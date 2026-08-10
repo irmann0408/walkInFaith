@@ -33,6 +33,9 @@ import kotlinx.coroutines.launch
 
 data class NoahsArkRewardResult(val stars: Int)
 
+/** Whether the last tap in a scene landed on a decoy item that doesn't belong. */
+enum class DecoyTapOutcome { NONE, DECOY_TAPPED }
+
 data class NoahsArkUiState(
     val foundAnimalIds: Set<String> = emptySet(),
     val matchingState: MatchingGameState,
@@ -40,6 +43,8 @@ data class NoahsArkUiState(
     val dragSortState: DragSortGameState,
     val hiddenObjectState: HiddenObjectGameState,
     val reward: NoahsArkRewardResult? = null,
+    val lastFindAnimalsDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
+    val lastGatherSuppliesDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
 )
 
 class NoahsArkViewModel(
@@ -63,6 +68,11 @@ class NoahsArkViewModel(
         _uiState.update { it.copy(foundAnimalIds = it.foundAnimalIds + animalId) }
     }
 
+    /** Never penalized, never blocks progress — the decoy just stays tappable. */
+    fun onFindAnimalsDecoyTapped() {
+        _uiState.update { it.copy(lastFindAnimalsDecoyOutcome = DecoyTapOutcome.DECOY_TAPPED) }
+    }
+
     fun onMatchItemTapped(itemId: String) {
         _uiState.update { current ->
             val newMatchingState = MatchingGame.onItemTapped(current.matchingState, itemId)
@@ -75,6 +85,11 @@ class NoahsArkViewModel(
 
     fun onSupplyCollected(supplyId: String) {
         _uiState.update { it.copy(collectedSupplyIds = it.collectedSupplyIds + supplyId) }
+    }
+
+    /** Never penalized, never blocks progress — the decoy just stays tappable. */
+    fun onGatherSuppliesDecoyTapped() {
+        _uiState.update { it.copy(lastGatherSuppliesDecoyOutcome = DecoyTapOutcome.DECOY_TAPPED) }
     }
 
     fun onSortItemDropped(itemId: String, categoryKey: String) {

@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-08-10
+Last updated: 2026-08-10 (Milestone 4 addendum: content variety, decoys, context cards)
 
 ## Current milestone
 
@@ -134,6 +134,70 @@ section 8's Noah's Ark checklist.
   `PlayerProfileLocalDataSourceInstrumentedTest.tearDown()` was an expression-bodied
   function whose inferred return type was `Preferences` instead of `Unit`, which
   JUnit4 rejects for `@After` methods — fixed with an explicit block body.
+
+### Milestone 4 addendum — content variety, decoys, and story context cards
+Follow-up pass on Noah's Ark: the "select/place everything provided" mini-games
+(Find the Animals, Gather Supplies, Organize the Ark) had no real discrimination
+required, which read as aimed at a younger audience than the 7+ target. Animal
+Matching and Find Missing Items were left untouched (Matching already requires
+finding a matching pair among many; Find Missing Items was excluded by the user's
+explicit choice). Adding a player name to the Character screen was considered and
+explicitly **not** done — spec section 16 (Child Safety) lists "Name" as personal
+information the app must not request without justification, and none exists yet.
+- **More real content**: `animals` grew from 6 to 8 (added camel, monkey); `supplies`
+  grew from 4 to 6 (added honey, rope). Both flow automatically into Find the
+  Animals, Animal Matching, and Gather Supplies, since those screens already iterate
+  `NoahsArkContent` generically. `hiddenItems` stayed a 1:1 mirror of `supplies` (now
+  6, with two new fractional positions). `sortableItems`' real-item count was
+  deliberately left at 6 (unchanged) — a drag gesture is heavier than a tap, so only
+  a decoy was added there rather than growing the real-item count too.
+- **Decoy items** (`game/stories/NoahsArkContent.kt`'s new `DecoyItemDef`,
+  `findAnimalsDecoys`/`gatherSuppliesDecoys`) — a rock, a toy ball, and (via
+  `sortableItems`' new nullable `categoryKey`) a hammer for Organize the Ark. Never
+  required for completion, never penalized, always stay interactive, and each shows
+  its own scene-specific feedback text (not the shared "Try another one!") —
+  `feedback_not_an_animal`/`feedback_not_a_supply`/`feedback_doesnt_belong`.
+  `DragSortGameState`/`DragSortGame` gained `SortOutcome.NOT_SORTABLE` and a nullable
+  `SortableItem.categoryKey` to represent "belongs in no bin," consistent with the
+  puzzle packages' existing "never FAILED" design. Find the Animals/Gather Supplies
+  have no dedicated engine, so their decoy state is two plain `DecoyTapOutcome`
+  fields on `NoahsArkUiState` rather than a new pure-Kotlin engine package — a third
+  micro-engine for "was a decoy tapped, yes/no" would go against this codebase's
+  existing precedent of not building shared abstractions ahead of real need.
+- **Story context cards**: one new reusable `ui/components/StoryBeatScreen.kt`
+  (title + 1-2 narrative lines + Continue, modeled on `NoahsArkIntroScreen` but
+  without the character render, to stay a quick narrator caption) — wired directly
+  into `BibleAdventuresNavHost.kt`'s `noahsArkGraph()` three times as new
+  `Destination.NoahsArk.{FindAnimalsContext,GatherSuppliesContext,OrganizeArkContext}`
+  routes, immediately before their respective puzzle scenes, so the player has
+  narrative grounding for what belongs before any decoy shows up.
+- Fixed a pre-existing bug found while making this change: `NoahsArkGatherSuppliesScreen.kt`
+  laid supplies out in a plain non-scrollable `Row`, already borderline-overflowing
+  at 4 items — changed to `LazyRow` (same pattern as Organize the Ark's item tray).
+- Tests: updated `NoahsArkViewModelTest`'s initial-state counts (16 matching items, 7
+  sortable items, 6 hidden items) and added decoy-outcome tests; `DragSortGameTest`
+  gained `NOT_SORTABLE`/decoy-completion/repeatable-retry tests; `NoahsArkFlowTest`
+  gained one more Continue tap before each of the three puzzle scenes and now
+  explicitly skips decoys in its "tap/drag everything" loops; new
+  `NoahsArkDecoyInteractionTest` (instrumented) covers decoy feedback text,
+  never-completes-early, and stays-interactive-after-repeated-taps for all three
+  decoys, kept separate from `NoahsArkFlowTest`'s happy-path walk.
+- Two more bugs only surfaced running `connectedDebugAndroidTest` on-device (same
+  pattern as M4's original two): `AnimalMatchingGameTest` still assumed Intro's
+  Continue led straight to Find Animals, predating the new context card in between —
+  fixed with an extra Continue tap. More substantially, `LazyRow` was the wrong
+  choice for Gather Supplies' tray (and, it turns out, Organize the Ark's
+  pre-existing tray once the hammer decoy pushed it past 6 items too): `LazyRow`
+  virtualizes off-screen children out of the semantics tree entirely, so items past
+  the visible viewport (7 items comfortably exceeds a phone's width) couldn't be
+  found by either the real accessibility tree or the instrumented tests. Both trays
+  now use a plain `Row` with `Modifier.horizontalScroll` instead — every item stays
+  in the tree regardless of scroll position, and tests call `.performScrollTo()`
+  before tapping/dragging an item to bring it into the visible/tappable viewport.
+  All 11 instrumented tests pass on-device (Samsung Galaxy S25 Ultra) after these
+  fixes; two other failures seen on the first run (`CharacterNavigationTest`,
+  `WorldMapNavigationTest`) did not reproduce on a clean re-run and were unrelated to
+  this change — flaky, not fixed.
 
 ## Environment notes
 

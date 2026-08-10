@@ -13,9 +13,12 @@ sealed class Destination(val route: String) {
     /** Nested graph — every scene shares one graph-scoped `NoahsArkViewModel`. */
     sealed class NoahsArk(route: String) : Destination(route) {
         data object Intro : NoahsArk("noahs_ark/intro")
+        data object FindAnimalsContext : NoahsArk("noahs_ark/find_animals_context")
         data object FindAnimals : NoahsArk("noahs_ark/find_animals")
         data object AnimalMatching : NoahsArk("noahs_ark/animal_matching")
+        data object GatherSuppliesContext : NoahsArk("noahs_ark/gather_supplies_context")
         data object GatherSupplies : NoahsArk("noahs_ark/gather_supplies")
+        data object OrganizeArkContext : NoahsArk("noahs_ark/organize_ark_context")
         data object OrganizeArk : NoahsArk("noahs_ark/organize_ark")
         data object FindMissingItems : NoahsArk("noahs_ark/find_missing_items")
         data object Lesson : NoahsArk("noahs_ark/lesson")

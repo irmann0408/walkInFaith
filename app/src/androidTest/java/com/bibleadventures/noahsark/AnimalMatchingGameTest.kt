@@ -32,7 +32,8 @@ class AnimalMatchingGameTest {
 
         composeTestRule.onNodeWithText(adventuresLabel).performClick()
         composeTestRule.onNodeWithText(noahsArkTitle).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro -> Find Animals
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro -> Find Animals context
+        composeTestRule.onNodeWithText(continueLabel).performClick() // context -> Find Animals
 
         NoahsArkContent.animals.forEach { animal ->
             val name = activity.getString(animal.nameRes)

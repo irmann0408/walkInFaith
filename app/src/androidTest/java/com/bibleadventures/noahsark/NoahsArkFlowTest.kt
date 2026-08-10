@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.geometry.Offset
@@ -39,7 +40,11 @@ class NoahsArkFlowTest {
         // Scene 1: Intro.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 2: Find the Animals.
+        // Scene 1b: Find the Animals context card.
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 2: Find the Animals. The decoy (a rock) is deliberately left untapped —
+        // completion must not depend on it.
         NoahsArkContent.animals.forEach { animal ->
             composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
         }
@@ -53,18 +58,28 @@ class NoahsArkFlowTest {
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 4: Gather Supplies.
+        // Scene 3b: Gather Supplies context card.
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 4: Gather Supplies. The decoy (a toy) is deliberately left untapped.
         NoahsArkContent.supplies.forEach { supply ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes)).performClick()
+            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes))
+                .performScrollTo()
+                .performClick()
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 5: Organize the Ark — drag every item onto its category.
-        NoahsArkContent.sortableItems.forEach { item ->
+        // Scene 4b: Organize the Ark context card.
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 5: Organize the Ark — drag every real item onto its category. The decoy
+        // (a hammer, categoryKey == null) is deliberately left in the tray, untouched.
+        NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->
             val itemName = activity.getString(item.nameRes)
             val categoryLabelRes = NoahsArkContent.sortCategories.first { it.key == item.categoryKey }.labelRes
             val categoryLabel = activity.getString(categoryLabelRes)
-            dragOnto(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetLabel = categoryLabel)
+            val itemNode = composeTestRule.onNodeWithContentDescription(itemName).performScrollTo()
+            dragOnto(itemNode = itemNode, targetLabel = categoryLabel)
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 

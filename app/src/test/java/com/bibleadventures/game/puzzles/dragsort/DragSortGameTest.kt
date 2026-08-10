@@ -7,12 +7,15 @@ import org.junit.Test
 
 private val lion = SortableItem("lion", iconRes = 1, contentDescriptionRes = 1, categoryKey = "animals")
 private val bread = SortableItem("bread", iconRes = 2, contentDescriptionRes = 2, categoryKey = "food")
+private val hammer = SortableItem("hammer", iconRes = 3, contentDescriptionRes = 3, categoryKey = null)
 private val categories = listOf(
     SortCategory("animals", labelRes = 10),
     SortCategory("food", labelRes = 11),
 )
 
 private fun initialState() = DragSortGameState(items = listOf(lion, bread), categories = categories)
+
+private fun initialStateWithDecoy() = DragSortGameState(items = listOf(lion, bread, hammer), categories = categories)
 
 class DragSortGameTest {
 
@@ -51,5 +54,39 @@ class DragSortGameTest {
         state = DragSortGame.onItemDroppedOnCategory(state, "bread", "food")
 
         assertTrue(state.isComplete)
+    }
+
+    @Test
+    fun `dropping an unsortable item on any category reports NOT_SORTABLE and never places it`() {
+        var state = DragSortGame.onItemDroppedOnCategory(initialStateWithDecoy(), "hammer", "animals")
+        assertEquals(SortOutcome.NOT_SORTABLE, state.lastOutcome)
+        assertTrue("hammer" !in state.placedItems)
+
+        state = DragSortGame.onItemDroppedOnCategory(state, "hammer", "food")
+        assertEquals(SortOutcome.NOT_SORTABLE, state.lastOutcome)
+        assertTrue("hammer" !in state.placedItems)
+    }
+
+    @Test
+    fun `game is complete once every real item is placed, even with an unsortable item still unplaced`() {
+        var state = initialStateWithDecoy()
+        assertFalse(state.isComplete)
+
+        state = DragSortGame.onItemDroppedOnCategory(state, "lion", "animals")
+        state = DragSortGame.onItemDroppedOnCategory(state, "bread", "food")
+
+        assertTrue(state.isComplete)
+        assertTrue("hammer" !in state.placedItems)
+    }
+
+    @Test
+    fun `dropping the same unsortable item repeatedly always reports NOT_SORTABLE and never blocks retrying`() {
+        var state = initialStateWithDecoy()
+
+        repeat(3) {
+            state = DragSortGame.onItemDroppedOnCategory(state, "hammer", "food")
+            assertEquals(SortOutcome.NOT_SORTABLE, state.lastOutcome)
+        }
+        assertTrue("hammer" !in state.placedItems)
     }
 }

@@ -3,13 +3,16 @@ package com.bibleadventures.ui.screens.noahsark.gathersupplies
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
@@ -29,9 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.game.stories.DecoyItemDef
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.game.stories.SupplyDef
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -45,7 +50,9 @@ fun NoahsArkGatherSuppliesScreen(
 
     NoahsArkGatherSuppliesContent(
         collectedSupplyIds = uiState.collectedSupplyIds,
+        decoyOutcome = uiState.lastGatherSuppliesDecoyOutcome,
         onSupplyTapped = viewModel::onSupplyCollected,
+        onDecoyTapped = viewModel::onGatherSuppliesDecoyTapped,
         onContinue = onContinue,
         modifier = modifier,
     )
@@ -54,7 +61,9 @@ fun NoahsArkGatherSuppliesScreen(
 @Composable
 private fun NoahsArkGatherSuppliesContent(
     collectedSupplyIds: Set<String>,
+    decoyOutcome: DecoyTapOutcome,
     onSupplyTapped: (String) -> Unit,
+    onDecoyTapped: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -75,16 +84,31 @@ private fun NoahsArkGatherSuppliesContent(
             Text(
                 text = stringResource(R.string.noahs_ark_gather_supplies_instructions),
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+                modifier = Modifier.padding(top = 8.dp),
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            val feedback = if (decoyOutcome == DecoyTapOutcome.DECOY_TAPPED) {
+                stringResource(R.string.feedback_not_a_supply)
+            } else {
+                ""
+            }
+            Box(modifier = Modifier.height(32.dp)) {
+                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
+            }
+
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
                 NoahsArkContent.supplies.forEach { supply ->
                     SupplyTile(
                         supply = supply,
                         isCollected = supply.id in collectedSupplyIds,
                         onClick = { onSupplyTapped(supply.id) },
                     )
+                }
+                NoahsArkContent.gatherSuppliesDecoys.forEach { decoy ->
+                    DecoyTile(decoy = decoy, onClick = onDecoyTapped)
                 }
             }
 
@@ -122,10 +146,36 @@ private fun SupplyTile(supply: SupplyDef, isCollected: Boolean, onClick: () -> U
     }
 }
 
+/** Always tappable, never checked off — a decoy stays recoverable forever. */
+@Composable
+private fun DecoyTile(decoy: DecoyItemDef, onClick: () -> Unit) {
+    val name = stringResource(decoy.nameRes)
+
+    Box(
+        modifier = Modifier
+            .size(72.dp)
+            .clickable(onClickLabel = name, onClick = onClick)
+            .semantics { contentDescription = name },
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(decoy.iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun NoahsArkGatherSuppliesPreview() {
     BibleAdventuresTheme {
-        NoahsArkGatherSuppliesContent(collectedSupplyIds = emptySet(), onSupplyTapped = {}, onContinue = {})
+        NoahsArkGatherSuppliesContent(
+            collectedSupplyIds = emptySet(),
+            decoyOutcome = DecoyTapOutcome.NONE,
+            onSupplyTapped = {},
+            onDecoyTapped = {},
+            onContinue = {},
+        )
     }
 }

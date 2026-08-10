@@ -16,14 +16,21 @@ object DragSortGame {
         if (itemId in state.placedItems) return state.copy(lastOutcome = SortOutcome.NONE)
 
         val item = state.items.first { it.id == itemId }
-        return if (item.categoryKey == categoryKey) {
-            state.copy(
-                placedItems = state.placedItems + (itemId to categoryKey),
-                lastOutcome = SortOutcome.CORRECT,
-            )
-        } else {
-            // Item is not added to placedItems, so the UI animates it back to origin.
-            state.copy(lastOutcome = SortOutcome.TRY_AGAIN)
+        return when {
+            item.categoryKey == null -> {
+                // A decoy: never placed, no matter which bin it's dropped on.
+                state.copy(lastOutcome = SortOutcome.NOT_SORTABLE)
+            }
+            item.categoryKey == categoryKey -> {
+                state.copy(
+                    placedItems = state.placedItems + (itemId to categoryKey),
+                    lastOutcome = SortOutcome.CORRECT,
+                )
+            }
+            else -> {
+                // Item is not added to placedItems, so the UI animates it back to origin.
+                state.copy(lastOutcome = SortOutcome.TRY_AGAIN)
+            }
         }
     }
 }

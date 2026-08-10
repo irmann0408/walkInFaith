@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -33,8 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.stories.AnimalDef
+import com.bibleadventures.game.stories.DecoyItemDef
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -48,7 +51,9 @@ fun NoahsArkFindAnimalsScreen(
 
     NoahsArkFindAnimalsContent(
         foundAnimalIds = uiState.foundAnimalIds,
+        decoyOutcome = uiState.lastFindAnimalsDecoyOutcome,
         onAnimalTapped = viewModel::onAnimalFound,
+        onDecoyTapped = viewModel::onFindAnimalsDecoyTapped,
         onContinue = onContinue,
         modifier = modifier,
     )
@@ -57,7 +62,9 @@ fun NoahsArkFindAnimalsScreen(
 @Composable
 private fun NoahsArkFindAnimalsContent(
     foundAnimalIds: Set<String>,
+    decoyOutcome: DecoyTapOutcome,
     onAnimalTapped: (String) -> Unit,
+    onDecoyTapped: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -78,8 +85,17 @@ private fun NoahsArkFindAnimalsContent(
             Text(
                 text = stringResource(R.string.noahs_ark_find_animals_instructions),
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+                modifier = Modifier.padding(top = 8.dp),
             )
+
+            val feedback = if (decoyOutcome == DecoyTapOutcome.DECOY_TAPPED) {
+                stringResource(R.string.feedback_not_an_animal)
+            } else {
+                ""
+            }
+            Box(modifier = Modifier.height(32.dp)) {
+                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
+            }
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
@@ -94,6 +110,9 @@ private fun NoahsArkFindAnimalsContent(
                         isFound = animal.id in foundAnimalIds,
                         onClick = { onAnimalTapped(animal.id) },
                     )
+                }
+                items(NoahsArkContent.findAnimalsDecoys) { decoy ->
+                    DecoyTile(decoy = decoy, onClick = onDecoyTapped)
                 }
             }
 
@@ -135,10 +154,36 @@ private fun AnimalTile(animal: AnimalDef, isFound: Boolean, onClick: () -> Unit)
     }
 }
 
+/** Always tappable, never checked off — a decoy stays recoverable forever. */
+@Composable
+private fun DecoyTile(decoy: DecoyItemDef, onClick: () -> Unit) {
+    val name = stringResource(decoy.nameRes)
+
+    Box(
+        modifier = Modifier
+            .size(88.dp)
+            .clickable(onClickLabel = name, onClick = onClick)
+            .semantics { contentDescription = name },
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(decoy.iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(72.dp),
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun NoahsArkFindAnimalsPreview() {
     BibleAdventuresTheme {
-        NoahsArkFindAnimalsContent(foundAnimalIds = emptySet(), onAnimalTapped = {}, onContinue = {})
+        NoahsArkFindAnimalsContent(
+            foundAnimalIds = emptySet(),
+            decoyOutcome = DecoyTapOutcome.NONE,
+            onAnimalTapped = {},
+            onDecoyTapped = {},
+            onContinue = {},
+        )
     }
 }

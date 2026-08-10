@@ -78,13 +78,13 @@ class NoahsArkViewModelTest {
     ) = NoahsArkViewModel(ProgressionService(repository), repository, audioController)
 
     @Test
-    fun `initial state has all 6 animal pairs, all sortable items, and all hidden items`() {
+    fun `initial state has one matching pair per animal, all sortable items including the decoy, and all hidden items`() {
         val viewModel = createViewModel()
         val state = viewModel.uiState.value
 
-        assertEquals(12, state.matchingState.items.size)
-        assertEquals(6, state.dragSortState.items.size)
-        assertEquals(4, state.hiddenObjectState.items.size)
+        assertEquals(16, state.matchingState.items.size)
+        assertEquals(7, state.dragSortState.items.size)
+        assertEquals(6, state.hiddenObjectState.items.size)
         assertTrue(state.foundAnimalIds.isEmpty())
         assertTrue(state.collectedSupplyIds.isEmpty())
     }
@@ -105,6 +105,26 @@ class NoahsArkViewModelTest {
         viewModel.onSupplyCollected("bread")
 
         assertTrue("bread" in viewModel.uiState.value.collectedSupplyIds)
+    }
+
+    @Test
+    fun `onFindAnimalsDecoyTapped sets the decoy outcome without touching foundAnimalIds`() {
+        val viewModel = createViewModel()
+
+        viewModel.onFindAnimalsDecoyTapped()
+
+        assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastFindAnimalsDecoyOutcome)
+        assertTrue(viewModel.uiState.value.foundAnimalIds.isEmpty())
+    }
+
+    @Test
+    fun `onGatherSuppliesDecoyTapped sets the decoy outcome without touching collectedSupplyIds`() {
+        val viewModel = createViewModel()
+
+        viewModel.onGatherSuppliesDecoyTapped()
+
+        assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastGatherSuppliesDecoyOutcome)
+        assertTrue(viewModel.uiState.value.collectedSupplyIds.isEmpty())
     }
 
     @Test

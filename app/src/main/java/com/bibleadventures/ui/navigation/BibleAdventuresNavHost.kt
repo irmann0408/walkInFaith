@@ -13,7 +13,9 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.bibleadventures.R
 import com.bibleadventures.domain.model.ChapterId
+import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.AppViewModelProvider
+import com.bibleadventures.ui.components.StoryBeatScreen
 import com.bibleadventures.ui.screens.character.CharacterScreen
 import com.bibleadventures.ui.screens.comingsoon.ComingSoonScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
@@ -90,6 +92,13 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
         composable(Destination.NoahsArk.Intro.route) { entry ->
             NoahsArkIntroScreen(
                 viewModel = navController.noahsArkViewModel(entry),
+                onContinue = { navController.navigate(Destination.NoahsArk.FindAnimalsContext.route) },
+            )
+        }
+        composable(Destination.NoahsArk.FindAnimalsContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.noahs_ark_find_animals_context_title,
+                lineRes = NoahsArkContent.findAnimalsContextLines,
                 onContinue = { navController.navigate(Destination.NoahsArk.FindAnimals.route) },
             )
         }
@@ -102,12 +111,26 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
         composable(Destination.NoahsArk.AnimalMatching.route) { entry ->
             NoahsArkMatchingScreen(
                 viewModel = navController.noahsArkViewModel(entry),
+                onContinue = { navController.navigate(Destination.NoahsArk.GatherSuppliesContext.route) },
+            )
+        }
+        composable(Destination.NoahsArk.GatherSuppliesContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.noahs_ark_gather_supplies_context_title,
+                lineRes = NoahsArkContent.gatherSuppliesContextLines,
                 onContinue = { navController.navigate(Destination.NoahsArk.GatherSupplies.route) },
             )
         }
         composable(Destination.NoahsArk.GatherSupplies.route) { entry ->
             NoahsArkGatherSuppliesScreen(
                 viewModel = navController.noahsArkViewModel(entry),
+                onContinue = { navController.navigate(Destination.NoahsArk.OrganizeArkContext.route) },
+            )
+        }
+        composable(Destination.NoahsArk.OrganizeArkContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.noahs_ark_organize_context_title,
+                lineRes = NoahsArkContent.organizeArkContextLines,
                 onContinue = { navController.navigate(Destination.NoahsArk.OrganizeArk.route) },
             )
         }

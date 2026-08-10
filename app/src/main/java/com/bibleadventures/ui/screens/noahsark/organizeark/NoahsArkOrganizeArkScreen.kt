@@ -3,6 +3,7 @@ package com.bibleadventures.ui.screens.noahsark.organizeark
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,14 +14,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.dragsort.DragSortGameState
 import com.bibleadventures.game.puzzles.dragsort.SortCategory
+import com.bibleadventures.game.puzzles.dragsort.SortOutcome
 import com.bibleadventures.game.puzzles.dragsort.SortableItem
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
@@ -93,8 +95,18 @@ private fun NoahsArkOrganizeArkContent(
             Text(
                 text = stringResource(R.string.noahs_ark_organize_instructions),
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+                modifier = Modifier.padding(top = 8.dp),
             )
+
+            val feedback = when (dragSortState.lastOutcome) {
+                SortOutcome.CORRECT -> stringResource(R.string.feedback_great_job)
+                SortOutcome.TRY_AGAIN -> stringResource(R.string.feedback_try_another_one)
+                SortOutcome.NOT_SORTABLE -> stringResource(R.string.feedback_doesnt_belong)
+                SortOutcome.NONE -> ""
+            }
+            Box(modifier = Modifier.height(32.dp).padding(bottom = 8.dp)) {
+                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -112,18 +124,21 @@ private fun NoahsArkOrganizeArkContent(
                 }
             }
 
-            LazyRow(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
                     .padding(top = 32.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                items(unplacedItems, key = { it.id }) { item ->
-                    DraggableSortItem(
-                        item = item,
-                        categoryBounds = categoryBounds,
-                        onDropped = { categoryKey -> onItemDropped(item.id, categoryKey) },
-                    )
+                unplacedItems.forEach { item ->
+                    key(item.id) {
+                        DraggableSortItem(
+                            item = item,
+                            categoryBounds = categoryBounds,
+                            onDropped = { categoryKey -> onItemDropped(item.id, categoryKey) },
+                        )
+                    }
                 }
             }
 

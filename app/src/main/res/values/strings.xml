@@ -78,6 +78,9 @@
     <string name="action_return_to_map">Return to Map</string>
     <string name="feedback_great_job">Great job!</string>
     <string name="feedback_try_another_one">Try another one!</string>
+    <string name="feedback_not_an_animal">That\'s not an animal!</string>
+    <string name="feedback_not_a_supply">We don\'t need that for the trip!</string>
+    <string name="feedback_doesnt_belong">That doesn\'t belong on the ark!</string>
 
     <string name="animal_lion">Lion</string>
     <string name="animal_elephant">Elephant</string>
@@ -85,11 +88,19 @@
     <string name="animal_sheep">Sheep</string>
     <string name="animal_rabbit">Rabbit</string>
     <string name="animal_bird">Bird</string>
+    <string name="animal_camel">Camel</string>
+    <string name="animal_monkey">Monkey</string>
 
     <string name="supply_bread">Bread</string>
     <string name="supply_fruit">Fruit</string>
     <string name="supply_water">Water</string>
     <string name="supply_grain">Grain</string>
+    <string name="supply_honey">Honey</string>
+    <string name="supply_rope">Rope</string>
+
+    <string name="decoy_rock">Rock</string>
+    <string name="decoy_toy">Toy Ball</string>
+    <string name="decoy_hammer">Hammer</string>
 
     <string name="sort_category_animals">Animals</string>
     <string name="sort_category_food">Food</string>
@@ -98,14 +109,26 @@
     <string name="noahs_ark_intro_line_1">Noah trusted God and followed His instructions.</string>
     <string name="noahs_ark_intro_line_2">Will you help Noah get everyone safely aboard the ark?</string>
 
+    <string name="noahs_ark_find_animals_context_title">Two By Two</string>
+    <string name="noahs_ark_find_animals_context_line_1">The rain is coming, and Noah needs every animal safely aboard the ark.</string>
+    <string name="noahs_ark_find_animals_context_line_2">Look around and find each animal — leave anything that isn\'t an animal behind.</string>
+
     <string name="noahs_ark_find_animals_title">Find the Animals</string>
     <string name="noahs_ark_find_animals_instructions">Tap each animal to bring it to the ark.</string>
 
     <string name="noahs_ark_matching_title">Match the Animal Pairs</string>
     <string name="noahs_ark_matching_instructions">Tap two animals that match.</string>
 
+    <string name="noahs_ark_gather_supplies_context_title">Ready for the Journey</string>
+    <string name="noahs_ark_gather_supplies_context_line_1">Noah\'s family will need food and water for many days at sea.</string>
+    <string name="noahs_ark_gather_supplies_context_line_2">Gather only what the ark truly needs for the trip.</string>
+
     <string name="noahs_ark_gather_supplies_title">Gather Supplies</string>
     <string name="noahs_ark_gather_supplies_instructions">Tap each supply to pack it for the journey.</string>
+
+    <string name="noahs_ark_organize_context_title">A Place for Everything</string>
+    <string name="noahs_ark_organize_context_line_1">Everything on the ark has its own place — animals, food, and supplies.</string>
+    <string name="noahs_ark_organize_context_line_2">Put each item where it belongs, and leave behind anything that isn\'t needed.</string>
 
     <string name="noahs_ark_organize_title">Organize the Ark</string>
     <string name="noahs_ark_organize_instructions">Drag each item into the right area.</string>
