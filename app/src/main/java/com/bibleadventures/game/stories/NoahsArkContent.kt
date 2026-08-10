@@ -31,16 +31,8 @@ data class SortableItemDef(
     @StringRes val nameRes: Int,
     val categoryKey: String?,
 )
-data class HiddenItemDef(
-    val id: String,
-    @DrawableRes val iconRes: Int,
-    @StringRes val nameRes: Int,
-    /** Fractional (0..1) position within the scene area. */
-    val position: Offset,
-)
-
-/** A tappable item that doesn't belong — never required, never penalized, always retryable. */
-data class DecoyItemDef(val id: String, @DrawableRes val iconRes: Int, @StringRes val nameRes: Int)
+// HiddenItemDef and DecoyItemDef live in ContentDefs.kt (same package) — shared
+// with DavidGoliathContent.kt, not Noah's-Ark-specific despite living here originally.
 
 /**
  * Static content for the Noah's Ark chapter. Kept separate from the game

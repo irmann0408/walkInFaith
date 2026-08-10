@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-10 (Milestone 5: Progression)
+Last updated: 2026-08-10 (Chapter 2: David and Goliath)
 
 ## Current milestone
 
-**Milestone 5 — Progression: COMPLETE**
+**Chapter 2 — David and Goliath: COMPLETE**
 
 ## Completed features
 
@@ -405,11 +405,77 @@ all scene progress back to the last completed chapter, since nothing was saving 
   repointed from "My Badges" to "Settings", since Badges (and Scripture Cards) now
   route to real screens.
 
-## Next tasks (Milestone 6 — Parent Area)
+### Chapter 2 — David and Goliath
+The second full chapter, unlocked automatically once Noah's Ark is completed (no
+changes needed to the generic chapter-unlock system). Scene flow: Intro → Choose
+the Stones (context card + scene) → Sling Practice context card → Choice → Sling
+Practice → Lesson → Reward.
+- **Choose the Stones** reuses Find the Missing Items' current (harder) design
+  as-is — camouflage background, 32dp/0.85-alpha icons in a 48dp tap target,
+  found-only labels, shuffled item-to-position mapping — over a new riverbed
+  background (`bg_david_goliath_riverbed.xml`), with one decoy (an old boot).
+  All five stones share one icon (`ic_stone_smooth.xml`): 1 Samuel 17:40 just
+  says "five smooth stones," with no textual basis for five distinct rock
+  types, so distinct art would be pedagogically pointless.
+- **Sling Practice** is the new centerpiece mechanic and the first genuinely new
+  gesture/animation pattern in this codebase: drag-to-aim-and-release at a mark
+  that moves back and forth on Goliath's shield over time, timing the release.
+  Framed as target practice ("help David aim true"), not combat — no
+  impact/hit visuals, Goliath just reacts with surprise (a shape-changed
+  drawable, `ic_goliath_shield_surprised.xml`, tilted via a `<group>` rotation
+  — never color alone) and a cheerful sound. New pure engine
+  `game/puzzles/slingshot/{SlingshotGame,SlingshotGameState}.kt` only judges
+  "was this release close enough to the mark" (`SlingshotOutcome.HIT`/`MISS`,
+  never `FAILED` — a miss is always instantly retriable, no attempt limit, no
+  countdown). The mark's continuous motion deliberately stays UI-side
+  (`rememberInfiniteTransition`) rather than becoming a `viewModelScope`
+  ticking loop — every other engine in this codebase is discrete/event-driven,
+  and Compose's own test clock (`composeTestRule.mainClock.autoAdvance = false`)
+  already makes the animation fully deterministic for the instrumented test
+  without any production-code support needed. **Noted as a design tension, not
+  fixed here**: a real-time moving target is inherently more timing-dependent
+  than every other mechanic in this app (all currently self-paced) — spec
+  section 2 explicitly allows "Timing" as a challenge type, and it's never
+  punishing (unlimited retries), but it's a first for this app's accessibility
+  posture and worth revisiting if further difficulty/accessibility tuning is
+  wanted later.
+- **Choice** is a new scene pattern: David picks one of three brave responses to
+  Goliath's taunt, no wrong answer, flavor text only (not stateful branching).
+  Deliberately *not* built on `OptionPicker` (that component is for a
+  persistent, re-selectable "current setting" picker like character
+  customization) — a plain vertical stack of `AdventureMenuButton`s fits a
+  one-shot narrative pick better.
+- **Shared-DTO extraction**: `HiddenItemDef`/`DecoyItemDef` moved out of
+  `NoahsArkContent.kt` into a new `game/stories/ContentDefs.kt`, now that a
+  second chapter needs them — mirrors the `FakePlayerProfileRepository`
+  extraction precedent (extract once a second real consumer exists, not
+  preemptively). `AnimalDef`/`SupplyDef`-shaped types stayed chapter-local; no
+  `StoneDef` was invented since David's stones have no second use site to
+  justify a wrapper type (mirrors how Noah's Ark's own `hiddenItems` reuses
+  `SupplyDef` directly rather than inventing one).
+- **Badge/scripture card**: "Brave Heart" + 1 Samuel 17:45, added to
+  `RewardCatalog` (one appended line each, per its existing convention). The
+  scripture text was sourced from the actual World English Bible (public
+  domain) rather than written from memory, same standard as Genesis 6:22.
+- **Deferred, not built**: two "bonus round" mini-games the user originally
+  described (a sheep-counting matching game, and a dodge-rolling-obstacles
+  game) — explicitly scoped out of this pass, same incremental-growth pattern
+  as Noah's Ark's own decoys/shuffle/labels/harder-search addenda.
+- Tests: `SlingshotGameTest.kt` (unit), `DavidGoliathViewModelTest.kt` (unit,
+  using the shared `FakePlayerProfileRepository`), new instrumented
+  `DavidGoliathFlowTest.kt` — which completes Noah's Ark itself first (rather
+  than assuming it's already done), since this device's save data persists
+  real state across test runs and David & Goliath is locked until Noah's Ark
+  is complete.
 
-- Parental gate, progress summary, settings (music/sound/narration toggles), and
-  reset-progress functionality, per spec section 17. No `settings/` package exists
-  yet — still deferred until this milestone actually needs it (spec section 5/26).
+## Next tasks
+
+Nothing currently planned. If work resumes later, the natural next step per the
+original spec is either **Chapter 3 — The Good Samaritan** (now unlocked once
+David and Goliath is completed) or **Milestone 6 — Parent Area**: a parental
+gate, progress summary, settings (music/sound/narration toggles), and
+reset-progress functionality (spec section 17). No `settings/` package exists
+yet — still deferred until that milestone actually needs it (spec section 5/26).
 
 ## Architectural decisions log
 

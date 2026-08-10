@@ -81,6 +81,11 @@
     <string name="scripture_genesis_6_22_title">Noah\'s Obedience</string>
     <string name="scripture_genesis_6_22_text">"And Noah did so; according to all that God commanded him, so he did."</string>
 
+    <string name="badge_brave_heart_title">Brave Heart</string>
+    <string name="badge_brave_heart_description">Faced a giant with courage and trust in God.</string>
+    <string name="scripture_1_samuel_17_45_title">David\'s Declaration</string>
+    <string name="scripture_1_samuel_17_45_text">"Then David said to the Philistine, \'You come to me with a sword, with a spear, and with a javelin; but I come to you in the name of Yahweh of Armies, the God of the armies of Israel, whom you have defied.\'"</string>
+
     <string name="action_continue">Continue</string>
     <string name="action_return_to_map">Return to Map</string>
     <string name="feedback_great_job">Great job!</string>
@@ -88,6 +93,7 @@
     <string name="feedback_not_an_animal">That\'s not an animal!</string>
     <string name="feedback_not_a_supply">We don\'t need that for the trip!</string>
     <string name="feedback_doesnt_belong">That doesn\'t belong on the ark!</string>
+    <string name="feedback_not_a_stone">That\'s not a stone!</string>
 
     <string name="animal_lion">Lion</string>
     <string name="animal_elephant">Elephant</string>
@@ -108,6 +114,13 @@
     <string name="decoy_rock">Rock</string>
     <string name="decoy_toy">Toy Ball</string>
     <string name="decoy_hammer">Hammer</string>
+    <string name="decoy_boot">Old Boot</string>
+
+    <string name="stone_1">Smooth Stone</string>
+    <string name="stone_2">River Stone</string>
+    <string name="stone_3">Round Stone</string>
+    <string name="stone_4">Grey Stone</string>
+    <string name="stone_5">Speckled Stone</string>
 
     <string name="sort_category_animals">Animals</string>
     <string name="sort_category_food">Food</string>
@@ -145,6 +158,37 @@
 
     <string name="noahs_ark_lesson_title">What did we learn?</string>
     <string name="noahs_ark_lesson_text">God wants us to trust Him and follow what is right.</string>
+
+    <string name="david_goliath_intro_line_1">David was just a shepherd boy, but he trusted God with all his heart.</string>
+    <string name="david_goliath_intro_line_2">One day a giant named Goliath challenged Israel\'s whole army — and David stepped forward.</string>
+
+    <string name="david_goliath_choose_stones_context_title">Down by the Stream</string>
+    <string name="david_goliath_choose_stones_context_line_1">Before facing Goliath, David went down to a stream near the battlefield.</string>
+    <string name="david_goliath_choose_stones_context_line_2">Help him find five smooth stones hidden among the rocks.</string>
+
+    <string name="david_goliath_choose_stones_title">Choose the Stones</string>
+    <string name="david_goliath_choose_stones_instructions">Look closely and tap to find five smooth stones for David\'s sling.</string>
+
+    <string name="david_goliath_sling_practice_context_title">Goliath\'s Challenge</string>
+    <string name="david_goliath_sling_practice_context_line_1">Goliath towered over the battlefield, mocking David and his God.</string>
+    <string name="david_goliath_sling_practice_context_line_2">David answered with courage, not fear.</string>
+
+    <string name="david_goliath_choice_title">What Will David Say?</string>
+    <string name="david_goliath_choice_instructions">Choose a brave response for David.</string>
+    <string name="david_goliath_choice_option_1">"The Lord will save me — He is with me!"</string>
+    <string name="david_goliath_choice_option_2">"I\'m not afraid, because God is bigger than you!"</string>
+    <string name="david_goliath_choice_option_3">"You come with a sword, but I come in the name of the Lord!"</string>
+    <string name="david_goliath_choice_reaction_1">David spoke with quiet, steady faith!</string>
+    <string name="david_goliath_choice_reaction_2">David\'s courage rang out across the valley!</string>
+    <string name="david_goliath_choice_reaction_3">David stood tall, trusting God completely!</string>
+
+    <string name="david_goliath_sling_practice_title">Sling Practice</string>
+    <string name="david_goliath_sling_practice_instructions">Drag back and let go to help David aim true at the mark.</string>
+    <string name="david_goliath_sling_target_mark_content_description">Target mark</string>
+    <string name="david_goliath_sling_stone_content_description">David\'s stone. Drag to aim, then let go.</string>
+
+    <string name="david_goliath_lesson_title">Courage and Trusting God</string>
+    <string name="david_goliath_lesson_text">David wasn\'t the biggest or the strongest, but he trusted God more than he feared Goliath. When we feel scared, we can remember God is with us too.</string>
 
     <string name="reward_title">Adventure Complete!</string>
     <string name="reward_stars_content_description">%1$d out of %2$d stars earned</string>

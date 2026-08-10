@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.bibleadventures.BibleAdventuresApplication
 import com.bibleadventures.ui.screens.badges.BadgesViewModel
 import com.bibleadventures.ui.screens.character.CharacterViewModel
+import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.mainmenu.MainMenuViewModel
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsViewModel
@@ -39,6 +40,10 @@ object AppViewModelProvider {
         initializer {
             val container = bibleAdventuresApplication().container
             NoahsArkViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
+        }
+        initializer {
+            val container = bibleAdventuresApplication().container
+            DavidGoliathViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
         }
         initializer {
             BadgesViewModel(bibleAdventuresApplication().container.playerProfileRepository)

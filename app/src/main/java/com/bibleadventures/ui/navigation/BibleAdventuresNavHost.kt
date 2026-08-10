@@ -13,12 +13,20 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.bibleadventures.R
 import com.bibleadventures.domain.model.ChapterId
+import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.StoryBeatScreen
 import com.bibleadventures.ui.screens.badges.BadgesScreen
 import com.bibleadventures.ui.screens.character.CharacterScreen
 import com.bibleadventures.ui.screens.comingsoon.ComingSoonScreen
+import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
+import com.bibleadventures.ui.screens.davidgoliath.choice.DavidGoliathChoiceScreen
+import com.bibleadventures.ui.screens.davidgoliath.choosestones.DavidGoliathChooseStonesScreen
+import com.bibleadventures.ui.screens.davidgoliath.intro.DavidGoliathIntroScreen
+import com.bibleadventures.ui.screens.davidgoliath.lesson.DavidGoliathLessonScreen
+import com.bibleadventures.ui.screens.davidgoliath.reward.DavidGoliathRewardScreen
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.DavidGoliathSlingPracticeScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.noahsark.findanimals.NoahsArkFindAnimalsScreen
@@ -68,10 +76,11 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
             WorldMapScreen(
                 onBack = { navController.popBackStack() },
                 onChapterSelected = { chapterId ->
-                    // Only Noah's Ark is ever unlocked/clickable right now, and it's the
-                    // only chapter with real gameplay built so far.
+                    // Only chapters with real gameplay built so far get a real destination.
                     if (chapterId == ChapterId.NOAHS_ARK) {
                         navController.navigate(Destination.NoahsArk.Intro.route)
+                    } else if (chapterId == ChapterId.DAVID_GOLIATH) {
+                        navController.navigate(Destination.DavidGoliath.Intro.route)
                     }
                 },
             )
@@ -83,6 +92,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
             ScriptureCardsScreen(onBack = { navController.popBackStack() })
         }
         noahsArkGraph(navController)
+        davidGoliathGraph(navController)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
                 backStackEntry.arguments?.getString(Destination.ComingSoon.ARG_FEATURE_TITLE).orEmpty()
@@ -208,5 +218,95 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
 @Composable
 private fun NavHostController.noahsArkViewModel(entry: NavBackStackEntry): NoahsArkViewModel {
     val parentEntry = remember(entry) { getBackStackEntry(Destination.NoahsArk.GRAPH_ROUTE) }
+    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
+}
+
+private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) {
+    navigation(
+        startDestination = Destination.DavidGoliath.Intro.route,
+        route = Destination.DavidGoliath.GRAPH_ROUTE,
+    ) {
+        composable(Destination.DavidGoliath.Intro.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            DavidGoliathIntroScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.DavidGoliath.ChooseStonesContext.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.ChooseStonesContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.david_goliath_choose_stones_context_title,
+                lineRes = DavidGoliathContent.chooseStonesContextLines,
+                onContinue = { navController.navigate(Destination.DavidGoliath.ChooseStones.route) },
+            )
+        }
+        composable(Destination.DavidGoliath.ChooseStones.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            DavidGoliathChooseStonesScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("choose_stones")
+                    navController.navigate(Destination.DavidGoliath.SlingPracticeContext.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.SlingPracticeContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.david_goliath_sling_practice_context_title,
+                lineRes = DavidGoliathContent.slingPracticeContextLines,
+                onContinue = { navController.navigate(Destination.DavidGoliath.Choice.route) },
+            )
+        }
+        composable(Destination.DavidGoliath.Choice.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            DavidGoliathChoiceScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("choice")
+                    navController.navigate(Destination.DavidGoliath.SlingPractice.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.SlingPractice.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            DavidGoliathSlingPracticeScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("sling_practice")
+                    navController.navigate(Destination.DavidGoliath.Lesson.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.Lesson.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            DavidGoliathLessonScreen(
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson")
+                    navController.navigate(Destination.DavidGoliath.Reward.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.Reward.route) { entry ->
+            DavidGoliathRewardScreen(
+                viewModel = navController.davidGoliathViewModel(entry),
+                onReturnToMap = {
+                    // Clears the whole David & Goliath back stack so Back from the map
+                    // can't re-enter a finished run or re-trigger onChapterFinished().
+                    navController.navigate(Destination.WorldMap.route) {
+                        popUpTo(Destination.WorldMap.route)
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavHostController.davidGoliathViewModel(entry: NavBackStackEntry): DavidGoliathViewModel {
+    val parentEntry = remember(entry) { getBackStackEntry(Destination.DavidGoliath.GRAPH_ROUTE) }
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }

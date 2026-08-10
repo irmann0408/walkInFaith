@@ -31,6 +31,22 @@ sealed class Destination(val route: String) {
         }
     }
 
+    /** Nested graph — every scene shares one graph-scoped `DavidGoliathViewModel`. */
+    sealed class DavidGoliath(route: String) : Destination(route) {
+        data object Intro : DavidGoliath("david_goliath/intro")
+        data object ChooseStonesContext : DavidGoliath("david_goliath/choose_stones_context")
+        data object ChooseStones : DavidGoliath("david_goliath/choose_stones")
+        data object SlingPracticeContext : DavidGoliath("david_goliath/sling_practice_context")
+        data object Choice : DavidGoliath("david_goliath/choice")
+        data object SlingPractice : DavidGoliath("david_goliath/sling_practice")
+        data object Lesson : DavidGoliath("david_goliath/lesson")
+        data object Reward : DavidGoliath("david_goliath/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "david_goliath"
+        }
+    }
+
     /** Temporary landing spot for menu items not yet implemented. */
     data class ComingSoon(val featureTitle: String) : Destination("coming_soon") {
         companion object {
