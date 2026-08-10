@@ -1,0 +1,1140 @@
+# CLAUDE CODE MASTER PROMPT
+
+## Bible Adventures — Interactive Bible Game for Kids 7+
+
+You are the lead software architect, senior Android engineer, game designer, UI/UX designer, QA engineer, and technical project manager for this project.
+
+Your task is to design and build a polished Android game called:
+
+# Bible Adventures: Walk in Faith
+
+The game is designed for children ages **7 and up**.
+
+The experience should feel like a combination of:
+
+* An interactive Bible storybook
+* A casual adventure game
+* Simple educational mini-games
+* A collection/reward game
+* A faith-based learning experience
+
+The game must be fun first, educational second, and always age-appropriate.
+
+---
+
+# 1. IMPORTANT DEVELOPMENT RULE
+
+Do NOT attempt to build the entire game in one step.
+
+Work incrementally.
+
+Before writing significant amounts of code:
+
+1. Inspect the existing repository.
+2. Understand the current project structure.
+3. Identify the current implementation status.
+4. Create or update the project architecture.
+5. Build one feature at a time.
+6. Compile frequently.
+7. Fix errors immediately.
+8. Run tests after meaningful changes.
+9. Keep the application runnable at every stage.
+10. Never leave the project in a deliberately broken state.
+
+If something is unclear, make a sensible engineering decision and document it rather than stopping unnecessarily.
+
+---
+
+# 2. PRODUCT VISION
+
+The player is a young adventurer who travels through a colorful world inspired by Bible stories.
+
+Each adventure presents a Bible story through:
+
+**Story → Exploration → Helping → Puzzle → Choice → Lesson → Reward**
+
+The player should feel like they are participating in the story rather than simply reading it.
+
+There must be no combat-focused gameplay.
+
+Instead, challenges should revolve around:
+
+* Helping people
+* Solving puzzles
+* Finding objects
+* Matching
+* Memory
+* Counting
+* Navigation
+* Timing
+* Sharing
+* Cooperation
+* Kindness
+* Courage
+* Patience
+* Faith
+
+---
+
+# 3. TARGET AUDIENCE
+
+Primary audience:
+
+Children ages 7+.
+
+Secondary audience:
+
+Parents who want their children to learn Bible stories in an interactive and positive way.
+
+Design requirements:
+
+* Large touch targets
+* Simple navigation
+* Minimal reading requirements
+* Clear visual feedback
+* Friendly characters
+* Short gameplay sessions
+* Positive reinforcement
+* No complicated menus
+* No scary imagery
+* No graphic violence
+* No gambling mechanics
+* No manipulative monetization
+
+---
+
+# 4. TECHNOLOGY STACK
+
+Use modern native Android development.
+
+Preferred stack:
+
+* Kotlin
+* Jetpack Compose
+* Material 3
+* Navigation Compose
+* Coroutines
+* StateFlow
+* ViewModel
+* Room and/or DataStore
+* Kotlin serialization where appropriate
+* Gradle Kotlin DSL
+
+Use a clean, maintainable architecture.
+
+Prefer:
+
+MVVM + Clean Architecture principles.
+
+Suggested package structure:
+
+com.bibleadventures
+
+```
+data/
+    local/
+    repository/
+
+domain/
+    model/
+    repository/
+    usecase/
+
+ui/
+    navigation/
+    screens/
+    components/
+    theme/
+
+game/
+    engine/
+    puzzles/
+    stories/
+    rewards/
+
+audio/
+
+character/
+
+progress/
+
+settings/
+
+util/
+```
+
+---
+
+# 5. ARCHITECTURE PRINCIPLES
+
+Follow these principles:
+
+* Separation of concerns
+* Single source of truth
+* Unidirectional data flow
+* Immutable UI state where practical
+* Dependency injection where useful
+* Testable business logic
+* Reusable Compose components
+* No business logic inside composables
+* No hard-coded navigation logic scattered throughout the UI
+* No unnecessary dependencies
+
+Avoid overengineering.
+
+The architecture should be appropriate for a small-to-medium mobile game.
+
+---
+
+# 6. OFFLINE-FIRST DESIGN
+
+The game must work without an internet connection.
+
+Core functionality must not depend on:
+
+* Remote APIs
+* Cloud services
+* Authentication
+* Online accounts
+
+Store player progress locally.
+
+Persist:
+
+* Current chapter
+* Completed chapters
+* Stars
+* Badges
+* Scripture cards
+* Character customization
+* Settings
+* Audio preferences
+
+If cloud synchronization is added in the future, design the architecture so it can be added without rewriting the application.
+
+---
+
+# 7. GAME STRUCTURE
+
+The game should eventually contain multiple Bible adventures.
+
+Initial chapters:
+
+### Chapter 1
+
+Noah's Ark
+
+Lesson:
+Obedience and trusting God.
+
+### Chapter 2
+
+David and Goliath
+
+Lesson:
+Courage and trusting God.
+
+### Chapter 3
+
+The Good Samaritan
+
+Lesson:
+Kindness and helping others.
+
+### Chapter 4
+
+Feeding the 5,000
+
+Lesson:
+Sharing and generosity.
+
+### Chapter 5
+
+Daniel and the Lions
+
+Lesson:
+Faithfulness and prayer.
+
+### Chapter 6
+
+Jesus Calms the Storm
+
+Lesson:
+Faith during difficult times.
+
+Only implement Chapter 1 initially.
+
+The other chapters should be represented in the architecture as future content.
+
+---
+
+# 8. MVP REQUIREMENTS
+
+The first milestone is a completely playable MVP.
+
+The MVP must contain:
+
+### Main Menu
+
+Buttons:
+
+* Continue Adventure
+* Adventures
+* My Badges
+* Scripture Cards
+* Character
+* Settings
+* Parent Area
+
+### Character Selection
+
+Allow the player to choose:
+
+* Boy / girl appearance
+* Several hairstyles
+* Several skin tones
+* Several clothing options
+
+Keep customization intentionally simple for the MVP.
+
+### World Map
+
+Create a colorful map containing Bible adventures.
+
+Example:
+
+Home Village
+↓
+Noah's Ark
+↓
+David & Goliath
+↓
+Good Samaritan
+↓
+Feeding the 5,000
+↓
+Daniel
+↓
+Jesus Calms the Storm
+
+Only Noah's Ark is initially unlocked.
+
+Future adventures should appear locked.
+
+### Noah's Ark
+
+This must be a complete playable adventure.
+
+It should contain:
+
+1. Story introduction
+2. Exploration
+3. Animal matching
+4. Food gathering
+5. Ark organization puzzle
+6. Missing-item search
+7. Short Bible lesson
+8. Scripture verse
+9. Reward screen
+
+---
+
+# 9. NOAH'S ARK GAMEPLAY
+
+Design the chapter as a sequence of short scenes.
+
+## Scene 1 — Introduction
+
+Show Noah and the player character.
+
+Narrator introduces the story.
+
+Use short dialogue rather than large paragraphs.
+
+Example:
+
+"Noah trusted God and followed His instructions."
+
+The player presses:
+
+CONTINUE
+
+---
+
+## Scene 2 — Find the Animals
+
+The player explores an area and finds animals.
+
+Use a simple tap interaction.
+
+Animals should have friendly animations.
+
+Examples:
+
+* Lion
+* Elephant
+* Giraffe
+* Sheep
+* Rabbit
+* Bird
+
+Avoid frightening representations.
+
+---
+
+## Scene 3 — Animal Matching
+
+Create a matching mini-game.
+
+Goal:
+
+Match animals into pairs.
+
+Requirements:
+
+* Drag-and-drop OR tap-to-match
+* Visual feedback
+* Positive animation
+* Simple sound effect
+* No punishment for mistakes
+
+When correct:
+
+"Great job!"
+
+When incorrect:
+
+"Try another one!"
+
+Do not make children feel like they failed.
+
+---
+
+## Scene 4 — Gather Supplies
+
+Create a simple collection game.
+
+The player gathers:
+
+* Bread
+* Fruit
+* Water
+* Grain
+
+Use simple tap interactions.
+
+Avoid complex inventory management.
+
+---
+
+## Scene 5 — Organize the Ark
+
+Create a simple sorting puzzle.
+
+The player helps organize animals and supplies.
+
+Possible areas:
+
+* Animals
+* Food
+* Supplies
+
+Use drag-and-drop.
+
+---
+
+## Scene 6 — Find Missing Items
+
+Create a simple hidden-object mini-game.
+
+The player searches the ark for several missing objects.
+
+Objects should be clearly visible enough for children.
+
+Avoid frustrating pixel-hunting.
+
+---
+
+## Scene 7 — Lesson
+
+Show:
+
+"What did we learn?"
+
+Then:
+
+"God wants us to trust Him and follow what is right."
+
+Display a short Bible verse.
+
+Use an appropriate Bible translation and ensure the wording/licensing is appropriate for distribution.
+
+Do not assume that every modern Bible translation is freely licensed.
+
+Where exact verse text licensing is uncertain, use:
+
+* Public-domain text where appropriate
+* Properly licensed text
+* Or a reference-only display such as "Genesis 6:22"
+
+---
+
+# 10. REWARD SYSTEM
+
+After completing an adventure, award:
+
+* Stars
+* Badge
+* Scripture Card
+* Storybook Page
+
+Example:
+
+⭐ ⭐ ⭐
+
+"ARK BUILDER"
+
+"Genesis 6:22"
+
+Rewards must be positive and non-monetary.
+
+Do not use loot boxes.
+
+Do not create artificial scarcity.
+
+---
+
+# 11. GAME PROGRESSION
+
+Use simple progression.
+
+Example:
+
+Complete Noah's Ark
+↓
+Earn Ark Badge
+↓
+Unlock David & Goliath
+
+However, the architecture should allow different unlocking rules in the future.
+
+Do not hard-code progression into individual screens.
+
+Create a progression service/repository.
+
+---
+
+# 12. UI/UX DESIGN
+
+The visual language should be:
+
+* Bright
+* Warm
+* Friendly
+* Wholesome
+* Cartoon-like
+* Storybook-inspired
+
+Use:
+
+* Rounded cards
+* Large buttons
+* Friendly typography
+* Large icons
+* Expressive characters
+* Simple animations
+
+Avoid:
+
+* Dark interfaces
+* Dense information
+* Tiny text
+* Excessive menus
+* Complex controls
+
+Children should understand what to do without needing instructions from an adult.
+
+---
+
+# 13. ACCESSIBILITY
+
+Support:
+
+* Large touch targets
+* Clear contrast
+* Readable typography
+* No information communicated only through color
+* Optional narration
+* Optional sound
+* Reduced animation setting if practical
+
+All interactive elements should have meaningful content descriptions where appropriate.
+
+---
+
+# 14. AUDIO ARCHITECTURE
+
+Create an audio abstraction layer.
+
+The game should support:
+
+* Background music
+* UI sounds
+* Gameplay sounds
+* Narration
+
+Settings:
+
+Music: ON/OFF
+
+Sound Effects: ON/OFF
+
+Narration: ON/OFF
+
+Do not require actual audio assets for the first MVP.
+
+Use placeholders or generated/simple local sounds where necessary, but keep the architecture ready for final assets.
+
+---
+
+# 15. ANIMATION
+
+Use subtle animations to make the game feel alive.
+
+Examples:
+
+* Character walking
+* Animal movement
+* Buttons responding to touch
+* Stars appearing
+* Badge celebration
+* Character waving
+* Objects bouncing slightly
+
+Do not overuse animation.
+
+Animations should support understanding rather than distract from gameplay.
+
+---
+
+# 16. CHILD SAFETY
+
+The application is intended for children.
+
+DO NOT implement:
+
+* Chat
+* Messaging
+* Public profiles
+* User-generated content
+* Social media
+* External advertising
+* Gambling
+* Loot boxes
+* Cryptocurrency
+* In-app purchases in the MVP
+* External links accessible directly to children
+
+Do not collect personal information.
+
+Do not request:
+
+* Name
+* Email
+* Phone number
+* Address
+* Location
+* Contacts
+* Camera
+* Microphone
+
+unless explicitly required later and properly justified.
+
+Design with child privacy and applicable children's privacy requirements in mind.
+
+Do not claim legal compliance automatically.
+
+---
+
+# 17. PARENT AREA
+
+Create a parent section.
+
+Protect it with a simple parental gate appropriate for the target age.
+
+Display:
+
+* Chapters completed
+* Stars earned
+* Badges
+* Scripture cards
+* Time played
+* Settings
+
+Allow parents to:
+
+* Reset progress
+* Configure sound
+* Configure narration
+* View privacy information
+
+The Parent Area should not expose unnecessary child data.
+
+---
+
+# 18. DATA MODEL
+
+Create clean domain models.
+
+Potential models:
+
+PlayerProfile
+
+```
+id
+character
+unlockedChapters
+completedChapters
+stars
+badges
+scriptureCards
+```
+
+CharacterCustomization
+
+```
+appearance
+hairstyle
+clothing
+accessories
+```
+
+Chapter
+
+```
+id
+title
+description
+lesson
+scriptureReference
+requiredChapter
+```
+
+AdventureProgress
+
+```
+chapterId
+completed
+stars
+completedActivities
+```
+
+Badge
+
+```
+id
+title
+description
+chapterId
+```
+
+ScriptureCard
+
+```
+id
+title
+reference
+text
+```
+
+Do not overcomplicate the schema.
+
+---
+
+# 19. TESTING
+
+Testing is mandatory.
+
+Create unit tests for:
+
+* Progress logic
+* Chapter unlocking
+* Reward calculation
+* Save/load behavior
+* Puzzle logic
+* Character customization
+* Settings
+
+Create Compose UI tests for important flows:
+
+* Launch application
+* Start adventure
+* Complete a mini-game
+* Complete Noah's Ark
+* Receive rewards
+* Return to map
+* Resume progress
+
+The project should compile successfully before considering a milestone complete.
+
+---
+
+# 20. ERROR HANDLING
+
+The application should fail gracefully.
+
+Do not crash because:
+
+* Saved data is missing
+* Saved data is corrupted
+* A chapter has no progress
+* Audio is unavailable
+* The player presses buttons quickly
+* The application is recreated
+
+Provide sensible defaults.
+
+---
+
+# 21. CODE QUALITY
+
+Follow modern Kotlin best practices.
+
+Use:
+
+* Meaningful names
+* Small functions
+* Single responsibility
+* Kotlin idioms
+* Immutable state where possible
+* Comments only when they provide useful context
+
+Do NOT generate huge monolithic files.
+
+Prefer reusable components.
+
+If a file becomes unnecessarily large, refactor it.
+
+---
+
+# 22. DOCUMENTATION
+
+Create a README containing:
+
+* Project overview
+* Features
+* Architecture
+* Build instructions
+* Run instructions
+* Testing instructions
+* Future roadmap
+* Asset requirements
+
+Also maintain a simple:
+
+docs/PROJECT_STATUS.md
+
+Track:
+
+* Completed features
+* Current milestone
+* Known issues
+* Next tasks
+* Architectural decisions
+
+---
+
+# 23. DEVELOPMENT MILESTONES
+
+Follow these milestones.
+
+## Milestone 1 — Foundation
+
+Build:
+
+* Android project
+* Gradle configuration
+* Compose
+* Theme
+* Navigation
+* Basic architecture
+* Main menu
+
+Verify:
+
+./gradlew build
+
+---
+
+## Milestone 2 — Character
+
+Build:
+
+* Character selection
+* Character model
+* Character persistence
+* Character preview
+
+Verify:
+
+* Build
+* Unit tests
+* UI tests
+
+---
+
+## Milestone 3 — World Map
+
+Build:
+
+* World map
+* Chapter nodes
+* Locked/unlocked states
+* Progress indicators
+
+---
+
+## Milestone 4 — Noah's Ark
+
+Build the complete adventure.
+
+Implement each scene separately.
+
+---
+
+## Milestone 5 — Progression
+
+Implement:
+
+* Stars
+* Badges
+* Scripture cards
+* Chapter unlocking
+* Save/load
+
+---
+
+## Milestone 6 — Parent Area
+
+Implement:
+
+* Parent gate
+* Progress summary
+* Settings
+* Reset functionality
+
+---
+
+## Milestone 7 — Polish
+
+Improve:
+
+* Animations
+* Transitions
+* Accessibility
+* Error states
+* Empty states
+* Audio architecture
+* UI consistency
+
+---
+
+# 24. FUTURE ROADMAP
+
+After MVP, architecture should support:
+
+### Additional Adventures
+
+* David & Goliath
+* Good Samaritan
+* Feeding the 5,000
+* Daniel
+* Jesus Calms the Storm
+
+### Additional Features
+
+* More characters
+* More customization
+* More mini-games
+* Storybook mode
+* Scripture memory games
+* Daily Bible challenge
+* Achievement system
+* Multiple save profiles
+
+Do not implement these until the MVP is stable.
+
+---
+
+# 25. ASSET STRATEGY
+
+Do not block development waiting for final artwork.
+
+Use simple placeholder graphics during development.
+
+Create an organized asset structure:
+
+assets/
+
+```
+characters/
+animals/
+environments/
+icons/
+audio/
+music/
+ui/
+```
+
+Use clearly named placeholder assets.
+
+Do not download copyrighted assets without permission.
+
+Do not assume an asset is free to use simply because it appears online.
+
+Design the code so production artwork can replace placeholders without changing game logic.
+
+---
+
+# 26. DESIGN FOR FUTURE CONTENT
+
+Bible stories should eventually be data-driven rather than hard-coded.
+
+For example:
+
+ChapterDefinition
+
+```
+chapterId
+title
+storyScenes
+activities
+lesson
+scriptureReference
+reward
+```
+
+This should make it possible to add another Bible story without rewriting the entire game engine.
+
+However, do not create an unnecessarily complicated content-management system for the MVP.
+
+Start simple.
+
+---
+
+# 27. AI DEVELOPMENT WORKFLOW
+
+You are working as an autonomous senior developer.
+
+For each task:
+
+1. Inspect the repository.
+2. Identify relevant files.
+3. Explain briefly what you intend to change.
+4. Make the changes.
+5. Compile.
+6. Run relevant tests.
+7. Fix failures.
+8. Review the implementation.
+9. Update PROJECT_STATUS.md.
+10. Report what was completed.
+
+Do not simply provide code snippets.
+
+Actually modify the project files.
+
+---
+
+# 28. WHEN SOMETHING FAILS
+
+If compilation fails:
+
+1. Read the complete error.
+2. Identify the root cause.
+3. Fix the root cause.
+4. Re-run the build.
+5. Do not hide the error.
+6. Do not disable tests just to make the build pass.
+
+If a dependency is incompatible:
+
+* Prefer a stable compatible version.
+* Do not introduce unnecessary dependencies.
+* Document the decision.
+
+---
+
+# 29. DEFINITION OF DONE
+
+A feature is NOT complete merely because the code exists.
+
+A feature is complete when:
+
+* It compiles
+* It works on an Android emulator/device
+* Its UI is usable
+* State behaves correctly
+* Relevant tests pass
+* No obvious crashes exist
+* Navigation works
+* Back navigation works
+* Saved progress works where applicable
+* Accessibility basics are addressed
+* Documentation/status is updated
+
+---
+
+# 30. FIRST TASK
+
+Do NOT immediately implement the whole game.
+
+Your first task is:
+
+### Analyze the repository.
+
+Determine:
+
+1. Whether an Android project already exists.
+2. Current Kotlin/Gradle versions.
+3. Current Compose setup.
+4. Existing package structure.
+5. Existing dependencies.
+6. Existing screens.
+7. Existing tests.
+8. Existing assets.
+
+Then create a short implementation plan for **Milestone 1**.
+
+After the plan, begin implementing Milestone 1.
+
+Do not move to Milestone 2 until Milestone 1 builds successfully.
+
+---
+
+# 31. IMPORTANT PRODUCT PRINCIPLE
+
+Always remember:
+
+This is not just a Bible quiz application.
+
+It is a **small adventure game that teaches Bible stories through play**.
+
+The child should feel:
+
+"I want to see what happens next."
+
+Not:
+
+"I have to answer another question."
+
+Make every interaction feel meaningful.
+
+The emotional experience should be:
+
+**Explore → Discover → Help → Learn → Celebrate**
+
+Build something that a child would genuinely enjoy playing and that a parent would feel comfortable giving to their child.
+
+# BEGIN
+
+Start by inspecting the repository and preparing the Milestone 1 implementation plan.
