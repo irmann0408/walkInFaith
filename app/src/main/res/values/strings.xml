@@ -12,4 +12,110 @@
     <string name="coming_soon_title">Coming Soon!</string>
     <string name="coming_soon_body">This part of the adventure is still being built. Check back soon!</string>
     <string name="action_back">Back</string>
+
+    <string name="character_screen_title">Choose Your Character</string>
+    <string name="character_preview_content_description">Your character</string>
+    <string name="character_section_appearance">Appearance</string>
+    <string name="character_section_hairstyle">Hairstyle</string>
+    <string name="character_section_skin_tone">Skin Tone</string>
+    <string name="character_section_clothing">Clothing</string>
+
+    <string name="character_option_boy">Boy</string>
+    <string name="character_option_girl">Girl</string>
+
+    <string name="character_hairstyle_short">Short</string>
+    <string name="character_hairstyle_curly">Curly</string>
+    <string name="character_hairstyle_braided">Braided</string>
+    <string name="character_hairstyle_ponytail">Ponytail</string>
+
+    <string name="character_skin_tone_1">Skin Tone 1</string>
+    <string name="character_skin_tone_2">Skin Tone 2</string>
+    <string name="character_skin_tone_3">Skin Tone 3</string>
+    <string name="character_skin_tone_4">Skin Tone 4</string>
+
+    <string name="character_clothing_tunic_blue">Blue Tunic</string>
+    <string name="character_clothing_tunic_green">Green Tunic</string>
+    <string name="character_clothing_robe_red">Red Robe</string>
+    <string name="character_clothing_vest_yellow">Yellow Vest</string>
+
+    <string name="character_option_selected_content_description">%1$s, selected</string>
+
+    <string name="world_map_title">Adventures</string>
+    <string name="world_map_home_village">Home Village</string>
+    <string name="world_map_stars_earned_content_description">%1$d stars earned</string>
+    <string name="world_map_locked_content_description">%1$s, locked. Complete %2$s first to unlock.</string>
+
+    <string name="chapter_noahs_ark_title">Noah\'s Ark</string>
+    <string name="chapter_noahs_ark_description">Help Noah gather the animals and trust God\'s plan.</string>
+    <string name="chapter_noahs_ark_lesson">Obedience and trusting God.</string>
+
+    <string name="chapter_david_goliath_title">David and Goliath</string>
+    <string name="chapter_david_goliath_description">Stand with young David as he faces a giant with faith, not fear.</string>
+    <string name="chapter_david_goliath_lesson">Courage and trusting God.</string>
+
+    <string name="chapter_good_samaritan_title">The Good Samaritan</string>
+    <string name="chapter_good_samaritan_description">Learn what it means to be a good neighbor to everyone you meet.</string>
+    <string name="chapter_good_samaritan_lesson">Kindness and helping others.</string>
+
+    <string name="chapter_feeding_5000_title">Feeding the 5,000</string>
+    <string name="chapter_feeding_5000_description">Watch a small gift multiply into more than enough for everyone.</string>
+    <string name="chapter_feeding_5000_lesson">Sharing and generosity.</string>
+
+    <string name="chapter_daniel_title">Daniel and the Lions</string>
+    <string name="chapter_daniel_description">Stay faithful with Daniel, even when it feels scary to pray.</string>
+    <string name="chapter_daniel_lesson">Faithfulness and prayer.</string>
+
+    <string name="chapter_jesus_calms_storm_title">Jesus Calms the Storm</string>
+    <string name="chapter_jesus_calms_storm_description">Ride out a stormy sea and discover peace in the middle of fear.</string>
+    <string name="chapter_jesus_calms_storm_lesson">Faith during difficult times.</string>
+
+    <string name="badge_ark_builder_title">Ark Builder</string>
+    <string name="badge_ark_builder_description">Helped Noah build the ark and gather every animal, two by two.</string>
+    <string name="scripture_genesis_6_22_title">Noah\'s Obedience</string>
+    <string name="scripture_genesis_6_22_text">"And Noah did so; according to all that God commanded him, so he did."</string>
+
+    <string name="action_continue">Continue</string>
+    <string name="action_return_to_map">Return to Map</string>
+    <string name="feedback_great_job">Great job!</string>
+    <string name="feedback_try_another_one">Try another one!</string>
+
+    <string name="animal_lion">Lion</string>
+    <string name="animal_elephant">Elephant</string>
+    <string name="animal_giraffe">Giraffe</string>
+    <string name="animal_sheep">Sheep</string>
+    <string name="animal_rabbit">Rabbit</string>
+    <string name="animal_bird">Bird</string>
+
+    <string name="supply_bread">Bread</string>
+    <string name="supply_fruit">Fruit</string>
+    <string name="supply_water">Water</string>
+    <string name="supply_grain">Grain</string>
+
+    <string name="sort_category_animals">Animals</string>
+    <string name="sort_category_food">Food</string>
+    <string name="sort_category_supplies">Supplies</string>
+
+    <string name="noahs_ark_intro_line_1">Noah trusted God and followed His instructions.</string>
+    <string name="noahs_ark_intro_line_2">Will you help Noah get everyone safely aboard the ark?</string>
+
+    <string name="noahs_ark_find_animals_title">Find the Animals</string>
+    <string name="noahs_ark_find_animals_instructions">Tap each animal to bring it to the ark.</string>
+
+    <string name="noahs_ark_matching_title">Match the Animal Pairs</string>
+    <string name="noahs_ark_matching_instructions">Tap two animals that match.</string>
+
+    <string name="noahs_ark_gather_supplies_title">Gather Supplies</string>
+    <string name="noahs_ark_gather_supplies_instructions">Tap each supply to pack it for the journey.</string>
+
+    <string name="noahs_ark_organize_title">Organize the Ark</string>
+    <string name="noahs_ark_organize_instructions">Drag each item into the right area.</string>
+
+    <string name="noahs_ark_missing_items_title">Find the Missing Items</string>
+    <string name="noahs_ark_missing_items_instructions">Tap to find everything Noah packed.</string>
+
+    <string name="noahs_ark_lesson_title">What did we learn?</string>
+    <string name="noahs_ark_lesson_text">God wants us to trust Him and follow what is right.</string>
+
+    <string name="reward_title">Adventure Complete!</string>
+    <string name="reward_stars_content_description">%1$d out of %2$d stars earned</string>
 </resources>

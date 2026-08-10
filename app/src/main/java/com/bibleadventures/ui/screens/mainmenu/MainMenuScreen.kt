@@ -21,13 +21,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bibleadventures.R
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.navigation.MenuItemId
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
-private data class MenuItem(val label: String, val enabled: Boolean = true)
+private data class MenuItem(val id: MenuItemId, val label: String, val enabled: Boolean = true)
 
 @Composable
 fun MainMenuScreen(
-    onNavigateToFeature: (String) -> Unit,
+    onMenuItemClick: (MenuItemId) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MainMenuViewModel = viewModel(),
 ) {
@@ -35,7 +36,7 @@ fun MainMenuScreen(
 
     MainMenuContent(
         hasAdventureInProgress = uiState.hasAdventureInProgress,
-        onMenuItemClick = onNavigateToFeature,
+        onMenuItemClick = onMenuItemClick,
         modifier = modifier,
     )
 }
@@ -43,18 +44,21 @@ fun MainMenuScreen(
 @Composable
 private fun MainMenuContent(
     hasAdventureInProgress: Boolean,
-    onMenuItemClick: (String) -> Unit,
+    onMenuItemClick: (MenuItemId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val continueLabel = stringResource(R.string.menu_continue_adventure)
     val menuItems = listOf(
-        MenuItem(continueLabel, enabled = hasAdventureInProgress),
-        MenuItem(stringResource(R.string.menu_adventures)),
-        MenuItem(stringResource(R.string.menu_badges)),
-        MenuItem(stringResource(R.string.menu_scripture_cards)),
-        MenuItem(stringResource(R.string.menu_character)),
-        MenuItem(stringResource(R.string.menu_settings)),
-        MenuItem(stringResource(R.string.menu_parent_area)),
+        MenuItem(
+            MenuItemId.CONTINUE_ADVENTURE,
+            stringResource(R.string.menu_continue_adventure),
+            enabled = hasAdventureInProgress,
+        ),
+        MenuItem(MenuItemId.ADVENTURES, stringResource(R.string.menu_adventures)),
+        MenuItem(MenuItemId.BADGES, stringResource(R.string.menu_badges)),
+        MenuItem(MenuItemId.SCRIPTURE_CARDS, stringResource(R.string.menu_scripture_cards)),
+        MenuItem(MenuItemId.CHARACTER, stringResource(R.string.menu_character)),
+        MenuItem(MenuItemId.SETTINGS, stringResource(R.string.menu_settings)),
+        MenuItem(MenuItemId.PARENT_AREA, stringResource(R.string.menu_parent_area)),
     )
 
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -79,7 +83,7 @@ private fun MainMenuContent(
                     AdventureMenuButton(
                         text = item.label,
                         enabled = item.enabled,
-                        onClick = { onMenuItemClick(item.label) },
+                        onClick = { onMenuItemClick(item.id) },
                     )
                 }
             }

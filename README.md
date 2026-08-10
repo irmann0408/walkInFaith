@@ -9,16 +9,22 @@ Full product and engineering spec: [`bible prompt.txt`](bible%20prompt.txt).
 
 ## Status
 
-Milestone 1 (Foundation) is complete. See [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)
-for the up-to-date milestone tracker, known issues, and next tasks.
+Milestone 4 (Noah's Ark) is complete — the full chapter is playable end to end. See
+[`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for the up-to-date milestone
+tracker, known issues, and next tasks.
 
 ## Features (MVP scope)
 
 - Main menu: Continue Adventure, Adventures, My Badges, Scripture Cards, Character,
   Settings, Parent Area.
-- Chapter 1, "Noah's Ark," as a complete playable adventure (story → exploration →
-  matching → gathering → sorting → hidden object → lesson → reward). *Not yet built —
-  scaffolded for Milestone 4.*
+- Character selection (boy/girl, 4 hairstyles, 4 skin tones, 4 clothing options),
+  persisted on-device and reflected in a placeholder character preview.
+- World Map: Home Village + all 6 chapter nodes, with real lock/unlock/completed
+  state driven by progression. Only Noah's Ark is unlocked at the start.
+- Chapter 1, "Noah's Ark," a complete playable adventure: story intro → find the
+  animals → animal matching → gather supplies → organize the ark (drag-and-drop) →
+  find missing items → lesson → scripture verse (World English Bible) → reward
+  (stars, "Ark Builder" badge, scripture card).
 - Offline-first: no accounts, no network calls, all progress stored on-device.
 - No combat, no loot boxes, no in-app purchases, no ads, no data collection.
 
@@ -30,20 +36,34 @@ MVVM + Clean Architecture, native Android, single Gradle module (`app`) for the 
 com.bibleadventures
 ├── ui/
 │   ├── navigation/   Destination routes + NavHost (single source of truth for routing)
-│   ├── screens/      One package per screen (mainmenu, comingsoon, ...)
-│   ├── components/   Reusable Compose components (large-touch-target buttons, etc.)
+│   ├── screens/      One package per screen (mainmenu, character, worldmap, noahsark/*, comingsoon, ...)
+│   ├── components/   Reusable Compose components (buttons, character preview, locked-node overlay, scripture card)
 │   └── theme/        Material 3 color scheme, typography, theme wrapper
+├── domain/
+│   ├── model/        PlayerProfile, Chapter, CharacterCustomization, Badge, ScriptureCard, ...
+│   └── repository/   Repository interfaces (PlayerProfileRepository)
+├── data/
+│   ├── local/        DataStore-backed local data sources
+│   └── repository/   Repository implementations
+├── game/
+│   ├── stories/      ChapterCatalog, NoahsArkContent (static content only)
+│   ├── puzzles/      matching / dragsort / hiddenobject — pure, chapter-agnostic mini-game logic
+│   └── rewards/      RewardCalculator, NoahsArkReward
+├── progress/         ChapterUnlockRules (pure), ProgressionService
+├── character/        Static picker content (CharacterOptionCatalog)
+├── audio/            AudioController (silent no-op for now; real audio is Milestone 7)
+├── AppContainer.kt, BibleAdventuresApplication.kt   Manual DI (no Hilt)
 ├── MainActivity.kt
 ```
 
-`data/`, `domain/`, `game/`, `audio/`, `character/`, `progress/`, and `settings/` packages
-will be added incrementally as their owning milestones land (character persistence,
-progression/reward logic, the Noah's Ark mini-games, etc.) rather than stubbed out ahead
-of time — see section 5/26 of the spec on avoiding overengineering.
+A `settings/` package will be added once Milestone 6/7 need it, rather than stubbed
+out ahead of time — see section 5/26 of the spec on avoiding overengineering.
 
 Key principles: single source of truth for navigation and state, unidirectional data
 flow (ViewModel → StateFlow → Composable), no business logic inside composables, no
-network dependency for core gameplay.
+network dependency for core gameplay. There is no DI framework — a small manual
+`AppContainer` holds lazily-built repositories, and screens obtain ViewModels via
+`viewModel(factory = AppViewModelProvider.Factory)`.
 
 ## Tech stack
 
@@ -51,8 +71,9 @@ network dependency for core gameplay.
 - Navigation Compose 2.7.7
 - AndroidX Lifecycle (ViewModel, StateFlow, `collectAsStateWithLifecycle`)
 - AGP 8.5.2, Gradle 8.7, compileSdk/targetSdk 34, minSdk 24
-- Room / DataStore, Kotlin serialization — planned for Milestone 2+ (character &
-  progress persistence), not yet added since nothing persists data yet.
+- DataStore Preferences + kotlinx.serialization JSON for the single on-device save
+  file (`PlayerProfile`) — not Room; see the architectural decisions log in
+  `docs/PROJECT_STATUS.md` for why.
 
 ## Build instructions
 
@@ -84,10 +105,10 @@ emulator or device (API 24+), or from the command line:
 ## Future roadmap
 
 See section 24 of the spec: additional adventures (David & Goliath, Good Samaritan,
-Feeding the 5,000, Daniel, Jesus Calms the Storm), more character customization, more
-mini-games, storybook mode, scripture memory games, daily challenge, achievements,
-multiple save profiles. None of these are implemented until the MVP (Chapters +
-progression + parent area) is stable.
+Feeding the 5,000, Daniel, Jesus Calms the Storm — currently `ChapterCatalog` entries
+with no gameplay), more character customization, more mini-games, storybook mode,
+scripture memory games, daily challenge, achievements, multiple save profiles. None of
+these are implemented until the MVP (Chapters + progression + parent area) is stable.
 
 ## Asset requirements
 
