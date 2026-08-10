@@ -10,6 +10,7 @@ import com.bibleadventures.domain.model.AdventureProgress
 import com.bibleadventures.domain.model.PlayerProfile
 import com.bibleadventures.domain.repository.PlayerProfileRepository
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
+import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -87,6 +88,30 @@ class NoahsArkViewModelTest {
         assertEquals(6, state.hiddenObjectState.items.size)
         assertTrue(state.foundAnimalIds.isEmpty())
         assertTrue(state.collectedSupplyIds.isEmpty())
+    }
+
+    @Test
+    fun `findAnimalsOrder and gatherSuppliesOrder are shuffled but still contain every real item and decoy exactly once`() {
+        val state = createViewModel().uiState.value
+
+        val expectedFindAnimalsIds = (NoahsArkContent.animals.map { it.id } + NoahsArkContent.findAnimalsDecoys.map { it.id }).toSet()
+        val expectedGatherSuppliesIds = (NoahsArkContent.supplies.map { it.id } + NoahsArkContent.gatherSuppliesDecoys.map { it.id }).toSet()
+
+        assertEquals(expectedFindAnimalsIds, state.findAnimalsOrder.toSet())
+        assertEquals(expectedFindAnimalsIds.size, state.findAnimalsOrder.size)
+        assertEquals(expectedGatherSuppliesIds, state.gatherSuppliesOrder.toSet())
+        assertEquals(expectedGatherSuppliesIds.size, state.gatherSuppliesOrder.size)
+    }
+
+    @Test
+    fun `hiddenObjectState items are shuffled onto the fixed positions without losing any item or position`() {
+        val state = createViewModel().uiState.value
+
+        val expectedIds = NoahsArkContent.hiddenItems.map { it.id }.toSet()
+        val expectedPositions = NoahsArkContent.hiddenItems.map { it.position }.toSet()
+
+        assertEquals(expectedIds, state.hiddenObjectState.items.map { it.id }.toSet())
+        assertEquals(expectedPositions, state.hiddenObjectState.items.map { it.position }.toSet())
     }
 
     @Test

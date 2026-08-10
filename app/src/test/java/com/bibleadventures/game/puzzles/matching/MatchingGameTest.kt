@@ -2,7 +2,6 @@ package com.bibleadventures.game.puzzles.matching
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -16,10 +15,19 @@ private fun initialState() = MatchingGameState(items = listOf(lionA, lionB, bird
 class MatchingGameTest {
 
     @Test
-    fun `tapping the first item selects it without a match outcome`() {
+    fun `all cards start face down`() {
+        val state = initialState()
+
+        assertFalse(state.isFaceUp("lion_a"))
+        assertFalse(state.isFaceUp("bird_b"))
+    }
+
+    @Test
+    fun `tapping the first item flips it face up without a match outcome`() {
         val state = MatchingGame.onItemTapped(initialState(), "lion_a")
 
-        assertEquals("lion_a", state.selectedId)
+        assertEquals(listOf("lion_a"), state.selectedIds)
+        assertTrue(state.isFaceUp("lion_a"))
         assertEquals(MatchOutcome.NONE, state.lastOutcome)
         assertTrue(state.matchedIds.isEmpty())
     }
@@ -32,18 +40,35 @@ class MatchingGameTest {
 
         assertEquals(MatchOutcome.CORRECT, state.lastOutcome)
         assertEquals(setOf("lion_a", "lion_b"), state.matchedIds)
-        assertNull(state.selectedId)
+        assertTrue(state.selectedIds.isEmpty())
+        assertTrue(state.isFaceUp("lion_a"))
+        assertTrue(state.isFaceUp("lion_b"))
     }
 
     @Test
-    fun `tapping a non-matching pair reports TRY_AGAIN and never FAILED`() {
+    fun `tapping a non-matching pair reports TRY_AGAIN, never FAILED, and keeps both face up`() {
         var state = initialState()
         state = MatchingGame.onItemTapped(state, "lion_a")
         state = MatchingGame.onItemTapped(state, "bird_a")
 
         assertEquals(MatchOutcome.TRY_AGAIN, state.lastOutcome)
         assertTrue(state.matchedIds.isEmpty())
-        assertNull(state.selectedId)
+        assertEquals(listOf("lion_a", "bird_a"), state.selectedIds)
+        assertTrue(state.isFaceUp("lion_a"))
+        assertTrue(state.isFaceUp("bird_a"))
+    }
+
+    @Test
+    fun `the next tap after a mismatch flips the pair back face down and starts a fresh selection`() {
+        var state = initialState()
+        state = MatchingGame.onItemTapped(state, "lion_a")
+        state = MatchingGame.onItemTapped(state, "bird_a")
+
+        state = MatchingGame.onItemTapped(state, "lion_a")
+
+        assertEquals(MatchOutcome.NONE, state.lastOutcome)
+        assertEquals(listOf("lion_a"), state.selectedIds)
+        assertFalse(state.isFaceUp("bird_a"))
     }
 
     @Test
@@ -67,8 +92,7 @@ class MatchingGameTest {
 
         state = MatchingGame.onItemTapped(state, "lion_a")
 
-        assertEquals(beforeTap.matchedIds, state.matchedIds)
-        assertNull(state.selectedId)
+        assertEquals(beforeTap, state)
     }
 
     @Test

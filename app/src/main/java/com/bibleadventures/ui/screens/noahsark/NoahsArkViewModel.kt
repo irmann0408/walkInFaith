@@ -45,6 +45,9 @@ data class NoahsArkUiState(
     val reward: NoahsArkRewardResult? = null,
     val lastFindAnimalsDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
     val lastGatherSuppliesDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
+    /** Ids (real + decoy), shuffled once per fresh game so the layout isn't the same every time. */
+    val findAnimalsOrder: List<String> = emptyList(),
+    val gatherSuppliesOrder: List<String> = emptyList(),
 )
 
 class NoahsArkViewModel(
@@ -138,19 +141,29 @@ class NoahsArkViewModel(
             )
         }.shuffled()
 
-        val sortableItems = NoahsArkContent.sortableItems.map {
+        // Shuffled once per fresh game (like matchItems above), not on every
+        // recomposition — order stays put for the rest of that playthrough.
+        val sortableItems = NoahsArkContent.sortableItems.shuffled().map {
             SortableItem(id = it.id, iconRes = it.iconRes, contentDescriptionRes = it.nameRes, categoryKey = it.categoryKey)
         }
         val sortCategories = NoahsArkContent.sortCategories.map { SortCategory(key = it.key, labelRes = it.labelRes) }
 
-        val hiddenItems = NoahsArkContent.hiddenItems.map {
-            HiddenItem(id = it.id, position = it.position, iconRes = it.iconRes, contentDescriptionRes = it.nameRes)
+        // Positions are hand-placed to fit the background and avoid overlap, so only
+        // which item lands on which position is shuffled, not the positions themselves.
+        val shuffledHiddenPositions = NoahsArkContent.hiddenItems.map { it.position }.shuffled()
+        val hiddenItems = NoahsArkContent.hiddenItems.mapIndexed { index, def ->
+            HiddenItem(id = def.id, position = shuffledHiddenPositions[index], iconRes = def.iconRes, contentDescriptionRes = def.nameRes)
         }
+
+        val findAnimalsOrder = (NoahsArkContent.animals.map { it.id } + NoahsArkContent.findAnimalsDecoys.map { it.id }).shuffled()
+        val gatherSuppliesOrder = (NoahsArkContent.supplies.map { it.id } + NoahsArkContent.gatherSuppliesDecoys.map { it.id }).shuffled()
 
         return NoahsArkUiState(
             matchingState = MatchingGameState(items = matchItems),
             dragSortState = DragSortGameState(items = sortableItems, categories = sortCategories),
             hiddenObjectState = HiddenObjectGameState(items = hiddenItems),
+            findAnimalsOrder = findAnimalsOrder,
+            gatherSuppliesOrder = gatherSuppliesOrder,
         )
     }
 }

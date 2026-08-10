@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
@@ -24,8 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,6 +52,7 @@ fun NoahsArkGatherSuppliesScreen(
     NoahsArkGatherSuppliesContent(
         collectedSupplyIds = uiState.collectedSupplyIds,
         decoyOutcome = uiState.lastGatherSuppliesDecoyOutcome,
+        order = uiState.gatherSuppliesOrder,
         onSupplyTapped = viewModel::onSupplyCollected,
         onDecoyTapped = viewModel::onGatherSuppliesDecoyTapped,
         onContinue = onContinue,
@@ -60,6 +64,7 @@ fun NoahsArkGatherSuppliesScreen(
 private fun NoahsArkGatherSuppliesContent(
     collectedSupplyIds: Set<String>,
     decoyOutcome: DecoyTapOutcome,
+    order: List<String>,
     onSupplyTapped: (String) -> Unit,
     onDecoyTapped: () -> Unit,
     onContinue: () -> Unit,
@@ -94,18 +99,24 @@ private fun NoahsArkGatherSuppliesContent(
                 Text(text = feedback, style = MaterialTheme.typography.titleLarge)
             }
 
+            // `order` is shuffled once per fresh game (NoahsArkViewModel.createInitialState),
+            // so the layout isn't the same every playthrough. Mixes in the decoy's
+            // position too, not just which tiles are real supplies.
             val tiles: List<@Composable () -> Unit> = buildList {
-                NoahsArkContent.supplies.forEach { supply ->
-                    add {
-                        SupplyTile(
-                            supply = supply,
-                            isCollected = supply.id in collectedSupplyIds,
-                            onClick = { onSupplyTapped(supply.id) },
-                        )
+                order.forEach { id ->
+                    val supply = NoahsArkContent.supplies.find { it.id == id }
+                    if (supply != null) {
+                        add {
+                            SupplyTile(
+                                supply = supply,
+                                isCollected = supply.id in collectedSupplyIds,
+                                onClick = { onSupplyTapped(supply.id) },
+                            )
+                        }
+                    } else {
+                        val decoy = NoahsArkContent.gatherSuppliesDecoys.first { it.id == id }
+                        add { DecoyTile(decoy = decoy, onClick = onDecoyTapped) }
                     }
-                }
-                NoahsArkContent.gatherSuppliesDecoys.forEach { decoy ->
-                    add { DecoyTile(decoy = decoy, onClick = onDecoyTapped) }
                 }
             }
 
@@ -135,21 +146,24 @@ private fun SupplyTile(supply: SupplyDef, isCollected: Boolean, onClick: () -> U
     val alpha by animateFloatAsState(targetValue = if (isCollected) 0.5f else 1f, label = "supplyCollectedAlpha")
     val name = stringResource(supply.nameRes)
 
-    Box(
+    Column(
         modifier = Modifier
-            .size(72.dp)
+            .width(72.dp)
             .clickable(enabled = !isCollected, onClickLabel = name, onClick = onClick)
             .semantics { contentDescription = name },
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(supply.iconRes),
-            contentDescription = null,
-            modifier = Modifier.size(64.dp).alpha(alpha),
-        )
-        if (isCollected) {
-            Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Box(modifier = Modifier.size(72.dp), contentAlignment = Alignment.Center) {
+            Image(
+                painter = painterResource(supply.iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(64.dp).alpha(alpha),
+            )
+            if (isCollected) {
+                Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            }
         }
+        TileLabel(name)
     }
 }
 
@@ -158,19 +172,38 @@ private fun SupplyTile(supply: SupplyDef, isCollected: Boolean, onClick: () -> U
 private fun DecoyTile(decoy: DecoyItemDef, onClick: () -> Unit) {
     val name = stringResource(decoy.nameRes)
 
-    Box(
+    Column(
         modifier = Modifier
-            .size(72.dp)
+            .width(72.dp)
             .clickable(onClickLabel = name, onClick = onClick)
             .semantics { contentDescription = name },
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(decoy.iconRes),
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-        )
+        Box(modifier = Modifier.size(72.dp), contentAlignment = Alignment.Center) {
+            Image(
+                painter = painterResource(decoy.iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+            )
+        }
+        TileLabel(name)
     }
+}
+
+/**
+ * Visible name caption under a tile icon. Purely a reading aid, not a second
+ * accessibility announcement — the tile's own `contentDescription` already
+ * covers screen readers, so this is cleared from the semantics tree.
+ */
+@Composable
+private fun TileLabel(name: String) {
+    Text(
+        text = name,
+        style = MaterialTheme.typography.labelMedium,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        modifier = Modifier.clearAndSetSemantics {},
+    )
 }
 
 @Preview(showBackground = true)
@@ -180,6 +213,7 @@ private fun NoahsArkGatherSuppliesPreview() {
         NoahsArkGatherSuppliesContent(
             collectedSupplyIds = emptySet(),
             decoyOutcome = DecoyTapOutcome.NONE,
+            order = NoahsArkContent.supplies.map { it.id } + NoahsArkContent.gatherSuppliesDecoys.map { it.id },
             onSupplyTapped = {},
             onDecoyTapped = {},
             onContinue = {},

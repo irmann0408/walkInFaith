@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -35,8 +36,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -178,36 +181,47 @@ private fun DraggableSortItem(
     var itemSize by remember { mutableStateOf(IntSize.Zero) }
     val name = stringResource(item.contentDescriptionRes)
 
-    Box(
-        modifier = Modifier
-            .onGloballyPositioned { coords ->
-                baseTopLeft = coords.positionInRoot()
-                itemSize = coords.size
-            }
-            .offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
-            .size(64.dp)
-            .pointerInput(item.id) {
-                detectDragGestures(
-                    onDragEnd = {
-                        val center = baseTopLeft + dragOffset +
-                            Offset(itemSize.width / 2f, itemSize.height / 2f)
-                        val targetCategory = categoryBounds.entries.firstOrNull { (_, rect) -> rect.contains(center) }?.key
-                        if (targetCategory != null) {
-                            onDropped(targetCategory)
-                        }
-                        dragOffset = Offset.Zero
-                    },
-                    onDragCancel = { dragOffset = Offset.Zero },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        dragOffset += dragAmount
-                    },
-                )
-            }
-            .semantics { contentDescription = name },
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(painter = painterResource(item.iconRes), contentDescription = null, modifier = Modifier.size(56.dp))
+    // The label sits below the draggable box rather than inside it, so it doesn't
+    // affect the drag/drop hit-testing math (which uses the box's own center).
+    Column(modifier = Modifier.width(64.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .onGloballyPositioned { coords ->
+                    baseTopLeft = coords.positionInRoot()
+                    itemSize = coords.size
+                }
+                .offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
+                .size(64.dp)
+                .pointerInput(item.id) {
+                    detectDragGestures(
+                        onDragEnd = {
+                            val center = baseTopLeft + dragOffset +
+                                Offset(itemSize.width / 2f, itemSize.height / 2f)
+                            val targetCategory = categoryBounds.entries.firstOrNull { (_, rect) -> rect.contains(center) }?.key
+                            if (targetCategory != null) {
+                                onDropped(targetCategory)
+                            }
+                            dragOffset = Offset.Zero
+                        },
+                        onDragCancel = { dragOffset = Offset.Zero },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            dragOffset += dragAmount
+                        },
+                    )
+                }
+                .semantics { contentDescription = name },
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(painter = painterResource(item.iconRes), contentDescription = null, modifier = Modifier.size(56.dp))
+        }
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelMedium,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            modifier = Modifier.clearAndSetSemantics {},
+        )
     }
 }
 

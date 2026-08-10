@@ -7,23 +7,22 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -91,20 +90,28 @@ private fun NoahsArkMatchingContent(
                 Text(text = feedback, style = MaterialTheme.typography.titleLarge)
             }
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                contentPadding = PaddingValues(8.dp),
+            // A static wrapped grid, not a lazily-virtualized one — every tile stays in
+            // the tree regardless of scroll position (see Gather Supplies' history).
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f, fill = false),
             ) {
-                items(matchingState.items, key = { it.id }) { item ->
-                    MatchTile(
-                        item = item,
-                        isSelected = item.id == matchingState.selectedId,
-                        isMatched = item.id in matchingState.matchedIds,
-                        onClick = { onItemTapped(item.id) },
-                    )
+                matchingState.items.chunked(4).forEach { rowItems ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        rowItems.forEach { item ->
+                            key(item.id) {
+                                MatchTile(
+                                    item = item,
+                                    isFaceUp = matchingState.isFaceUp(item.id),
+                                    isSelected = item.id in matchingState.selectedIds,
+                                    isMatched = item.id in matchingState.matchedIds,
+                                    onClick = { onItemTapped(item.id) },
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -120,9 +127,9 @@ private fun NoahsArkMatchingContent(
 }
 
 @Composable
-private fun MatchTile(item: MatchItem, isSelected: Boolean, isMatched: Boolean, onClick: () -> Unit) {
+private fun MatchTile(item: MatchItem, isFaceUp: Boolean, isSelected: Boolean, isMatched: Boolean, onClick: () -> Unit) {
     val name = stringResource(item.contentDescriptionRes)
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val borderColor = if (isSelected && !isMatched) MaterialTheme.colorScheme.primary else Color.Transparent
 
     Box(
         modifier = Modifier
@@ -135,9 +142,9 @@ private fun MatchTile(item: MatchItem, isSelected: Boolean, isMatched: Boolean, 
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            painter = painterResource(item.iconRes),
+            painter = if (isFaceUp) painterResource(item.iconRes) else painterResource(R.drawable.ic_card_back),
             contentDescription = null,
-            modifier = Modifier.size(56.dp).alpha(if (isMatched) 0.35f else 1f),
+            modifier = Modifier.size(56.dp),
         )
     }
 }

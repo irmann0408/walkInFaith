@@ -200,6 +200,126 @@ information the app must not request without justification, and none exists yet.
   (`CharacterNavigationTest`, on a screen untouched here) surfaced in one of three
   runs and did not reproduce on the others.
 
+### Milestone 4 addendum 2 — Find the Missing Items: real hidden-object search
+Find the Missing Items previously wasn't actually a hidden-object game — the spec's
+"avoid frustrating pixel-hunting" caution was taken further than intended, so every
+item sat fully visible on a plain two-tone background, making the scene a "tap
+everything" checklist like Find the Animals/Gather Supplies rather than a search.
+Per the user's explicit direction ("treat it like finding Waldo"), `bg_noahs_ark_missing_items.xml`
+was replaced with a busy, abstract camouflage pattern — 8 blended, overlapping color
+blobs (`android:fillAlpha`) plus ~30 scattered accent dots across a 300x300 viewport,
+still simple placeholder vector shapes, no representational art needed. `HiddenItemTarget`'s
+icon (`NoahsArkMissingItemsScreen.kt`) shrank from 40dp to 32dp and dropped to 0.85
+alpha so items visually blend into the clutter instead of floating on top of it —
+the 48dp tap target itself is unchanged, so the *search* got harder without anything
+becoming harder to actually tap once spotted, preserving spec section 9's real intent.
+Instructions text updated to set expectations ("hiding somewhere... look closely").
+No logic/test changes: found/not-found state, positions, content descriptions, and
+the no-penalty/always-recoverable design are all unchanged, so `NoahsArkFlowTest`
+needed no updates — confirmed passing on-device after the change.
+
+### Milestone 4 addendum 3 — visible name labels on every mini-game tile
+Every tile across the five Noah's Ark mini-games (Find the Animals, Animal Matching,
+Gather Supplies, Organize the Ark, Find the Missing Items) now shows the item's name
+as a small caption under its icon, not just an accessibility content description —
+so a child who doesn't yet recognize a species/object by its placeholder icon alone
+can read what it is. The caption is purely visual: each tile's existing `contentDescription`
+already covers screen readers, so the new `Text` is `Modifier.clearAndSetSemantics {}`
+to avoid a duplicate/redundant TalkBack announcement, mirroring how each tile's
+`Image` already uses `contentDescription = null` for the same reason.
+- Find the Animals and Animal Matching switched their `LazyVerticalGrid`s to the same
+  static wrapped-grid pattern (`items.chunked(n)`) already used by Gather Supplies and
+  Organize the Ark, since taller (icon + label) tiles made virtualization overflow —
+  and off-screen-but-uncomposed tiles were exactly the Gather Supplies bug from
+  earlier in this milestone. Both now wrap in `Modifier.verticalScroll(...)` as a
+  normal, discoverable vertical scroll if content ever exceeds the screen — unlike the
+  earlier `LazyRow` bug, nothing here is hidden from the tree or unreachable.
+- Organize the Ark's `DraggableSortItem` label sits in a `Column` below the
+  draggable `Box` rather than inside it, so the label doesn't affect the drag/drop
+  hit-testing math (which uses the draggable box's own center) — during a drag the
+  icon lifts away while the label stays put in the tray slot.
+- Find the Missing Items: the label only appears once an item is *found* (next to
+  the checkmark) — showing it upfront would print the answer next to the hidden
+  icon and undo the search difficulty added in the previous addendum.
+- No changes to any puzzle engine, `NoahsArkContent`, or test files — content
+  descriptions, positions, and win conditions are all unchanged, purely additive UI.
+  All 11 instrumented tests still exercise every labeled tile via their existing
+  `onNodeWithContentDescription` lookups; confirmed passing on-device (one flaky,
+  pre-existing, unrelated failure on `WorldMapNavigationTest` — a screen untouched
+  by any of this milestone's work — seen intermittently across four separate runs).
+
+### Milestone 4 addendum 4 — Animal Matching becomes a real memory/concentration game
+Per the user's direction, Animal Matching changed from "always-face-up tap two
+matching icons" to a classic memory game: cards start face down, tapping flips one
+up, a second tap compares it against the first. A match stays face up forever; a
+mismatch stays face up too (so the player gets a real look, with "Try another one!"
+showing) — the *next* tap anywhere flips the mismatched pair back down and starts a
+fresh selection, at the player's own pace rather than a forced timer. The label
+caption added in the previous addendum was removed from this scene specifically
+(it would trivialize a memory game by printing the answer under a face-down card).
+- `game/puzzles/matching/MatchingGameState.kt`: `selectedId: String?` became
+  `selectedIds: List<String>` (0-2 unresolved face-up cards); added
+  `isFaceUp(id)` (`matchedIds` or `selectedIds`).
+- `game/puzzles/matching/MatchingGame.kt`: `onItemTapped` now clears a shown
+  mismatch (`lastOutcome == TRY_AGAIN`) at the start of the *next* tap before
+  processing that tap as a fresh first selection — no timer/coroutine needed, the
+  engine stays fully synchronous and pure. Matched cards are still an immediate no-op.
+- New placeholder drawable `ic_card_back.xml` — a simple six-petal rosette pattern
+  (abstract, not representational), shown instead of the real icon while a card is
+  face down.
+- `NoahsArkMatchingScreen.kt`'s `MatchTile` renders `ic_card_back` or the real icon
+  based on `MatchingGameState.isFaceUp`; the label `Column`/`Text` from the previous
+  addendum was reverted back to a plain `Box`.
+- **Judgment call:** each tile's `contentDescription` stays the item's name at all
+  times (even face down), rather than something generic like "hidden card." A fully
+  fair implementation would hide the identity from screen readers too until flipped,
+  but that would require rewriting every content-description-based lookup in the
+  existing instrumented test suite (`NoahsArkFlowTest`, `AnimalMatchingGameTest`) to
+  a position/tag-based scheme instead. Kept as-is for now — flagged here rather than
+  silently decided, easy to revisit.
+- Card shuffle: already happened for free — `NoahsArkViewModel.createInitialState()`
+  already calls `.shuffled()` once per fresh `NoahsArkViewModel` instance, and a new
+  instance is created every time the chapter is (re)started, so "re-arrange the cards
+  randomly every new game" needed no code change.
+- Tests: rewrote `MatchingGameTest.kt` for the new face-down/face-up/selectedIds
+  model (added a "cards start face down" case and a "next tap after a mismatch
+  flips it back down" case). **No instrumented test changes were needed at all** —
+  `AnimalMatchingGameTest`'s existing mismatch-then-correct-match sequence and
+  `NoahsArkFlowTest`'s always-tap-the-same-animal-twice sequence both already match
+  the new engine's tap semantics exactly; traced by hand and confirmed passing
+  on-device.
+
+### Milestone 4 addendum 5 — shuffle layout order for the remaining mini-games
+Animal Matching already re-shuffled every game; the other four scenes (Find the
+Animals, Gather Supplies, Organize the Ark, Find the Missing Items) always showed
+their icons in the exact same order/position, which the user flagged directly.
+Fixed by shuffling once per fresh game in `NoahsArkViewModel.createInitialState()`
+(the same place Matching's shuffle already lived), not inside `NoahsArkContent`
+itself — that `object`'s `val` lists are computed once per process lifetime, so
+shuffling there would only randomize once per app install/launch, not per
+playthrough (a new `NoahsArkViewModel` — and so a fresh shuffle — is created every
+time the chapter is (re)started, same mechanism the Matching shuffle already relies on).
+- Find the Animals / Gather Supplies: new `NoahsArkUiState.findAnimalsOrder` /
+  `.gatherSuppliesOrder` (`List<String>`, real item ids + decoy id shuffled
+  *together*, not each list shuffled separately then concatenated — otherwise the
+  decoy would always land in the same last-in-grid slot every game). Each screen
+  now builds its tile list by walking this order and looking up each id against
+  `NoahsArkContent`, instead of iterating the static content lists directly.
+- Organize the Ark: `NoahsArkContent.sortableItems.shuffled()` at construction time
+  in `createInitialState()`, so the tray order (and the decoy hammer's position in
+  it) varies — no screen changes needed, `NoahsArkOrganizeArkScreen.kt` already just
+  renders whatever order `dragSortState.items` holds.
+- Find the Missing Items: positions themselves stay fixed (they're hand-placed to
+  fit the background and not overlap), but *which item lands on which position* is
+  now shuffled — `NoahsArkContent.hiddenItems.map { it.position }.shuffled()`, then
+  zipped back onto the id/icon list in original order. No screen changes needed here
+  either, same reasoning as Organize the Ark.
+- Tests: added two `NoahsArkViewModelTest` cases confirming the shuffles are true
+  permutations (same id/position sets, just reordered) rather than losing or
+  duplicating anything. No instrumented test changes needed — every existing lookup
+  is by `contentDescription` (name), which is order-independent by construction;
+  confirmed passing on-device.
+
 ## Environment notes
 
 - This machine had no Android SDK installed. Set up locally at `C:\Android\Sdk`

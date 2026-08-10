@@ -25,8 +25,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -127,12 +129,28 @@ private fun HiddenItemTarget(
         contentAlignment = Alignment.Center,
     ) {
         if (isFound) {
-            Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            // Label only appears once found — showing it upfront would give away what
+            // to search for and undo the point of hiding it in the first place.
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.labelMedium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
+            }
         } else {
+            // Smaller and slightly translucent so items blend into the busy background
+            // instead of floating on top of it — the 48dp tap target above is unchanged,
+            // so this makes the *search* harder without making anything harder to tap
+            // once spotted (spec section 9's "avoid frustrating pixel-hunting" still
+            // holds: nothing shrinks below a comfortably tappable area).
             Image(
                 painter = painterResource(item.iconRes),
                 contentDescription = null,
-                modifier = Modifier.size(40.dp).alpha(0.95f),
+                modifier = Modifier.size(32.dp).alpha(0.85f),
             )
         }
     }
