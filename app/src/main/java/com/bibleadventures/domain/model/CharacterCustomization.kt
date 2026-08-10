@@ -12,7 +12,7 @@ enum class Hairstyle { SHORT, CURLY, BRAIDED, PONYTAIL }
 enum class SkinTone { TONE_1, TONE_2, TONE_3, TONE_4 }
 
 @Serializable
-enum class Clothing { TUNIC_BLUE, TUNIC_GREEN, ROBE_RED, VEST_YELLOW }
+enum class Clothing { TUNIC_BLUE, TUNIC_GREEN, ROBE_RED, VEST_YELLOW, ROBE_PURPLE }
 
 /**
  * Player's chosen appearance. Intentionally simple for the MVP (spec

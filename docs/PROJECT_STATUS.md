@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-10 (Chapter 2: David and Goliath)
+Last updated: 2026-08-10 (swapped Daniel and Feeding the 5,000 chapter order)
 
 ## Current milestone
 
-**Chapter 2 — David and Goliath: COMPLETE**
+**Chapter 3 — The Good Samaritan: COMPLETE**
 
 ## Completed features
 
@@ -650,14 +650,165 @@ player saw and what the engine checked were different rectangles.
   `DavidGoliathFlowTest.kt` still just drags to wherever the mark is frozen,
   which now correctly falls inside the correctly-rendered shield.
 
+### Chapter 3 — The Good Samaritan
+The third full chapter, unlocked automatically once David and Goliath is
+completed. Scene flow: Intro → The Road to Jericho context card → Explore
+(a grid maze covering find-medicine → treat-the-traveler → reach-the-Inn,
+one continuous scene) → Lesson → Reward. No Choice scene this time — Luke
+10:34 describes a specific, non-branching sequence of care (bandaged
+wounds, oil and wine, brought to the inn), so unlike David's open-ended
+reply to Goliath there's no real decision to offer; the flow template is a
+general shape, not a mandatory checklist for every chapter.
+- **New mechanic**: a 10x10 grid maze navigated with 4 on-screen direction
+  buttons, not tap-on-tile — a 10x10 grid can't give each cell a legible
+  48dp tap target on a phone screen, which is exactly why movement is
+  D-pad-based. New pure engine `game/puzzles/gridmaze/{GridMazeGame,GridMazeGameState}.kt`
+  is the first engine in this codebase with **zero** Compose/Android
+  imports at all (positions are plain ints, not `Offset`). Walking into a
+  wall or off the grid is a same-position no-op (`GridMazeOutcome.BLOCKED`)
+  — not even a "miss," since nothing was attempted incorrectly, just
+  blocked; still never a failure state, consistent with every other engine.
+- **Originally proposed as an HP/game-over mechanic with hostile "bandit"
+  hazards** (from a detailed blueprint the user provided, targeting a
+  different architecture entirely — a standalone game package, a bespoke
+  manager class). Explicitly rejected during planning: this app has a
+  non-negotiable "no failure states, no combat/punishing hazards" rule.
+  Confirmed with the user: bandits are now purely path-blocking, mechanically
+  identical to a rock wall — the engine has exactly one `WALL` tile type;
+  rock (`#`) vs. bandit (`X`) is only a rendering choice the *screen* makes
+  by reading the raw map character directly (`ic_wall_rock` vs.
+  `ic_wall_bandit`), never a distinct engine case. Mirrors the "content
+  decides flavor, engine stays generic" precedent already used for Noah's
+  Ark's decoys.
+- **v1 is outbound-only**, also confirmed with the user: find medicine,
+  treat the traveler, reach the Inn. The blueprint's second phase (escort
+  the traveler back across a re-hazarded map) is explicitly deferred — see
+  Follow-up below.
+- `game/stories/GoodSamaritanContent.kt` holds the 10x10 map as a
+  `List<String>` (adapted directly from the user's own blueprint, with
+  `[B]`→`X`, `[E]`→`I` for Inn), **verified solvable by hand** (BFS from
+  start reaches the medicine, the traveler, and the Inn all in one
+  connected component) rather than shuffled per playthrough — randomizing
+  tile layout risks an unsolvable maze with no in-app solver/validator in
+  scope for this pass. Also holds a hand-verified 20-move `solutionPath`
+  used by the instrumented test to replay a known-solvable route
+  deterministically, since the map itself is intentionally static.
+  **Found only by actually running it on-device**: the instrumented test
+  initially failed with the player stuck at (4,9), one row short of the
+  Inn, despite the hand-derived BFS route being mathematically correct.
+  Root cause was a single-character transcription slip converting the
+  20-token row into a compact string — one row had 7 trailing `#` instead
+  of 6 `#` followed by a `.`, silently turning the one open cell needed to
+  continue downward into a wall. Diagnosed by adding a temporary
+  `printToLog`/screenshot to the test to see the actual rendered grid and
+  player position rather than guessing from the exception alone — the
+  same "trust but verify on a real device" lesson as the Sling Practice
+  shield-position bug (addendum 6 above). Confirms the map needs the same
+  "don't trust hand-verification alone" treatment as any other new layout
+  in this codebase.
+- **The "treat the traveler" moment** is an automatic full-screen overlay
+  (not a new nav route) shown the instant `travelerTreated` flips true,
+  rendering 3 lines paralleling Luke 10:34 and blocking D-pad input
+  underneath (a `clickable {}` with no visual indication, consuming
+  touches) until dismissed — a pure presentation concern, same category as
+  Dodge's `displayedBeat` from Chapter 2.
+- **Badge/scripture card**: "Good Neighbor" + Luke 10:33, added to
+  `RewardCatalog`. The scripture text was sourced from the actual World
+  English Bible (public domain) via WebFetch, same standard as Genesis 6:22
+  and 1 Samuel 17:45 — not written from memory.
+- **Known accessibility limitation, not fixed here**: individual grid
+  tiles (other than the player marker) have no content description, since
+  narrating up to 100 non-interactive cells to a screen reader on every
+  recomposition would be noisy and wasn't in scope for this pass. Worth
+  revisiting if this chapter needs a fuller accessibility pass later.
+- Tests: `GridMazeGameTest.kt` (unit, mirrors `DodgeGameTest.kt`'s style —
+  a blocked move is a same-position no-op, never a failure; medicine/
+  traveler/Inn interactions; once-complete is a no-op); `GoodSamaritanViewModelTest.kt`
+  (unit, using the shared `FakePlayerProfileRepository`); new instrumented
+  `GoodSamaritanFlowTest.kt`, which completes **both** Noah's Ark and David
+  and Goliath itself first (this device's save state persists across test
+  runs, and Good Samaritan is locked until both prior chapters are done),
+  then replays the hand-verified `solutionPath`, dismissing the helping-beat
+  overlay inline the instant it's detected rather than at one hardcoded
+  step index (robust to the exact move count).
+
+## Follow-up (explicitly deferred, not built now)
+
+- The blueprint's second "escort back to Jerusalem" phase, with hazards
+  newly placed on the return trip.
+- An optional "donkey feed" pickup the user mentioned (temporary
+  vision-radius or extra-move buff) — a nice-to-have, not required.
+- A fuller accessibility pass on the grid maze's individual tiles (see
+  "Known accessibility limitation" above).
+
+### Milestone 4 addendum 6 — removed Gather Supplies; added purple clothing
+Two small follow-ups after Chapter 3 shipped.
+- **Gather Supplies removed from Noah's Ark**, per the user's direct
+  feedback: it was mechanically identical to Find the Animals (tap every
+  real item, leave the one decoy untapped) with no puzzle variety of its
+  own — reskinned content, not a distinct challenge. Scene flow is now
+  `Intro → Find Animals Context → Find Animals → Animal Matching →
+  Organize the Ark Context → Organize the Ark → Find the Missing Items →
+  Lesson → Reward`; Animal Matching's `onContinue` now routes straight to
+  `OrganizeArkContext`. Removed everything that only existed to support
+  it: `NoahsArkGatherSuppliesScreen.kt`, the `GatherSuppliesContext`/
+  `GatherSupplies` routes, `NoahsArkUiState`'s `collectedSupplyIds`/
+  `lastGatherSuppliesDecoyOutcome`/`gatherSuppliesOrder`, `onSupplyCollected`/
+  `onGatherSuppliesDecoyTapped`, `NoahsArkContent.supplies`/
+  `gatherSuppliesContextLines`/`gatherSuppliesDecoys`, the now-unused
+  `SupplyDef` type, `ic_decoy_toy.xml`, and the `gather_supplies_*`/
+  `feedback_not_a_supply`/`decoy_toy` strings. **Judgment call**: the
+  `supply_*` strings/drawables (bread, fruit, water, grain, honey, rope)
+  themselves were kept — Organize the Ark's `sortableItems` and Find the
+  Missing Items' `hiddenItems` each already reference those same icon/name
+  resources directly as their own independent content lists (not through
+  the now-deleted `supplies` list), so the underlying items were never
+  Gather-Supplies-exclusive, only that one redundant scene was.
+  `NoahsArkFlowTest.kt`, `NoahsArkDecoyInteractionTest.kt`,
+  `NoahsArkViewModelTest.kt`, and the `completeNoahsArk()` helper duplicated
+  in both `DavidGoliathFlowTest.kt` and `GoodSamaritanFlowTest.kt` (Noah's
+  Ark being a prerequisite chapter for both) all needed the Gather Supplies
+  step removed to match.
+- **Added a purple clothing option** to the Character screen: `Clothing`
+  gained a new `ROBE_PURPLE` constant (appended, not inserted — persisted
+  keys are stable enum names, so appending is safe while reordering
+  existing constants would not be), a new `character_clothing_robe_purple`
+  string ("Purple Robe"), and one new entry in
+  `CharacterOptionCatalog.clothingOptions`. Both the picker (`OptionPicker`
+  in `CharacterScreen.kt`) and `CharacterPreview`'s body-color rendering
+  are already fully data-driven off this catalog, so no other file needed
+  a change for the new option to appear and work end-to-end.
+
+### Milestone 4 addendum 7 — swapped Chapter 4/5 order (Daniel before Feeding the 5,000)
+Per the user's request, **Daniel and the Lions** now comes right after the
+Good Samaritan, with **Feeding the 5,000** moved to the following slot —
+the reverse of the original spec order. This only ever touched
+`ChapterCatalog.kt`'s static data, since neither chapter has real gameplay
+yet (both still route to `ComingSoonScreen`): swapped the two `Chapter`
+entries' position in the `all` list (World Map display order follows this
+list directly) and re-linked the `requiredChapter` chain —
+`GOOD_SAMARITAN → DANIEL → FEEDING_5000 → JESUS_CALMS_STORM` — including
+fixing `JESUS_CALMS_STORM`'s own `requiredChapter`, which had to move from
+`DANIEL` to `FEEDING_5000` to stay last in the new order. Each chapter's
+`id`, title/description/lesson string resources, and `scriptureReference`
+stayed correctly paired with its own entry — only position and
+`requiredChapter` changed, confirmed by checking `scriptureReference`
+wasn't accidentally cross-wired during the edit. `ChapterId`'s own enum
+declaration order was left untouched (nothing depends on it; sequencing
+comes entirely from `ChapterCatalog.all` + `requiredChapter`).
+Updated `ChapterUnlockRulesTest`'s out-of-order-completion case and
+`GoodSamaritanFlowTest`'s final "next chapter unlocked" assertion (and its
+name) to expect Daniel instead of Feeding the 5,000.
+
 ## Next tasks
 
-Nothing currently planned. If work resumes later, the natural next step per the
-original spec is either **Chapter 3 — The Good Samaritan** (now unlocked once
-David and Goliath is completed) or **Milestone 6 — Parent Area**: a parental
-gate, progress summary, settings (music/sound/narration toggles), and
-reset-progress functionality (spec section 17). No `settings/` package exists
-yet — still deferred until that milestone actually needs it (spec section 5/26).
+Nothing currently planned. If work resumes later, the natural next step per
+the current order is either **Chapter 4 — Daniel and the Lions** (now
+unlocked once the Good Samaritan is completed) or **Milestone 6 — Parent
+Area**: a parental gate, progress summary, settings (music/sound/narration
+toggles), and reset-progress functionality (spec section 17). No
+`settings/` package exists yet — still deferred until that milestone
+actually needs it (spec section 5/26).
 
 ## Architectural decisions log
 
@@ -701,3 +852,13 @@ yet — still deferred until that milestone actually needs it (spec section 5/26
 - **Genesis 6:22 uses the World English Bible (WEB) text**, a modern public-domain
   translation — the user's explicit decision, since not every Bible translation is
   freely licensed for redistribution (spec section 9's caution).
+- **Grid-based chapters use a 4-button D-pad, never tap-on-tile movement.** A
+  phone-sized grid can't give each cell a legible 48dp tap target (spec section 13);
+  moving via directional buttons sidesteps the problem entirely instead of shrinking
+  the touch-target rule for one screen. Follow this for any future maze-style chapter.
+- **A hazard mechanic proposed with an HP/game-over lose condition (Good Samaritan's
+  original "bandit" concept) was redesigned as purely path-blocking**, mechanically
+  identical to a wall — this app's "no failure states, no punishing hazards" rule
+  (spec, non-negotiable) is treated as a hard constraint on any future mechanic
+  proposal, not just existing ones; redesign around it rather than special-casing
+  an exception.

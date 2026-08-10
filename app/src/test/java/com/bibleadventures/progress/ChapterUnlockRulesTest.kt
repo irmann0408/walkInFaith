@@ -44,8 +44,8 @@ class ChapterUnlockRulesTest {
 
         assertEquals(ChapterStatus.LOCKED, statuses.getValue(ChapterId.DAVID_GOLIATH))
         assertEquals(ChapterStatus.COMPLETED, statuses.getValue(ChapterId.GOOD_SAMARITAN))
-        assertEquals(ChapterStatus.UNLOCKED, statuses.getValue(ChapterId.FEEDING_5000))
-        assertEquals(ChapterStatus.LOCKED, statuses.getValue(ChapterId.DANIEL))
+        assertEquals(ChapterStatus.UNLOCKED, statuses.getValue(ChapterId.DANIEL))
+        assertEquals(ChapterStatus.LOCKED, statuses.getValue(ChapterId.FEEDING_5000))
     }
 
     @Test

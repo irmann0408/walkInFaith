@@ -44,6 +44,7 @@ object CharacterOptionCatalog {
         ClothingOption(Clothing.TUNIC_GREEN, R.string.character_clothing_tunic_green, Color(0xFF6FBE7C)),
         ClothingOption(Clothing.ROBE_RED, R.string.character_clothing_robe_red, Color(0xFFF08A6C)),
         ClothingOption(Clothing.VEST_YELLOW, R.string.character_clothing_vest_yellow, Color(0xFFF6C445)),
+        ClothingOption(Clothing.ROBE_PURPLE, R.string.character_clothing_robe_purple, Color(0xFFA07CC9)),
     )
 
     val hairColor = Color(0xFF6B4A2E)

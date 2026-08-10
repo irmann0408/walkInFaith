@@ -148,13 +148,6 @@ class DavidGoliathFlowTest {
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Gather Supplies context
-
-        NoahsArkContent.supplies.forEach { supply ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes)).performClick()
-        }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-
         composeTestRule.onNodeWithText(continueLabel).performClick() // Organize the Ark context
 
         NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->

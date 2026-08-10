@@ -48,20 +48,16 @@ class NoahsArkViewModelTest {
         assertEquals(7, state.dragSortState.items.size)
         assertEquals(6, state.hiddenObjectState.items.size)
         assertTrue(state.foundAnimalIds.isEmpty())
-        assertTrue(state.collectedSupplyIds.isEmpty())
     }
 
     @Test
-    fun `findAnimalsOrder and gatherSuppliesOrder are shuffled but still contain every real item and decoy exactly once`() {
+    fun `findAnimalsOrder is shuffled but still contains every real item and decoy exactly once`() {
         val state = createViewModel().uiState.value
 
         val expectedFindAnimalsIds = (NoahsArkContent.animals.map { it.id } + NoahsArkContent.findAnimalsDecoys.map { it.id }).toSet()
-        val expectedGatherSuppliesIds = (NoahsArkContent.supplies.map { it.id } + NoahsArkContent.gatherSuppliesDecoys.map { it.id }).toSet()
 
         assertEquals(expectedFindAnimalsIds, state.findAnimalsOrder.toSet())
         assertEquals(expectedFindAnimalsIds.size, state.findAnimalsOrder.size)
-        assertEquals(expectedGatherSuppliesIds, state.gatherSuppliesOrder.toSet())
-        assertEquals(expectedGatherSuppliesIds.size, state.gatherSuppliesOrder.size)
     }
 
     @Test
@@ -85,15 +81,6 @@ class NoahsArkViewModelTest {
     }
 
     @Test
-    fun `onSupplyCollected adds the supply to collectedSupplyIds`() {
-        val viewModel = createViewModel()
-
-        viewModel.onSupplyCollected("bread")
-
-        assertTrue("bread" in viewModel.uiState.value.collectedSupplyIds)
-    }
-
-    @Test
     fun `onFindAnimalsDecoyTapped sets the decoy outcome without touching foundAnimalIds`() {
         val viewModel = createViewModel()
 
@@ -101,16 +88,6 @@ class NoahsArkViewModelTest {
 
         assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastFindAnimalsDecoyOutcome)
         assertTrue(viewModel.uiState.value.foundAnimalIds.isEmpty())
-    }
-
-    @Test
-    fun `onGatherSuppliesDecoyTapped sets the decoy outcome without touching collectedSupplyIds`() {
-        val viewModel = createViewModel()
-
-        viewModel.onGatherSuppliesDecoyTapped()
-
-        assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastGatherSuppliesDecoyOutcome)
-        assertTrue(viewModel.uiState.value.collectedSupplyIds.isEmpty())
     }
 
     @Test

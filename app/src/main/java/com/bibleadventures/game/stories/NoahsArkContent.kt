@@ -9,7 +9,6 @@ enum class NoahsArkScene {
     INTRO,
     FIND_ANIMALS,
     ANIMAL_MATCHING,
-    GATHER_SUPPLIES,
     ORGANIZE_ARK,
     FIND_MISSING_ITEMS,
     LESSON,
@@ -17,7 +16,6 @@ enum class NoahsArkScene {
 }
 
 data class AnimalDef(val id: String, @DrawableRes val iconRes: Int, @StringRes val nameRes: Int)
-data class SupplyDef(val id: String, @DrawableRes val iconRes: Int, @StringRes val nameRes: Int)
 data class SortCategoryDef(val key: String, @StringRes val labelRes: Int)
 
 /**
@@ -51,11 +49,6 @@ object NoahsArkContent {
         R.string.noahs_ark_find_animals_context_line_2,
     )
 
-    val gatherSuppliesContextLines: List<Int> = listOf(
-        R.string.noahs_ark_gather_supplies_context_line_1,
-        R.string.noahs_ark_gather_supplies_context_line_2,
-    )
-
     val organizeArkContextLines: List<Int> = listOf(
         R.string.noahs_ark_organize_context_line_1,
         R.string.noahs_ark_organize_context_line_2,
@@ -72,21 +65,8 @@ object NoahsArkContent {
         AnimalDef("monkey", R.drawable.ic_animal_monkey, R.string.animal_monkey),
     )
 
-    val supplies: List<SupplyDef> = listOf(
-        SupplyDef("bread", R.drawable.ic_supply_bread, R.string.supply_bread),
-        SupplyDef("fruit", R.drawable.ic_supply_fruit, R.string.supply_fruit),
-        SupplyDef("water", R.drawable.ic_supply_water, R.string.supply_water),
-        SupplyDef("grain", R.drawable.ic_supply_grain, R.string.supply_grain),
-        SupplyDef("honey", R.drawable.ic_supply_honey, R.string.supply_honey),
-        SupplyDef("rope", R.drawable.ic_supply_rope, R.string.supply_rope),
-    )
-
     val findAnimalsDecoys: List<DecoyItemDef> = listOf(
         DecoyItemDef("decoy_rock", R.drawable.ic_decoy_rock, R.string.decoy_rock),
-    )
-
-    val gatherSuppliesDecoys: List<DecoyItemDef> = listOf(
-        DecoyItemDef("decoy_toy", R.drawable.ic_decoy_toy, R.string.decoy_toy),
     )
 
     val sortCategories: List<SortCategoryDef> = listOf(

@@ -17,8 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Covers the decoy items added to Find the Animals, Gather Supplies, and Organize
- * the Ark: tapping/dropping one shows scene-specific feedback, never enables
+ * Covers the decoy items added to Find the Animals and Organize the Ark:
+ * tapping/dropping one shows scene-specific feedback, never enables
  * Continue prematurely, and stays interactive after repeated attempts. Kept separate
  * from [NoahsArkFlowTest] so that "happy path" walk doesn't have to carry
  * decoy-specific assertions.
@@ -58,22 +58,7 @@ class NoahsArkDecoyInteractionTest {
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
             composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Matching -> Gather Supplies context
-        composeTestRule.onNodeWithText(continueLabel).performClick() // context -> Gather Supplies
-
-        // --- Gather Supplies: tapping the toy never counts, never completes the scene.
-        val toyName = activity.getString(R.string.decoy_toy)
-        val notASupply = activity.getString(R.string.feedback_not_a_supply)
-        repeat(2) {
-            composeTestRule.onNodeWithContentDescription(toyName).performClick()
-            composeTestRule.onNodeWithText(notASupply).assertExists()
-        }
-        composeTestRule.onNodeWithText(continueLabel).assertDoesNotExist()
-
-        NoahsArkContent.supplies.forEach { supply ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes)).performClick()
-        }
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Gather Supplies -> Organize Ark context
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Matching -> Organize Ark context
         composeTestRule.onNodeWithText(continueLabel).performClick() // context -> Organize the Ark
 
         // --- Organize the Ark: dropping the hammer on any category never places it or

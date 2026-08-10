@@ -37,6 +37,7 @@
     <string name="character_clothing_tunic_green">Green Tunic</string>
     <string name="character_clothing_robe_red">Red Robe</string>
     <string name="character_clothing_vest_yellow">Yellow Vest</string>
+    <string name="character_clothing_robe_purple">Purple Robe</string>
 
     <string name="character_option_selected_content_description">%1$s, selected</string>
 
@@ -86,12 +87,16 @@
     <string name="scripture_1_samuel_17_45_title">David\'s Declaration</string>
     <string name="scripture_1_samuel_17_45_text">"Then David said to the Philistine, \'You come to me with a sword, with a spear, and with a javelin; but I come to you in the name of Yahweh of Armies, the God of the armies of Israel, whom you have defied.\'"</string>
 
+    <string name="badge_good_neighbor_title">Good Neighbor</string>
+    <string name="badge_good_neighbor_description">Stopped to help a stranger in need, just like the Good Samaritan.</string>
+    <string name="scripture_luke_10_33_title">The Good Samaritan\'s Compassion</string>
+    <string name="scripture_luke_10_33_text">"But a certain Samaritan, as he traveled, came where he was. When he saw him, he was moved with compassion,"</string>
+
     <string name="action_continue">Continue</string>
     <string name="action_return_to_map">Return to Map</string>
     <string name="feedback_great_job">Great job!</string>
     <string name="feedback_try_another_one">Try another one!</string>
     <string name="feedback_not_an_animal">That\'s not an animal!</string>
-    <string name="feedback_not_a_supply">We don\'t need that for the trip!</string>
     <string name="feedback_doesnt_belong">That doesn\'t belong on the ark!</string>
     <string name="feedback_not_a_stone">That\'s not a stone!</string>
 
@@ -112,7 +117,6 @@
     <string name="supply_rope">Rope</string>
 
     <string name="decoy_rock">Rock</string>
-    <string name="decoy_toy">Toy Ball</string>
     <string name="decoy_hammer">Hammer</string>
     <string name="decoy_boot">Old Boot</string>
 
@@ -138,13 +142,6 @@
 
     <string name="noahs_ark_matching_title">Match the Animal Pairs</string>
     <string name="noahs_ark_matching_instructions">Tap two animals that match.</string>
-
-    <string name="noahs_ark_gather_supplies_context_title">Ready for the Journey</string>
-    <string name="noahs_ark_gather_supplies_context_line_1">Noah\'s family will need food and water for many days at sea.</string>
-    <string name="noahs_ark_gather_supplies_context_line_2">Gather only what the ark truly needs for the trip.</string>
-
-    <string name="noahs_ark_gather_supplies_title">Gather Supplies</string>
-    <string name="noahs_ark_gather_supplies_instructions">Tap each supply to pack it for the journey.</string>
 
     <string name="noahs_ark_organize_context_title">A Place for Everything</string>
     <string name="noahs_ark_organize_context_line_1">Everything on the ark has its own place — animals, food, and supplies.</string>
@@ -212,6 +209,33 @@
 
     <string name="david_goliath_lesson_title">Courage and Trusting God</string>
     <string name="david_goliath_lesson_text">David wasn\'t the biggest or the strongest, but he trusted God more than he feared Goliath. When we feel scared, we can remember God is with us too.</string>
+
+    <string name="good_samaritan_intro_line_1">A man was traveling the dangerous road from Jerusalem to Jericho when robbers attacked him and left him hurt beside the road.</string>
+    <string name="good_samaritan_intro_line_2">Others walked right past him. Will you stop and help, like the Good Samaritan did?</string>
+
+    <string name="good_samaritan_explore_context_title">The Road to Jericho</string>
+    <string name="good_samaritan_explore_context_line_1">A priest and a Levite already passed the hurt man by without stopping.</string>
+    <string name="good_samaritan_explore_context_line_2">Walk the road, find medicine, and help him — then bring him safely to the Inn.</string>
+
+    <string name="good_samaritan_explore_title">The Road to Jericho</string>
+    <string name="good_samaritan_explore_instructions">Use the arrows to walk the road. Find medicine, help the traveler, then reach the Inn.</string>
+    <string name="good_samaritan_player_content_description">You are here</string>
+    <string name="good_samaritan_medicine_content_description">Medicine</string>
+    <string name="good_samaritan_traveler_content_description">Injured traveler</string>
+    <string name="good_samaritan_inn_content_description">The Inn</string>
+    <string name="good_samaritan_direction_up">Up</string>
+    <string name="good_samaritan_direction_down">Down</string>
+    <string name="good_samaritan_direction_left">Left</string>
+    <string name="good_samaritan_direction_right">Right</string>
+    <string name="good_samaritan_needs_medicine_message">He needs medicine first — look around for some nearby!</string>
+
+    <string name="good_samaritan_helping_beat_title">Stopping to Help</string>
+    <string name="good_samaritan_helping_beat_line_1">The Samaritan knelt down and bandaged the man\'s wounds.</string>
+    <string name="good_samaritan_helping_beat_line_2">He gently poured on oil and wine to help him heal.</string>
+    <string name="good_samaritan_helping_beat_line_3">Then he helped the man onto his own animal to carry him the rest of the way.</string>
+
+    <string name="good_samaritan_lesson_title">Kindness and Helping Others</string>
+    <string name="good_samaritan_lesson_text">The Good Samaritan stopped to help even though the hurt man was a stranger. God wants us to be a good neighbor to everyone we meet, not just our friends.</string>
 
     <string name="reward_title">Adventure Complete!</string>
     <string name="reward_stars_content_description">%1$d out of %2$d stars earned</string>

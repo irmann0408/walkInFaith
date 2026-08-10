@@ -38,20 +38,20 @@ object ChapterCatalog {
             requiredChapter = ChapterId.DAVID_GOLIATH,
         ),
         Chapter(
-            id = ChapterId.FEEDING_5000,
-            titleRes = R.string.chapter_feeding_5000_title,
-            descriptionRes = R.string.chapter_feeding_5000_description,
-            lessonRes = R.string.chapter_feeding_5000_lesson,
-            scriptureReference = "John 6:11",
-            requiredChapter = ChapterId.GOOD_SAMARITAN,
-        ),
-        Chapter(
             id = ChapterId.DANIEL,
             titleRes = R.string.chapter_daniel_title,
             descriptionRes = R.string.chapter_daniel_description,
             lessonRes = R.string.chapter_daniel_lesson,
             scriptureReference = "Daniel 6:22",
-            requiredChapter = ChapterId.FEEDING_5000,
+            requiredChapter = ChapterId.GOOD_SAMARITAN,
+        ),
+        Chapter(
+            id = ChapterId.FEEDING_5000,
+            titleRes = R.string.chapter_feeding_5000_title,
+            descriptionRes = R.string.chapter_feeding_5000_description,
+            lessonRes = R.string.chapter_feeding_5000_lesson,
+            scriptureReference = "John 6:11",
+            requiredChapter = ChapterId.DANIEL,
         ),
         Chapter(
             id = ChapterId.JESUS_CALMS_STORM,
@@ -59,7 +59,7 @@ object ChapterCatalog {
             descriptionRes = R.string.chapter_jesus_calms_storm_description,
             lessonRes = R.string.chapter_jesus_calms_storm_lesson,
             scriptureReference = "Mark 4:39",
-            requiredChapter = ChapterId.DANIEL,
+            requiredChapter = ChapterId.FEEDING_5000,
         ),
     )
 }

@@ -18,8 +18,6 @@ sealed class Destination(val route: String) {
         data object FindAnimalsContext : NoahsArk("noahs_ark/find_animals_context")
         data object FindAnimals : NoahsArk("noahs_ark/find_animals")
         data object AnimalMatching : NoahsArk("noahs_ark/animal_matching")
-        data object GatherSuppliesContext : NoahsArk("noahs_ark/gather_supplies_context")
-        data object GatherSupplies : NoahsArk("noahs_ark/gather_supplies")
         data object OrganizeArkContext : NoahsArk("noahs_ark/organize_ark_context")
         data object OrganizeArk : NoahsArk("noahs_ark/organize_ark")
         data object FindMissingItems : NoahsArk("noahs_ark/find_missing_items")
@@ -48,6 +46,19 @@ sealed class Destination(val route: String) {
 
         companion object {
             const val GRAPH_ROUTE = "david_goliath"
+        }
+    }
+
+    /** Nested graph — every scene shares one graph-scoped `GoodSamaritanViewModel`. */
+    sealed class GoodSamaritan(route: String) : Destination(route) {
+        data object Intro : GoodSamaritan("good_samaritan/intro")
+        data object ExploreContext : GoodSamaritan("good_samaritan/explore_context")
+        data object Explore : GoodSamaritan("good_samaritan/explore")
+        data object Lesson : GoodSamaritan("good_samaritan/lesson")
+        data object Reward : GoodSamaritan("good_samaritan/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "good_samaritan"
         }
     }
 

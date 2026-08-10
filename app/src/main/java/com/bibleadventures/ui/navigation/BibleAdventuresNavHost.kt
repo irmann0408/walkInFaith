@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.bibleadventures.R
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.stories.DavidGoliathContent
+import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.StoryBeatScreen
@@ -29,10 +30,14 @@ import com.bibleadventures.ui.screens.davidgoliath.lesson.DavidGoliathLessonScre
 import com.bibleadventures.ui.screens.davidgoliath.reward.DavidGoliathRewardScreen
 import com.bibleadventures.ui.screens.davidgoliath.sheepcounting.DavidGoliathSheepCountingScreen
 import com.bibleadventures.ui.screens.davidgoliath.slingpractice.DavidGoliathSlingPracticeScreen
+import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
+import com.bibleadventures.ui.screens.goodsamaritan.explore.GoodSamaritanExploreScreen
+import com.bibleadventures.ui.screens.goodsamaritan.intro.GoodSamaritanIntroScreen
+import com.bibleadventures.ui.screens.goodsamaritan.lesson.GoodSamaritanLessonScreen
+import com.bibleadventures.ui.screens.goodsamaritan.reward.GoodSamaritanRewardScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.noahsark.findanimals.NoahsArkFindAnimalsScreen
-import com.bibleadventures.ui.screens.noahsark.gathersupplies.NoahsArkGatherSuppliesScreen
 import com.bibleadventures.ui.screens.noahsark.intro.NoahsArkIntroScreen
 import com.bibleadventures.ui.screens.noahsark.lesson.NoahsArkLessonScreen
 import com.bibleadventures.ui.screens.noahsark.matching.NoahsArkMatchingScreen
@@ -83,6 +88,8 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                         navController.navigate(Destination.NoahsArk.Intro.route)
                     } else if (chapterId == ChapterId.DAVID_GOLIATH) {
                         navController.navigate(Destination.DavidGoliath.Intro.route)
+                    } else if (chapterId == ChapterId.GOOD_SAMARITAN) {
+                        navController.navigate(Destination.GoodSamaritan.Intro.route)
                     }
                 },
             )
@@ -95,6 +102,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         }
         noahsArkGraph(navController)
         davidGoliathGraph(navController)
+        goodSamaritanGraph(navController)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
                 backStackEntry.arguments?.getString(Destination.ComingSoon.ARG_FEATURE_TITLE).orEmpty()
@@ -144,23 +152,6 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
                 viewModel = viewModel,
                 onContinue = {
                     viewModel.onSceneCompleted("animal_matching")
-                    navController.navigate(Destination.NoahsArk.GatherSuppliesContext.route)
-                },
-            )
-        }
-        composable(Destination.NoahsArk.GatherSuppliesContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.noahs_ark_gather_supplies_context_title,
-                lineRes = NoahsArkContent.gatherSuppliesContextLines,
-                onContinue = { navController.navigate(Destination.NoahsArk.GatherSupplies.route) },
-            )
-        }
-        composable(Destination.NoahsArk.GatherSupplies.route) { entry ->
-            val viewModel = navController.noahsArkViewModel(entry)
-            NoahsArkGatherSuppliesScreen(
-                viewModel = viewModel,
-                onContinue = {
-                    viewModel.onSceneCompleted("gather_supplies")
                     navController.navigate(Destination.NoahsArk.OrganizeArkContext.route)
                 },
             )
@@ -344,5 +335,68 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
 @Composable
 private fun NavHostController.davidGoliathViewModel(entry: NavBackStackEntry): DavidGoliathViewModel {
     val parentEntry = remember(entry) { getBackStackEntry(Destination.DavidGoliath.GRAPH_ROUTE) }
+    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
+}
+
+private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController) {
+    navigation(
+        startDestination = Destination.GoodSamaritan.Intro.route,
+        route = Destination.GoodSamaritan.GRAPH_ROUTE,
+    ) {
+        composable(Destination.GoodSamaritan.Intro.route) { entry ->
+            val viewModel = navController.goodSamaritanViewModel(entry)
+            GoodSamaritanIntroScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.GoodSamaritan.ExploreContext.route)
+                },
+            )
+        }
+        composable(Destination.GoodSamaritan.ExploreContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.good_samaritan_explore_context_title,
+                lineRes = GoodSamaritanContent.exploreContextLines,
+                onContinue = { navController.navigate(Destination.GoodSamaritan.Explore.route) },
+            )
+        }
+        composable(Destination.GoodSamaritan.Explore.route) { entry ->
+            val viewModel = navController.goodSamaritanViewModel(entry)
+            GoodSamaritanExploreScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("explore")
+                    navController.navigate(Destination.GoodSamaritan.Lesson.route)
+                },
+            )
+        }
+        composable(Destination.GoodSamaritan.Lesson.route) { entry ->
+            val viewModel = navController.goodSamaritanViewModel(entry)
+            GoodSamaritanLessonScreen(
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson")
+                    navController.navigate(Destination.GoodSamaritan.Reward.route)
+                },
+            )
+        }
+        composable(Destination.GoodSamaritan.Reward.route) { entry ->
+            GoodSamaritanRewardScreen(
+                viewModel = navController.goodSamaritanViewModel(entry),
+                onReturnToMap = {
+                    // Clears the whole Good Samaritan back stack so Back from the map
+                    // can't re-enter a finished run or re-trigger onChapterFinished().
+                    navController.navigate(Destination.WorldMap.route) {
+                        popUpTo(Destination.WorldMap.route)
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavHostController.goodSamaritanViewModel(entry: NavBackStackEntry): GoodSamaritanViewModel {
+    val parentEntry = remember(entry) { getBackStackEntry(Destination.GoodSamaritan.GRAPH_ROUTE) }
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }

@@ -57,19 +57,10 @@ class NoahsArkFlowTest {
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 3b: Gather Supplies context card.
+        // Scene 3b: Organize the Ark context card.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 4: Gather Supplies. The decoy (a toy) is deliberately left untapped.
-        NoahsArkContent.supplies.forEach { supply ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes)).performClick()
-        }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-
-        // Scene 4b: Organize the Ark context card.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-
-        // Scene 5: Organize the Ark — drag every real item onto its category. The decoy
+        // Scene 4: Organize the Ark — drag every real item onto its category. The decoy
         // (a hammer, categoryKey == null) is deliberately left in the tray, untouched.
         NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->
             val itemName = activity.getString(item.nameRes)
@@ -79,17 +70,17 @@ class NoahsArkFlowTest {
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 6: Find the Missing Items.
+        // Scene 5: Find the Missing Items.
         NoahsArkContent.hiddenItems.forEach { item ->
             composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 7: Lesson.
+        // Scene 6: Lesson.
         composeTestRule.onNodeWithText(activity.getString(R.string.noahs_ark_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 8: Reward.
+        // Scene 7: Reward.
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.badge_ark_builder_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()

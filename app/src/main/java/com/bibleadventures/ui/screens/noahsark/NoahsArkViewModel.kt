@@ -39,15 +39,12 @@ enum class DecoyTapOutcome { NONE, DECOY_TAPPED }
 data class NoahsArkUiState(
     val foundAnimalIds: Set<String> = emptySet(),
     val matchingState: MatchingGameState,
-    val collectedSupplyIds: Set<String> = emptySet(),
     val dragSortState: DragSortGameState,
     val hiddenObjectState: HiddenObjectGameState,
     val reward: NoahsArkRewardResult? = null,
     val lastFindAnimalsDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
-    val lastGatherSuppliesDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
     /** Ids (real + decoy), shuffled once per fresh game so the layout isn't the same every time. */
     val findAnimalsOrder: List<String> = emptyList(),
-    val gatherSuppliesOrder: List<String> = emptyList(),
 )
 
 class NoahsArkViewModel(
@@ -84,15 +81,6 @@ class NoahsArkViewModel(
             }
             current.copy(matchingState = newMatchingState)
         }
-    }
-
-    fun onSupplyCollected(supplyId: String) {
-        _uiState.update { it.copy(collectedSupplyIds = it.collectedSupplyIds + supplyId) }
-    }
-
-    /** Never penalized, never blocks progress — the decoy just stays tappable. */
-    fun onGatherSuppliesDecoyTapped() {
-        _uiState.update { it.copy(lastGatherSuppliesDecoyOutcome = DecoyTapOutcome.DECOY_TAPPED) }
     }
 
     fun onSortItemDropped(itemId: String, categoryKey: String) {
@@ -163,14 +151,12 @@ class NoahsArkViewModel(
         }
 
         val findAnimalsOrder = (NoahsArkContent.animals.map { it.id } + NoahsArkContent.findAnimalsDecoys.map { it.id }).shuffled()
-        val gatherSuppliesOrder = (NoahsArkContent.supplies.map { it.id } + NoahsArkContent.gatherSuppliesDecoys.map { it.id }).shuffled()
 
         return NoahsArkUiState(
             matchingState = MatchingGameState(items = matchItems),
             dragSortState = DragSortGameState(items = sortableItems, categories = sortCategories),
             hiddenObjectState = HiddenObjectGameState(items = hiddenItems),
             findAnimalsOrder = findAnimalsOrder,
-            gatherSuppliesOrder = gatherSuppliesOrder,
         )
     }
 }
