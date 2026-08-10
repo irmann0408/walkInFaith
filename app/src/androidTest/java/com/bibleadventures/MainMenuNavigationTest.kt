@@ -22,14 +22,14 @@ class MainMenuNavigationTest {
 
     @Test
     fun tappingAMenuItem_navigatesForwardAndBackNavigationReturnsToTheMenu() {
-        // "My Badges" has no real screen yet (unlike "Adventures", which now routes
-        // to the World Map — see WorldMapNavigationTest), so it still exercises the
-        // generic placeholder flow.
-        val badgesLabel = composeTestRule.activity.getString(R.string.menu_badges)
+        // "Settings" has no real screen yet (Adventures/My Badges/Scripture Cards all
+        // now route to real screens — see WorldMapNavigationTest/BadgesNavigationTest/
+        // ScriptureCardsNavigationTest), so it still exercises the generic placeholder flow.
+        val settingsLabel = composeTestRule.activity.getString(R.string.menu_settings)
         val comingSoonTitle = composeTestRule.activity.getString(R.string.coming_soon_title)
         val appName = composeTestRule.activity.getString(R.string.app_name)
 
-        composeTestRule.onNodeWithText(badgesLabel).performClick()
+        composeTestRule.onNodeWithText(settingsLabel).performClick()
         composeTestRule.onNodeWithText(comingSoonTitle).assertExists()
 
         composeTestRule.onNodeWithContentDescription(

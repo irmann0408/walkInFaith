@@ -16,6 +16,7 @@ import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.StoryBeatScreen
+import com.bibleadventures.ui.screens.badges.BadgesScreen
 import com.bibleadventures.ui.screens.character.CharacterScreen
 import com.bibleadventures.ui.screens.comingsoon.ComingSoonScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
@@ -28,14 +29,12 @@ import com.bibleadventures.ui.screens.noahsark.matching.NoahsArkMatchingScreen
 import com.bibleadventures.ui.screens.noahsark.missingitems.NoahsArkMissingItemsScreen
 import com.bibleadventures.ui.screens.noahsark.organizeark.NoahsArkOrganizeArkScreen
 import com.bibleadventures.ui.screens.noahsark.reward.NoahsArkRewardScreen
+import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsScreen
 import com.bibleadventures.ui.screens.worldmap.WorldMapScreen
 
 @Composable
 fun BibleAdventuresNavHost(navController: NavHostController = rememberNavController()) {
     val comingSoonTitles = mapOf(
-        MenuItemId.CONTINUE_ADVENTURE to stringResource(R.string.menu_continue_adventure),
-        MenuItemId.BADGES to stringResource(R.string.menu_badges),
-        MenuItemId.SCRIPTURE_CARDS to stringResource(R.string.menu_scripture_cards),
         MenuItemId.SETTINGS to stringResource(R.string.menu_settings),
         MenuItemId.PARENT_AREA to stringResource(R.string.menu_parent_area),
     )
@@ -47,6 +46,11 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                     when (itemId) {
                         MenuItemId.CHARACTER -> navController.navigate(Destination.Character.route)
                         MenuItemId.ADVENTURES -> navController.navigate(Destination.WorldMap.route)
+                        // Continuing simply takes the player back to the World Map, where
+                        // the in-progress chapter's node already shows its state.
+                        MenuItemId.CONTINUE_ADVENTURE -> navController.navigate(Destination.WorldMap.route)
+                        MenuItemId.BADGES -> navController.navigate(Destination.Badges.route)
+                        MenuItemId.SCRIPTURE_CARDS -> navController.navigate(Destination.ScriptureCards.route)
                         else -> {
                             // No real destination exists yet for these; every other menu
                             // item routes to the placeholder until its owning milestone lands.
@@ -72,6 +76,12 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                 },
             )
         }
+        composable(Destination.Badges.route) {
+            BadgesScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Destination.ScriptureCards.route) {
+            ScriptureCardsScreen(onBack = { navController.popBackStack() })
+        }
         noahsArkGraph(navController)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
@@ -90,9 +100,13 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
         route = Destination.NoahsArk.GRAPH_ROUTE,
     ) {
         composable(Destination.NoahsArk.Intro.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
             NoahsArkIntroScreen(
-                viewModel = navController.noahsArkViewModel(entry),
-                onContinue = { navController.navigate(Destination.NoahsArk.FindAnimalsContext.route) },
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.NoahsArk.FindAnimalsContext.route)
+                },
             )
         }
         composable(Destination.NoahsArk.FindAnimalsContext.route) {
@@ -103,15 +117,23 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
             )
         }
         composable(Destination.NoahsArk.FindAnimals.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
             NoahsArkFindAnimalsScreen(
-                viewModel = navController.noahsArkViewModel(entry),
-                onContinue = { navController.navigate(Destination.NoahsArk.AnimalMatching.route) },
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("find_animals")
+                    navController.navigate(Destination.NoahsArk.AnimalMatching.route)
+                },
             )
         }
         composable(Destination.NoahsArk.AnimalMatching.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
             NoahsArkMatchingScreen(
-                viewModel = navController.noahsArkViewModel(entry),
-                onContinue = { navController.navigate(Destination.NoahsArk.GatherSuppliesContext.route) },
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("animal_matching")
+                    navController.navigate(Destination.NoahsArk.GatherSuppliesContext.route)
+                },
             )
         }
         composable(Destination.NoahsArk.GatherSuppliesContext.route) {
@@ -122,9 +144,13 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
             )
         }
         composable(Destination.NoahsArk.GatherSupplies.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
             NoahsArkGatherSuppliesScreen(
-                viewModel = navController.noahsArkViewModel(entry),
-                onContinue = { navController.navigate(Destination.NoahsArk.OrganizeArkContext.route) },
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("gather_supplies")
+                    navController.navigate(Destination.NoahsArk.OrganizeArkContext.route)
+                },
             )
         }
         composable(Destination.NoahsArk.OrganizeArkContext.route) {
@@ -135,20 +161,32 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
             )
         }
         composable(Destination.NoahsArk.OrganizeArk.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
             NoahsArkOrganizeArkScreen(
-                viewModel = navController.noahsArkViewModel(entry),
-                onContinue = { navController.navigate(Destination.NoahsArk.FindMissingItems.route) },
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("organize_ark")
+                    navController.navigate(Destination.NoahsArk.FindMissingItems.route)
+                },
             )
         }
         composable(Destination.NoahsArk.FindMissingItems.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
             NoahsArkMissingItemsScreen(
-                viewModel = navController.noahsArkViewModel(entry),
-                onContinue = { navController.navigate(Destination.NoahsArk.Lesson.route) },
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("find_missing_items")
+                    navController.navigate(Destination.NoahsArk.Lesson.route)
+                },
             )
         }
-        composable(Destination.NoahsArk.Lesson.route) {
+        composable(Destination.NoahsArk.Lesson.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
             NoahsArkLessonScreen(
-                onContinue = { navController.navigate(Destination.NoahsArk.Reward.route) },
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson")
+                    navController.navigate(Destination.NoahsArk.Reward.route)
+                },
             )
         }
         composable(Destination.NoahsArk.Reward.route) { entry ->

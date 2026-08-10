@@ -1,20 +1,15 @@
 package com.bibleadventures.ui.screens.noahsark
 
+import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.audio.AudioController
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.domain.model.ChapterId
-import com.bibleadventures.domain.model.CharacterCustomization
-import com.bibleadventures.domain.model.AdventureProgress
-import com.bibleadventures.domain.model.PlayerProfile
-import com.bibleadventures.domain.repository.PlayerProfileRepository
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -23,40 +18,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-
-private class FakePlayerProfileRepository(
-    initial: PlayerProfile = PlayerProfile.DEFAULT,
-) : PlayerProfileRepository {
-    private val state = MutableStateFlow(initial)
-    override val profile: Flow<PlayerProfile> = state
-
-    override suspend fun updateCharacter(customization: CharacterCustomization) {
-        state.value = state.value.copy(character = customization)
-    }
-
-    override suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String) = Unit
-
-    override suspend fun completeChapter(
-        chapterId: ChapterId,
-        stars: Int,
-        badgeId: String,
-        scriptureCardId: String,
-    ) {
-        state.value = state.value.let { current ->
-            val progress = (current.progressByChapter[chapterId] ?: AdventureProgress(chapterId = chapterId))
-                .copy(completed = true, stars = stars)
-            current.copy(
-                progressByChapter = current.progressByChapter + (chapterId to progress),
-                completedChapters = current.completedChapters + chapterId,
-                stars = current.stars + stars,
-                badges = current.badges + badgeId,
-                scriptureCards = current.scriptureCards + scriptureCardId,
-            )
-        }
-    }
-
-    fun current(): PlayerProfile = state.value
-}
 
 private class RecordingAudioController : AudioController {
     val playedEffects = mutableListOf<SoundEffect>()
@@ -150,6 +111,19 @@ class NoahsArkViewModelTest {
 
         assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastGatherSuppliesDecoyOutcome)
         assertTrue(viewModel.uiState.value.collectedSupplyIds.isEmpty())
+    }
+
+    @Test
+    fun `onSceneCompleted marks the scene as a completed activity for Noah's Ark`() = runTest {
+        val repository = FakePlayerProfileRepository()
+        val viewModel = createViewModel(repository = repository)
+
+        viewModel.onSceneCompleted("intro")
+        advanceUntilIdle()
+
+        val progress = repository.current().progressByChapter.getValue(ChapterId.NOAHS_ARK)
+        assertTrue("intro" in progress.completedActivities)
+        assertTrue(!progress.completed)
     }
 
     @Test

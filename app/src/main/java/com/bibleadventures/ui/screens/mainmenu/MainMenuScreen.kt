@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bibleadventures.R
+import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.navigation.MenuItemId
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -30,7 +31,7 @@ private data class MenuItem(val id: MenuItemId, val label: String, val enabled: 
 fun MainMenuScreen(
     onMenuItemClick: (MenuItemId) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MainMenuViewModel = viewModel(),
+    viewModel: MainMenuViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

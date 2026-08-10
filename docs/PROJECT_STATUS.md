@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-10 (Milestone 4 addendum: content variety, decoys, context cards)
+Last updated: 2026-08-10 (Milestone 5: Progression)
 
 ## Current milestone
 
-**Milestone 4 — Noah's Ark: COMPLETE**
+**Milestone 5 — Progression: COMPLETE**
 
 ## Completed features
 
@@ -337,11 +337,6 @@ time the chapter is (re)started, same mechanism the Matching shuffle already rel
 - minSdk 24 devices fall back to a non-adaptive icon; no legacy PNG mipmap was
   generated (only the `mipmap-anydpi-v26` adaptive icon exists). Cosmetic only.
 - No `settings/` package yet — deferred until Milestone 6/7 need it.
-- `MainMenuViewModel.hasAdventureInProgress` is still hardcoded `false` — wiring it to
-  the real `PlayerProfileRepository` is cheap now that the repository exists, but is
-  being left for Milestone 5 (Progression) as originally planned, to keep "Continue
-  Adventure" behavior consistent with the rest of the progression system landing in
-  one milestone rather than piecemeal.
 - David & Goliath through Jesus Calms the Storm still exist only as `ChapterCatalog`
   entries with no gameplay — expected per spec section 7, each lands in its own future
   milestone.
@@ -349,15 +344,72 @@ time the chapter is (re)started, same mechanism the Matching shuffle already rel
   vector shapes, not final art (spec section 25) — code reads them by drawable
   resource id, so swapping in real art later doesn't touch game logic.
 
-## Next tasks (Milestone 5 — Progression)
+### Milestone 5 — Progression
+Closed out the three items left after Noah's Ark: "Continue Adventure" wiring,
+Badges/Scripture Cards galleries, and formalizing save/load edge cases. All three
+turned out to share one root cause: `PlayerProfileRepository.markSceneCompleted`
+was fully implemented since Milestone 2 but had zero production call sites, so
+`AdventureProgress.completedActivities` never actually got populated — "in
+progress" had nothing real to key off of, and a process kill mid-adventure lost
+all scene progress back to the last completed chapter, since nothing was saving it.
+- `NoahsArkViewModel.onSceneCompleted(sceneId)` now gets called from every gameplay
+  scene's `onContinue` in `BibleAdventuresNavHost.kt`'s `noahsArkGraph()` (Intro,
+  Find Animals, Animal Matching, Gather Supplies, Organize the Ark, Find Missing
+  Items, Lesson — using the `NoahsArkScene` enum's names lowercased, finally giving
+  that enum a real purpose), calling through to `markSceneCompleted`. Reward is
+  untouched (`completeChapter` already flips `completed = true` in the same
+  transaction that awards the badge/card, so a `"reward"` activity entry would be
+  redundant the instant it's set).
+- `MainMenuViewModel` now takes a `PlayerProfileRepository` and derives
+  `hasAdventureInProgress` as "any chapter with non-empty `completedActivities` that
+  isn't `completed`." Per the user's explicit choice, tapping "Continue Adventure"
+  navigates to the World Map (same as "Adventures") rather than resuming at the
+  exact scene — the in-progress chapter's node already shows its state there, and a
+  true scene-level resume would require the nested Noah's Ark nav graph to support
+  entry points other than Intro, a bigger change not warranted yet.
+- New `game/rewards/RewardCatalog.kt` aggregates every chapter's reward content
+  (currently just `NoahsArkReward`) into flat `List<Badge>`/`List<ScriptureCard>`
+  for the two new galleries — a future chapter's own `*Reward.kt` adds one line to
+  each list, mirroring `ChapterCatalog`'s fixed-list precedent rather than building
+  a registration framework. Per the user's explicit choice, the galleries only list
+  what actually exists (currently the one Ark Builder badge / Genesis 6:22 card) —
+  nothing is fabricated as a placeholder for chapters 2-6, which have no gameplay or
+  reward object yet.
+- `Badge` gained `iconRes`, `ScriptureCard` gained `chapterId` (neither persisted —
+  only `id` strings live in `PlayerProfile.badges`/`.scriptureCards` — so both are
+  additive/safe) so a generic gallery tile can resolve a badge's icon and a locked
+  card's prerequisite chapter without a second lookup table.
+- New `ui/components/BadgeView.kt` (icon + title + description) is the one
+  rendering path for "an earned badge" — extracted out of `NoahsArkRewardScreen.kt`'s
+  previously-inline block, now shared by the Reward screen and the new
+  `ui/screens/badges/{BadgesScreen,BadgesViewModel}.kt` gallery (locked badges reuse
+  the same view at reduced icon alpha, paired with `LockedNodeOverlay` and a content
+  description naming the prerequisite chapter — dimming alone never conveys lock
+  state, spec section 13). `ui/screens/scripturecards/{ScriptureCardsScreen,ScriptureCardsViewModel}.kt`
+  reuses the existing `ScriptureCardView` as-is for earned cards; locked cards show
+  neither `reference` nor text at all (unlike badges, which still show a dimmed
+  icon+title) — a badge's title isn't much of a spoiler, but a scripture verse's
+  text is the actual collectible content.
+- New shared test fake `app/src/test/java/com/bibleadventures/FakePlayerProfileRepository.kt`
+  (same shared-test-utility precedent as `MainDispatcherRule.kt`) replaces four
+  near-identical private `FakePlayerProfileRepository` classes that would otherwise
+  exist across `MainMenuViewModelTest`/`BadgesViewModelTest`/`ScriptureCardsViewModelTest`/
+  `NoahsArkViewModelTest` — `WorldMapViewModelTest`'s own copy was left alone since
+  it's unrelated to this milestone's work.
+- Not added: a new "process killed mid-write" edge-case test. Confirmed by reading
+  `DataStorePlayerProfileLocalDataSource` that DataStore's `edit {}` is already
+  transactional (atomic file write + mutex) — every repository method is a single
+  `update {}` call, so there's no half-written-JSON risk to test; the real gap was
+  the missing `markSceneCompleted` call sites, fixed above.
+- `MainMenuNavigationTest`'s generic "tap a menu item → ComingSoon" case was
+  repointed from "My Badges" to "Settings", since Badges (and Scripture Cards) now
+  route to real screens.
 
-- Wire `MainMenuViewModel.hasAdventureInProgress` to real save data (per-chapter
-  `completedActivities` already tracks enough to resume mid-adventure).
-- Badges gallery and Scripture Cards gallery screens (data already collected in
-  `PlayerProfile.badges`/`scriptureCards`; only the "My Badges"/"Scripture Cards" menu
-  items still route to `ComingSoonScreen`).
-- Formalize save/load edge cases beyond the corrupted-JSON case already covered (e.g.
-  app killed mid-`completeChapter`).
+## Next tasks (Milestone 6 — Parent Area)
+
+- Parental gate, progress summary, settings (music/sound/narration toggles), and
+  reset-progress functionality, per spec section 17. No `settings/` package exists
+  yet — still deferred until this milestone actually needs it (spec section 5/26).
 
 ## Architectural decisions log
 

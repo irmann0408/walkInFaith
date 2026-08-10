@@ -52,7 +52,7 @@ data class NoahsArkUiState(
 
 class NoahsArkViewModel(
     private val progressionService: ProgressionService,
-    profileRepository: PlayerProfileRepository,
+    private val profileRepository: PlayerProfileRepository,
     private val audioController: AudioController,
 ) : ViewModel() {
 
@@ -104,6 +104,13 @@ class NoahsArkViewModel(
     fun onHiddenItemTapped(itemId: String) {
         _uiState.update { current ->
             current.copy(hiddenObjectState = HiddenObjectGame.onItemTapped(current.hiddenObjectState, itemId))
+        }
+    }
+
+    /** Records mid-adventure progress so "Continue Adventure" and a future resume can see it. */
+    fun onSceneCompleted(sceneId: String) {
+        viewModelScope.launch {
+            profileRepository.markSceneCompleted(ChapterId.NOAHS_ARK, sceneId)
         }
     }
 

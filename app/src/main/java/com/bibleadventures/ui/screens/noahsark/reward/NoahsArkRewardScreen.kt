@@ -1,12 +1,9 @@
 package com.bibleadventures.ui.screens.noahsark.reward
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -16,7 +13,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -27,6 +23,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.rewards.NoahsArkReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BadgeView
 import com.bibleadventures.ui.components.ScriptureCardView
 import com.bibleadventures.ui.screens.noahsark.NoahsArkRewardResult
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
@@ -81,26 +78,12 @@ private fun NoahsArkRewardContent(
                             .semantics { contentDescription = starsContentDescription },
                     )
 
-                    Row(
+                    BadgeView(
+                        badge = NoahsArkReward.badge,
+                        title = stringResource(NoahsArkReward.badge.titleRes),
+                        description = stringResource(NoahsArkReward.badge.descriptionRes),
                         modifier = Modifier.padding(top = 24.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_badge_ark_builder),
-                            contentDescription = stringResource(NoahsArkReward.badge.titleRes),
-                            modifier = Modifier.size(64.dp),
-                        )
-                        Column(modifier = Modifier.padding(start = 16.dp)) {
-                            Text(
-                                text = stringResource(NoahsArkReward.badge.titleRes),
-                                style = MaterialTheme.typography.titleLarge,
-                            )
-                            Text(
-                                text = stringResource(NoahsArkReward.badge.descriptionRes),
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
-                        }
-                    }
+                    )
 
                     ScriptureCardView(
                         reference = NoahsArkReward.scriptureCard.reference,

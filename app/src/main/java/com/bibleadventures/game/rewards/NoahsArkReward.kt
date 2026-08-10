@@ -11,6 +11,7 @@ object NoahsArkReward {
         id = "ARK_BUILDER",
         titleRes = R.string.badge_ark_builder_title,
         descriptionRes = R.string.badge_ark_builder_description,
+        iconRes = R.drawable.ic_badge_ark_builder,
         chapterId = ChapterId.NOAHS_ARK,
     )
 
@@ -19,5 +20,6 @@ object NoahsArkReward {
         titleRes = R.string.scripture_genesis_6_22_title,
         reference = "Genesis 6:22",
         textRes = R.string.scripture_genesis_6_22_text,
+        chapterId = ChapterId.NOAHS_ARK,
     )
 }

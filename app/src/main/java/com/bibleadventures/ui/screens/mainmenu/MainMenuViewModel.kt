@@ -1,16 +1,28 @@
 package com.bibleadventures.ui.screens.mainmenu
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.lifecycle.viewModelScope
+import com.bibleadventures.domain.repository.PlayerProfileRepository
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 data class MainMenuUiState(
-    // No progress persistence exists yet (arrives with the progression
-    // repository in Milestone 5), so there is nothing to continue.
     val hasAdventureInProgress: Boolean = false,
 )
 
-class MainMenuViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(MainMenuUiState())
-    val uiState: StateFlow<MainMenuUiState> = _uiState
+class MainMenuViewModel(repository: PlayerProfileRepository) : ViewModel() {
+    val uiState: StateFlow<MainMenuUiState> = repository.profile
+        .map { profile ->
+            MainMenuUiState(
+                hasAdventureInProgress = profile.progressByChapter.values
+                    .any { it.completedActivities.isNotEmpty() && !it.completed },
+            )
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = MainMenuUiState(),
+        )
 }

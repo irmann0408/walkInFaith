@@ -5,8 +5,11 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.bibleadventures.BibleAdventuresApplication
+import com.bibleadventures.ui.screens.badges.BadgesViewModel
 import com.bibleadventures.ui.screens.character.CharacterViewModel
+import com.bibleadventures.ui.screens.mainmenu.MainMenuViewModel
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
+import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsViewModel
 import com.bibleadventures.ui.screens.worldmap.WorldMapViewModel
 
 /**
@@ -24,6 +27,9 @@ fun CreationExtras.bibleAdventuresApplication(): BibleAdventuresApplication =
 object AppViewModelProvider {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
         initializer {
+            MainMenuViewModel(bibleAdventuresApplication().container.playerProfileRepository)
+        }
+        initializer {
             CharacterViewModel(bibleAdventuresApplication().container.playerProfileRepository)
         }
         initializer {
@@ -33,6 +39,12 @@ object AppViewModelProvider {
         initializer {
             val container = bibleAdventuresApplication().container
             NoahsArkViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
+        }
+        initializer {
+            BadgesViewModel(bibleAdventuresApplication().container.playerProfileRepository)
+        }
+        initializer {
+            ScriptureCardsViewModel(bibleAdventuresApplication().container.playerProfileRepository)
         }
     }
 }

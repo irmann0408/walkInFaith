@@ -45,6 +45,13 @@
     <string name="world_map_stars_earned_content_description">%1$d stars earned</string>
     <string name="world_map_locked_content_description">%1$s, locked. Complete %2$s first to unlock.</string>
 
+    <string name="badges_title">My Badges</string>
+    <string name="badge_locked_content_description">%1$s, locked. Complete %2$s first to unlock.</string>
+
+    <string name="scripture_cards_title">Scripture Cards</string>
+    <string name="scripture_card_locked_placeholder">Locked Scripture Card</string>
+    <string name="scripture_card_locked_content_description">Scripture card, locked. Complete %1$s first to unlock.</string>
+
     <string name="chapter_noahs_ark_title">Noah\'s Ark</string>
     <string name="chapter_noahs_ark_description">Help Noah gather the animals and trust God\'s plan.</string>
     <string name="chapter_noahs_ark_lesson">Obedience and trusting God.</string>

@@ -8,4 +8,5 @@ data class ScriptureCard(
     @StringRes val titleRes: Int,
     val reference: String,
     @StringRes val textRes: Int,
+    val chapterId: ChapterId,
 )

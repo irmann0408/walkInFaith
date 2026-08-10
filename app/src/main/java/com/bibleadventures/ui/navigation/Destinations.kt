@@ -9,6 +9,8 @@ sealed class Destination(val route: String) {
     data object MainMenu : Destination("main_menu")
     data object Character : Destination("character")
     data object WorldMap : Destination("world_map")
+    data object Badges : Destination("badges")
+    data object ScriptureCards : Destination("scripture_cards")
 
     /** Nested graph — every scene shares one graph-scoped `NoahsArkViewModel`. */
     sealed class NoahsArk(route: String) : Destination(route) {
