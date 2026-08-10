@@ -171,9 +171,6 @@ information the app must not request without justification, and none exists yet.
   `Destination.NoahsArk.{FindAnimalsContext,GatherSuppliesContext,OrganizeArkContext}`
   routes, immediately before their respective puzzle scenes, so the player has
   narrative grounding for what belongs before any decoy shows up.
-- Fixed a pre-existing bug found while making this change: `NoahsArkGatherSuppliesScreen.kt`
-  laid supplies out in a plain non-scrollable `Row`, already borderline-overflowing
-  at 4 items — changed to `LazyRow` (same pattern as Organize the Ark's item tray).
 - Tests: updated `NoahsArkViewModelTest`'s initial-state counts (16 matching items, 7
   sortable items, 6 hidden items) and added decoy-outcome tests; `DragSortGameTest`
   gained `NOT_SORTABLE`/decoy-completion/repeatable-retry tests; `NoahsArkFlowTest`
@@ -182,22 +179,26 @@ information the app must not request without justification, and none exists yet.
   `NoahsArkDecoyInteractionTest` (instrumented) covers decoy feedback text,
   never-completes-early, and stays-interactive-after-repeated-taps for all three
   decoys, kept separate from `NoahsArkFlowTest`'s happy-path walk.
-- Two more bugs only surfaced running `connectedDebugAndroidTest` on-device (same
-  pattern as M4's original two): `AnimalMatchingGameTest` still assumed Intro's
-  Continue led straight to Find Animals, predating the new context card in between —
-  fixed with an extra Continue tap. More substantially, `LazyRow` was the wrong
-  choice for Gather Supplies' tray (and, it turns out, Organize the Ark's
-  pre-existing tray once the hammer decoy pushed it past 6 items too): `LazyRow`
-  virtualizes off-screen children out of the semantics tree entirely, so items past
-  the visible viewport (7 items comfortably exceeds a phone's width) couldn't be
-  found by either the real accessibility tree or the instrumented tests. Both trays
-  now use a plain `Row` with `Modifier.horizontalScroll` instead — every item stays
-  in the tree regardless of scroll position, and tests call `.performScrollTo()`
-  before tapping/dragging an item to bring it into the visible/tappable viewport.
-  All 11 instrumented tests pass on-device (Samsung Galaxy S25 Ultra) after these
-  fixes; two other failures seen on the first run (`CharacterNavigationTest`,
-  `WorldMapNavigationTest`) did not reproduce on a clean re-run and were unrelated to
-  this change — flaky, not fixed.
+- Three item-tray layout bugs, found in three passes of on-device testing (same
+  pattern as M4's original two on-device-only bugs): (1) `AnimalMatchingGameTest`
+  still assumed Intro's Continue led straight to Find Animals, predating the new
+  context card in between — fixed with an extra Continue tap. (2) `NoahsArkGatherSuppliesScreen.kt`'s
+  supplies tray was a plain non-scrollable `Row`, already borderline-overflowing at 4
+  items — an interim fix moved it (and Organize the Ark's pre-existing tray) to
+  `LazyRow`. (3) That interim fix was itself wrong: `LazyRow` virtualizes off-screen
+  children out of the semantics tree entirely, so once a tray held more items than
+  fit on a phone's width (7, after the decoy), the extra items weren't just visually
+  clipped — they didn't exist for either the accessibility tree or a sighted player
+  to find, and there was no scroll affordance hinting they were there at all. A real
+  user hit exactly this on Gather Supplies (found Honey/Rope unreachable, blocked
+  from completing the scene). Final fix: both trays now wrap into a static multi-row
+  grid (`tiles.chunked(4)` / `unplacedItems.chunked(4)`, no laziness, no scrolling) —
+  every item is always visible and always in the tree, consistent with spec section
+  13's "simple, discoverable navigation" and the same reasoning Find the Animals'
+  grid already followed. All 11 instrumented tests pass on-device (Samsung Galaxy
+  S25 Ultra); one flaky, pre-existing failure unrelated to this change
+  (`CharacterNavigationTest`, on a screen untouched here) surfaced in one of three
+  runs and did not reproduce on the others.
 
 ## Environment notes
 

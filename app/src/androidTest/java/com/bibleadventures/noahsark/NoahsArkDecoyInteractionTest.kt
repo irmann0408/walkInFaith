@@ -8,7 +8,6 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
@@ -66,15 +65,13 @@ class NoahsArkDecoyInteractionTest {
         val toyName = activity.getString(R.string.decoy_toy)
         val notASupply = activity.getString(R.string.feedback_not_a_supply)
         repeat(2) {
-            composeTestRule.onNodeWithContentDescription(toyName).performScrollTo().performClick()
+            composeTestRule.onNodeWithContentDescription(toyName).performClick()
             composeTestRule.onNodeWithText(notASupply).assertExists()
         }
         composeTestRule.onNodeWithText(continueLabel).assertDoesNotExist()
 
         NoahsArkContent.supplies.forEach { supply ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes))
-                .performScrollTo()
-                .performClick()
+            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes)).performClick()
         }
         composeTestRule.onNodeWithText(continueLabel).performClick() // Gather Supplies -> Organize Ark context
         composeTestRule.onNodeWithText(continueLabel).performClick() // context -> Organize the Ark
@@ -85,8 +82,7 @@ class NoahsArkDecoyInteractionTest {
         val doesntBelong = activity.getString(R.string.feedback_doesnt_belong)
         val firstCategoryLabel = activity.getString(NoahsArkContent.sortCategories.first().labelRes)
         repeat(2) {
-            val hammerNode = composeTestRule.onNodeWithContentDescription(hammerName).performScrollTo()
-            dragOnto(hammerNode, firstCategoryLabel)
+            dragOnto(composeTestRule.onNodeWithContentDescription(hammerName), firstCategoryLabel)
             composeTestRule.onNodeWithText(doesntBelong).assertExists()
         }
         composeTestRule.onNodeWithText(continueLabel).assertDoesNotExist()
@@ -95,8 +91,7 @@ class NoahsArkDecoyInteractionTest {
             val itemName = activity.getString(item.nameRes)
             val categoryLabelRes = NoahsArkContent.sortCategories.first { it.key == item.categoryKey }.labelRes
             val categoryLabel = activity.getString(categoryLabelRes)
-            val itemNode = composeTestRule.onNodeWithContentDescription(itemName).performScrollTo()
-            dragOnto(itemNode, categoryLabel)
+            dragOnto(composeTestRule.onNodeWithContentDescription(itemName), categoryLabel)
         }
         composeTestRule.onNodeWithText(continueLabel).assertExists()
     }

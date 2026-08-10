@@ -3,7 +3,6 @@ package com.bibleadventures.ui.screens.noahsark.gathersupplies
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
@@ -96,19 +94,28 @@ private fun NoahsArkGatherSuppliesContent(
                 Text(text = feedback, style = MaterialTheme.typography.titleLarge)
             }
 
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-            ) {
+            val tiles: List<@Composable () -> Unit> = buildList {
                 NoahsArkContent.supplies.forEach { supply ->
-                    SupplyTile(
-                        supply = supply,
-                        isCollected = supply.id in collectedSupplyIds,
-                        onClick = { onSupplyTapped(supply.id) },
-                    )
+                    add {
+                        SupplyTile(
+                            supply = supply,
+                            isCollected = supply.id in collectedSupplyIds,
+                            onClick = { onSupplyTapped(supply.id) },
+                        )
+                    }
                 }
                 NoahsArkContent.gatherSuppliesDecoys.forEach { decoy ->
-                    DecoyTile(decoy = decoy, onClick = onDecoyTapped)
+                    add { DecoyTile(decoy = decoy, onClick = onDecoyTapped) }
+                }
+            }
+
+            // A static wrapped grid, not a hidden scroll — every item is visible at once
+            // so nothing can be missed (spec section 13: simple, discoverable navigation).
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                tiles.chunked(4).forEach { rowTiles ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        rowTiles.forEach { tile -> tile() }
+                    }
                 }
             }
 

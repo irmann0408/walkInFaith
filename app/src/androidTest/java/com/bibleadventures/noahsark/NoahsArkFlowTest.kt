@@ -7,7 +7,6 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.geometry.Offset
@@ -63,9 +62,7 @@ class NoahsArkFlowTest {
 
         // Scene 4: Gather Supplies. The decoy (a toy) is deliberately left untapped.
         NoahsArkContent.supplies.forEach { supply ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes))
-                .performScrollTo()
-                .performClick()
+            composeTestRule.onNodeWithContentDescription(activity.getString(supply.nameRes)).performClick()
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -78,8 +75,7 @@ class NoahsArkFlowTest {
             val itemName = activity.getString(item.nameRes)
             val categoryLabelRes = NoahsArkContent.sortCategories.first { it.key == item.categoryKey }.labelRes
             val categoryLabel = activity.getString(categoryLabelRes)
-            val itemNode = composeTestRule.onNodeWithContentDescription(itemName).performScrollTo()
-            dragOnto(itemNode = itemNode, targetLabel = categoryLabel)
+            dragOnto(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetLabel = categoryLabel)
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 

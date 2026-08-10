@@ -3,7 +3,6 @@ package com.bibleadventures.ui.screens.noahsark.organizeark
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -124,20 +122,23 @@ private fun NoahsArkOrganizeArkContent(
                 }
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(top = 32.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            // A static wrapped grid, not a hidden scroll — every item is visible at once
+            // so nothing can be missed (spec section 13: simple, discoverable navigation).
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                unplacedItems.forEach { item ->
-                    key(item.id) {
-                        DraggableSortItem(
-                            item = item,
-                            categoryBounds = categoryBounds,
-                            onDropped = { categoryKey -> onItemDropped(item.id, categoryKey) },
-                        )
+                unplacedItems.chunked(4).forEach { rowItems ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        rowItems.forEach { item ->
+                            key(item.id) {
+                                DraggableSortItem(
+                                    item = item,
+                                    categoryBounds = categoryBounds,
+                                    onDropped = { categoryKey -> onItemDropped(item.id, categoryKey) },
+                                )
+                            }
+                        }
                     }
                 }
             }
