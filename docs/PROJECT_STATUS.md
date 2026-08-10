@@ -407,9 +407,10 @@ all scene progress back to the last completed chapter, since nothing was saving 
 
 ### Chapter 2 — David and Goliath
 The second full chapter, unlocked automatically once Noah's Ark is completed (no
-changes needed to the generic chapter-unlock system). Scene flow: Intro → Choose
-the Stones (context card + scene) → Sling Practice context card → Choice → Sling
-Practice → Lesson → Reward.
+changes needed to the generic chapter-unlock system). Scene flow: Intro → Counting
+the Flock (context card + Sheep Counting) → Choose the Stones (context card +
+scene) → Sling Practice context card → Choice → Crossing the Valley (context card
++ Dodge) → Sling Practice → Lesson → Reward.
 - **Choose the Stones** reuses Find the Missing Items' current (harder) design
   as-is — camouflage background, 32dp/0.85-alpha icons in a 48dp tap target,
   found-only labels, shuffled item-to-position mapping — over a new riverbed
@@ -457,16 +458,57 @@ Practice → Lesson → Reward.
   `RewardCatalog` (one appended line each, per its existing convention). The
   scripture text was sourced from the actual World English Bible (public
   domain) rather than written from memory, same standard as Genesis 6:22.
-- **Deferred, not built**: two "bonus round" mini-games the user originally
-  described (a sheep-counting matching game, and a dodge-rolling-obstacles
-  game) — explicitly scoped out of this pass, same incremental-growth pattern
-  as Noah's Ark's own decoys/shuffle/labels/harder-search addenda.
 - Tests: `SlingshotGameTest.kt` (unit), `DavidGoliathViewModelTest.kt` (unit,
   using the shared `FakePlayerProfileRepository`), new instrumented
   `DavidGoliathFlowTest.kt` — which completes Noah's Ark itself first (rather
   than assuming it's already done), since this device's save data persists
   real state across test runs and David & Goliath is locked until Noah's Ark
   is complete.
+
+### Chapter 2 addendum — Sheep Counting and Dodge Rolling Obstacles
+The two "bonus round" mini-games originally described and deferred from the
+initial Chapter 2 pass are now built in as mandatory scenes (confirmed by the
+user: this codebase has no "optional scene" navigation concept anywhere, and
+inventing one for two scenes wasn't worth the complexity).
+- **Sheep Counting** (`SheepCountingContext` → `SheepCounting`, right after
+  Intro) reuses the existing `game/puzzles/matching` engine completely
+  unchanged — it already matches pairs by a `pairKey: String`, not identical
+  icon/id, so a numeral card and a same-count "sheep group" card are already
+  a valid pair. Numerals 1–5, 10 cards total. **Judgment call**: unlike the
+  stones (all one icon, since the text gives no basis for rock variety), the
+  5 sheep-group icons (`ic_sheep_group_1..5.xml`) are genuinely distinct —
+  here the *count itself* is the pedagogical point, so baking each count into
+  its own vector was necessary, keeping every existing `MatchItem`/tile
+  rendering path unmodified rather than inventing a new "composite tile"
+  concept. New screen `DavidGoliathSheepCountingScreen.kt` duplicates
+  `NoahsArkMatchingScreen.kt`'s tile/grid composables rather than extracting
+  a shared component — consistent with this codebase never having extracted
+  UI across its several near-identical grid screens, only a *data shape*
+  (`ContentDefs.kt`) once a second real consumer existed.
+- **Dodge Rolling Obstacles** (`DodgeContext` → `Dodge`, after Choice, before
+  Sling Practice — David physically crossing the valley toward Goliath, a
+  tension beat distinct from the calm stream stone-picking earlier) is a new
+  pure engine, `game/puzzles/dodge/{DodgeGame,DodgeGameState}.kt`, mirroring
+  `SlingshotGame`'s style (an outcome enum with no `FAILED` case, an
+  `isComplete` property). **Confirmed design choice**: discrete/self-paced,
+  not real-time — a hazard just rests visibly in one of two lanes
+  (`DodgeLane.LEFT`/`RIGHT`) until the player taps the other lane, no clock,
+  no reflex pressure. This deliberately avoids stacking a second real-time
+  timing mechanic on top of Sling Practice, which is already flagged above as
+  this app's first (and still-open) timing/accessibility question — Dodge
+  needed no frozen-clock test choreography at all, just a plain tap sequence.
+  A wrong tap shows the existing `feedback_try_another_one` text and
+  re-shows the same beat; nothing is collected here (deliberately not framed
+  as a second "collect stones" scene, to avoid mechanic redundancy with
+  Choose the Stones).
+- New `SoundEffect.OBSTACLE_DODGED` added to `AudioController`'s enum,
+  alongside `TARGET_HIT`.
+- Tests: new `DodgeGameTest.kt` (unit); `DavidGoliathViewModelTest.kt` gained
+  cases for the initial shuffled sheep-counting state, `onSheepCountingItemTapped`'s
+  sound-only-on-correct-pair behavior, the initial dodge state, and
+  `onLaneTapped`'s sound-only-on-`DODGED` behavior; `DavidGoliathFlowTest.kt`
+  gained the two new scenes' walkthrough steps in the right places in the
+  existing full-chapter flow.
 
 ## Next tasks
 

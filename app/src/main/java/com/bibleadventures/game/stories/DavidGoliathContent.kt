@@ -1,10 +1,16 @@
 package com.bibleadventures.game.stories
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import com.bibleadventures.R
+import com.bibleadventures.game.puzzles.dodge.DodgeBeat
+import com.bibleadventures.game.puzzles.dodge.DodgeLane
 
 data class ChoiceOptionDef(val id: String, @StringRes val textRes: Int, @StringRes val reactionTextRes: Int)
+
+/** One numeral count in the Sheep Counting matching game — [numeralIconRes] and [sheepGroupIconRes] share a pairKey. */
+data class SheepCountDef(val count: Int, @DrawableRes val numeralIconRes: Int, @DrawableRes val sheepGroupIconRes: Int, @StringRes val nameRes: Int)
 
 /**
  * Static content for the David and Goliath chapter. Kept separate from the
@@ -16,6 +22,16 @@ object DavidGoliathContent {
     val introDialogueLines: List<Int> = listOf(
         R.string.david_goliath_intro_line_1,
         R.string.david_goliath_intro_line_2,
+    )
+
+    val sheepCountingContextLines: List<Int> = listOf(
+        R.string.david_goliath_sheep_counting_context_line_1,
+        R.string.david_goliath_sheep_counting_context_line_2,
+    )
+
+    val dodgeContextLines: List<Int> = listOf(
+        R.string.david_goliath_dodge_context_line_1,
+        R.string.david_goliath_dodge_context_line_2,
     )
 
     val chooseStonesContextLines: List<Int> = listOf(
@@ -48,5 +64,23 @@ object DavidGoliathContent {
         ChoiceOptionDef("trust", R.string.david_goliath_choice_option_1, R.string.david_goliath_choice_reaction_1),
         ChoiceOptionDef("unafraid", R.string.david_goliath_choice_option_2, R.string.david_goliath_choice_reaction_2),
         ChoiceOptionDef("declaration", R.string.david_goliath_choice_option_3, R.string.david_goliath_choice_reaction_3),
+    )
+
+    // Numerals 1-5 matched to a same-count sheep icon — unlike the stones,
+    // the count itself is the point, so each count needs its own distinct art.
+    val sheepCounts: List<SheepCountDef> = listOf(
+        SheepCountDef(1, R.drawable.ic_numeral_1, R.drawable.ic_sheep_group_1, R.string.david_goliath_sheep_count_1),
+        SheepCountDef(2, R.drawable.ic_numeral_2, R.drawable.ic_sheep_group_2, R.string.david_goliath_sheep_count_2),
+        SheepCountDef(3, R.drawable.ic_numeral_3, R.drawable.ic_sheep_group_3, R.string.david_goliath_sheep_count_3),
+        SheepCountDef(4, R.drawable.ic_numeral_4, R.drawable.ic_sheep_group_4, R.string.david_goliath_sheep_count_4),
+        SheepCountDef(5, R.drawable.ic_numeral_5, R.drawable.ic_sheep_group_5, R.string.david_goliath_sheep_count_5),
+    )
+
+    // A short, discrete "crossing the valley" sequence — each beat is a hazard
+    // resting in one lane; the player steps to the other lane whenever ready.
+    val dodgeBeats: List<DodgeBeat> = listOf(
+        DodgeBeat("beat_1", DodgeLane.LEFT),
+        DodgeBeat("beat_2", DodgeLane.RIGHT),
+        DodgeBeat("beat_3", DodgeLane.LEFT),
     )
 }

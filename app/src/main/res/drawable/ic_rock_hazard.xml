@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- A craggier, larger silhouette than ic_stone_smooth to read clearly as a hazard, not a collectible. -->
+    <path android:fillColor="#FF7A6E63" android:pathData="M32,50 L10,42 L14,24 L26,10 L44,12 L54,28 L50,44 Z" />
+    <path android:fillColor="#FF9A8C7D" android:pathData="M26,20 L38,18 L44,28 L34,38 L22,34 Z" />
+</vector>

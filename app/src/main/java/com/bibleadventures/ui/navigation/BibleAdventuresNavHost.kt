@@ -23,9 +23,11 @@ import com.bibleadventures.ui.screens.comingsoon.ComingSoonScreen
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.davidgoliath.choice.DavidGoliathChoiceScreen
 import com.bibleadventures.ui.screens.davidgoliath.choosestones.DavidGoliathChooseStonesScreen
+import com.bibleadventures.ui.screens.davidgoliath.dodge.DavidGoliathDodgeScreen
 import com.bibleadventures.ui.screens.davidgoliath.intro.DavidGoliathIntroScreen
 import com.bibleadventures.ui.screens.davidgoliath.lesson.DavidGoliathLessonScreen
 import com.bibleadventures.ui.screens.davidgoliath.reward.DavidGoliathRewardScreen
+import com.bibleadventures.ui.screens.davidgoliath.sheepcounting.DavidGoliathSheepCountingScreen
 import com.bibleadventures.ui.screens.davidgoliath.slingpractice.DavidGoliathSlingPracticeScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
@@ -232,6 +234,23 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
                 viewModel = viewModel,
                 onContinue = {
                     viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.DavidGoliath.SheepCountingContext.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.SheepCountingContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.david_goliath_sheep_counting_context_title,
+                lineRes = DavidGoliathContent.sheepCountingContextLines,
+                onContinue = { navController.navigate(Destination.DavidGoliath.SheepCounting.route) },
+            )
+        }
+        composable(Destination.DavidGoliath.SheepCounting.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            DavidGoliathSheepCountingScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("sheep_counting")
                     navController.navigate(Destination.DavidGoliath.ChooseStonesContext.route)
                 },
             )
@@ -266,6 +285,23 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
                 viewModel = viewModel,
                 onContinue = {
                     viewModel.onSceneCompleted("choice")
+                    navController.navigate(Destination.DavidGoliath.DodgeContext.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.DodgeContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.david_goliath_dodge_context_title,
+                lineRes = DavidGoliathContent.dodgeContextLines,
+                onContinue = { navController.navigate(Destination.DavidGoliath.Dodge.route) },
+            )
+        }
+        composable(Destination.DavidGoliath.Dodge.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            DavidGoliathDodgeScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("dodge")
                     navController.navigate(Destination.DavidGoliath.SlingPractice.route)
                 },
             )

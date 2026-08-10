@@ -2,7 +2,7 @@ package com.bibleadventures.audio
 
 enum class MusicTrack { WORLD_MAP, NOAHS_ARK }
 
-enum class SoundEffect { MATCH_SUCCESS, SCENE_TRANSITION, REWARD_CELEBRATION, ITEM_COLLECTED, TARGET_HIT }
+enum class SoundEffect { MATCH_SUCCESS, SCENE_TRANSITION, REWARD_CELEBRATION, ITEM_COLLECTED, TARGET_HIT, OBSTACLE_DODGED }
 
 /**
  * Audio abstraction (spec section 14). Milestone 4 only wires silent call

@@ -8,9 +8,17 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
+import com.bibleadventures.game.puzzles.dodge.DodgeGame
+import com.bibleadventures.game.puzzles.dodge.DodgeGameState
+import com.bibleadventures.game.puzzles.dodge.DodgeLane
+import com.bibleadventures.game.puzzles.dodge.DodgeOutcome
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGame
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
+import com.bibleadventures.game.puzzles.matching.MatchItem
+import com.bibleadventures.game.puzzles.matching.MatchOutcome
+import com.bibleadventures.game.puzzles.matching.MatchingGame
+import com.bibleadventures.game.puzzles.matching.MatchingGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGame
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotOutcome
@@ -38,6 +46,8 @@ data class DavidGoliathUiState(
     val selectedChoiceId: String? = null,
     val reward: DavidGoliathRewardResult? = null,
     val lastRiverbedDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
+    val sheepCountingState: MatchingGameState,
+    val dodgeState: DodgeGameState = DodgeGameState(beats = DavidGoliathContent.dodgeBeats),
 )
 
 class DavidGoliathViewModel(
@@ -70,6 +80,26 @@ class DavidGoliathViewModel(
 
     fun onChoiceSelected(choiceId: String) {
         _uiState.update { it.copy(selectedChoiceId = choiceId) }
+    }
+
+    fun onSheepCountingItemTapped(itemId: String) {
+        _uiState.update { current ->
+            val next = MatchingGame.onItemTapped(current.sheepCountingState, itemId)
+            if (next.lastOutcome == MatchOutcome.CORRECT) {
+                audioController.playSfx(SoundEffect.MATCH_SUCCESS)
+            }
+            current.copy(sheepCountingState = next)
+        }
+    }
+
+    fun onLaneTapped(lane: DodgeLane) {
+        _uiState.update { current ->
+            val next = DodgeGame.onLaneTapped(current.dodgeState, lane)
+            if (next.lastOutcome == DodgeOutcome.DODGED) {
+                audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
+            }
+            current.copy(dodgeState = next)
+        }
     }
 
     fun onStoneReleased(aimedPosition: Float, markPosition: Float) {
@@ -117,9 +147,17 @@ class DavidGoliathViewModel(
         }
         val decoyPosition = shuffledPositions[DavidGoliathContent.stones.size]
 
+        val sheepCountingItems = DavidGoliathContent.sheepCounts.flatMap { def ->
+            listOf(
+                MatchItem(id = "numeral_${def.count}", iconRes = def.numeralIconRes, contentDescriptionRes = def.nameRes, pairKey = "${def.count}"),
+                MatchItem(id = "group_${def.count}", iconRes = def.sheepGroupIconRes, contentDescriptionRes = def.nameRes, pairKey = "${def.count}"),
+            )
+        }.shuffled()
+
         return DavidGoliathUiState(
             hiddenObjectState = HiddenObjectGameState(items = hiddenItems),
             riverbedDecoyPosition = decoyPosition,
+            sheepCountingState = MatchingGameState(items = sheepCountingItems),
         )
     }
 }

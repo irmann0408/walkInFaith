@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
+import com.bibleadventures.game.puzzles.dodge.DodgeLane
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import org.junit.Rule
@@ -44,7 +45,18 @@ class DavidGoliathFlowTest {
         // Scene 1: Intro.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 1b: Choose the Stones context card.
+        // Scene 1b: Counting the Flock context card.
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 1c: Count the Sheep — flip every numeral/sheep-group pair.
+        DavidGoliathContent.sheepCounts.forEach { count ->
+            val name = activity.getString(count.nameRes)
+            composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
+            composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
+        }
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 1d: Choose the Stones context card.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         // Scene 2: Choose the Stones. The decoy (an old boot) is deliberately left untapped.
@@ -58,6 +70,19 @@ class DavidGoliathFlowTest {
 
         // Scene 3: Choice — any option is valid.
         composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_choice_option_1)).performClick()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 3b: Crossing the Valley context card.
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 3c: Cross the Valley — step to the safe lane for every beat. Fully
+        // static/self-paced (no clock to freeze), so this is a plain tap sequence.
+        val leftLabel = activity.getString(R.string.david_goliath_dodge_lane_left)
+        val rightLabel = activity.getString(R.string.david_goliath_dodge_lane_right)
+        DavidGoliathContent.dodgeBeats.forEach { beat ->
+            val safeLabel = if (beat.hazardLane == DodgeLane.LEFT) rightLabel else leftLabel
+            composeTestRule.onNodeWithText(safeLabel).performClick()
+        }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         // Scene 4: Sling Practice. Let the screen fully compose (with the clock

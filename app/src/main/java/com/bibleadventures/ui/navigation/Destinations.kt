@@ -34,10 +34,14 @@ sealed class Destination(val route: String) {
     /** Nested graph — every scene shares one graph-scoped `DavidGoliathViewModel`. */
     sealed class DavidGoliath(route: String) : Destination(route) {
         data object Intro : DavidGoliath("david_goliath/intro")
+        data object SheepCountingContext : DavidGoliath("david_goliath/sheep_counting_context")
+        data object SheepCounting : DavidGoliath("david_goliath/sheep_counting")
         data object ChooseStonesContext : DavidGoliath("david_goliath/choose_stones_context")
         data object ChooseStones : DavidGoliath("david_goliath/choose_stones")
         data object SlingPracticeContext : DavidGoliath("david_goliath/sling_practice_context")
         data object Choice : DavidGoliath("david_goliath/choice")
+        data object DodgeContext : DavidGoliath("david_goliath/dodge_context")
+        data object Dodge : DavidGoliath("david_goliath/dodge")
         data object SlingPractice : DavidGoliath("david_goliath/sling_practice")
         data object Lesson : DavidGoliath("david_goliath/lesson")
         data object Reward : DavidGoliath("david_goliath/reward")

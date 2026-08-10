@@ -162,6 +162,28 @@
     <string name="david_goliath_intro_line_1">David was just a shepherd boy, but he trusted God with all his heart.</string>
     <string name="david_goliath_intro_line_2">One day a giant named Goliath challenged Israel\'s whole army — and David stepped forward.</string>
 
+    <string name="david_goliath_sheep_counting_context_title">Counting the Flock</string>
+    <string name="david_goliath_sheep_counting_context_line_1">Before he could leave, David counted his sheep to make sure they were all safe.</string>
+    <string name="david_goliath_sheep_counting_context_line_2">Help him match each number to the right group of sheep.</string>
+
+    <string name="david_goliath_sheep_counting_title">Count the Sheep</string>
+    <string name="david_goliath_sheep_counting_instructions">Flip the cards to match each number with its group of sheep.</string>
+    <string name="david_goliath_sheep_count_1">1 Sheep</string>
+    <string name="david_goliath_sheep_count_2">2 Sheep</string>
+    <string name="david_goliath_sheep_count_3">3 Sheep</string>
+    <string name="david_goliath_sheep_count_4">4 Sheep</string>
+    <string name="david_goliath_sheep_count_5">5 Sheep</string>
+
+    <string name="david_goliath_dodge_context_title">Crossing the Valley</string>
+    <string name="david_goliath_dodge_context_line_1">David hurried across the Valley of Elah toward Goliath.</string>
+    <string name="david_goliath_dodge_context_line_2">Loose rocks tumbled down the hillside — help him step out of the way.</string>
+
+    <string name="david_goliath_dodge_title">Cross the Valley</string>
+    <string name="david_goliath_dodge_instructions">A rock is rolling in! Tap the safe side for David to step to.</string>
+    <string name="david_goliath_dodge_lane_left">Step Left</string>
+    <string name="david_goliath_dodge_lane_right">Step Right</string>
+    <string name="david_goliath_dodge_rock_content_description">Rolling rock</string>
+
     <string name="david_goliath_choose_stones_context_title">Down by the Stream</string>
     <string name="david_goliath_choose_stones_context_line_1">Before facing Goliath, David went down to a stream near the battlefield.</string>
     <string name="david_goliath_choose_stones_context_line_2">Help him find five smooth stones hidden among the rocks.</string>
