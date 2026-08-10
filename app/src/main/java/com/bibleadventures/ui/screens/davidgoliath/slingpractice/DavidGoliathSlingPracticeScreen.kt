@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,6 +55,37 @@ import kotlin.math.roundToInt
 private const val MARK_MIN_FRACTION = 0.15f
 private const val MARK_MAX_FRACTION = 0.85f
 
+// The shield IMAGE's own bounding-box span, expressed as fixed fractions of
+// the same 0..1 track the mark and aim already use. Positioned (not just
+// sized) explicitly via offset + width below — not via fillMaxWidth +
+// align(TopCenter), which always centers at fraction 0.5 regardless of
+// these constants, silently decoupling what's drawn from what's checked.
+private const val SHIELD_IMAGE_MIN_FRACTION = 0.00f
+private const val SHIELD_IMAGE_MAX_FRACTION = 0.60f
+
+// ic_goliath_shield.xml's silhouette is narrower than its own bounding box:
+// its widest point (the top edge, where the mark's line sits) spans x=12..52
+// of a 64-wide viewport. Both the hit-test's "shield perimeter" and the
+// mark's rendered line width are derived from this actual top-edge span, not
+// the full (partly transparent) bounding box — "within the shield" means
+// within the shape a player can actually see, not its invisible padding.
+private const val SHIELD_TOP_EDGE_LEFT_RATIO = 12f / 64f
+private const val SHIELD_TOP_EDGE_RIGHT_RATIO = 52f / 64f
+
+private val SHIELD_IMAGE_WIDTH_FRACTION = SHIELD_IMAGE_MAX_FRACTION - SHIELD_IMAGE_MIN_FRACTION
+
+// The shield's true, visible perimeter — what the hit-test checks and what
+// the mark's line width matches. The mark sweeps a wider range
+// (MARK_MIN..MARK_MAX) than this window, so it spends real time outside the
+// shield entirely; timing the release to when it's actually over the shield
+// is the point. Also comfortably includes MARK_MIN_FRACTION with margin, so
+// DavidGoliathFlowTest.kt's simple freeze-and-drag technique keeps working
+// (rememberInfiniteTransition animations don't progress once the test clock
+// is frozen — a known Compose testing limitation — so the test always drags
+// to the animation's initialValue).
+private val SHIELD_MIN_FRACTION = SHIELD_IMAGE_MIN_FRACTION + SHIELD_TOP_EDGE_LEFT_RATIO * SHIELD_IMAGE_WIDTH_FRACTION
+private val SHIELD_MAX_FRACTION = SHIELD_IMAGE_MIN_FRACTION + SHIELD_TOP_EDGE_RIGHT_RATIO * SHIELD_IMAGE_WIDTH_FRACTION
+
 @Composable
 fun DavidGoliathSlingPracticeScreen(
     viewModel: DavidGoliathViewModel,
@@ -72,7 +105,7 @@ fun DavidGoliathSlingPracticeScreen(
 @Composable
 private fun DavidGoliathSlingPracticeContent(
     slingshotState: SlingshotGameState,
-    onStoneReleased: (aimedPosition: Float, markPosition: Float) -> Unit,
+    onStoneReleased: (aimedPosition: Float, markPosition: Float, shieldMinFraction: Float, shieldMaxFraction: Float) -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -127,24 +160,30 @@ private fun DavidGoliathSlingPracticeContent(
                 var dragOffsetX by remember { mutableStateOf(0f) }
                 val aimFraction = (0.5f + dragOffsetX / trackWidthPx).coerceIn(0f, 1f)
 
+                val shieldContentDescription = stringResource(R.string.david_goliath_sling_shield_content_description)
                 Image(
                     painter = painterResource(
                         if (slingshotState.isHit) R.drawable.ic_goliath_shield_surprised else R.drawable.ic_goliath_shield,
                     ),
-                    contentDescription = null,
+                    contentDescription = shieldContentDescription,
                     modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 8.dp)
-                        .size(120.dp),
+                        .offset(x = maxWidth * SHIELD_IMAGE_MIN_FRACTION, y = 8.dp)
+                        .width(maxWidth * SHIELD_IMAGE_WIDTH_FRACTION),
                 )
 
+                // The mark is a horizontal line as wide as the shield itself, not a dot —
+                // it's meant to be lined up with, not just tapped. It only counts as a hit
+                // while its center falls within the shield's own span above; the mark
+                // sweeps a much wider range than that, so most of its swing it isn't a
+                // scoring opportunity at all.
                 val markContentDescription = stringResource(R.string.david_goliath_sling_target_mark_content_description)
-                Image(
-                    painter = painterResource(R.drawable.ic_target_mark),
-                    contentDescription = null,
+                val markWidth = maxWidth * (SHIELD_MAX_FRACTION - SHIELD_MIN_FRACTION)
+                Box(
                     modifier = Modifier
-                        .size(28.dp)
-                        .offset(x = maxWidth * markFraction - 14.dp, y = maxHeight * 0.28f)
+                        .offset(x = maxWidth * markFraction - markWidth / 2, y = maxHeight * 0.2f)
+                        .width(markWidth)
+                        .height(4.dp)
+                        .background(MaterialTheme.colorScheme.primary)
                         .semantics { contentDescription = markContentDescription },
                 )
 
@@ -184,7 +223,7 @@ private fun DavidGoliathSlingPracticeContent(
                                     // handler was first created (pointerInput(Unit) never
                                     // restarts, so those outer vals would otherwise be stale).
                                     val releasedAim = (0.5f + dragOffsetX / trackWidthPx).coerceIn(0f, 1f)
-                                    onStoneReleased(releasedAim, markFraction)
+                                    onStoneReleased(releasedAim, markFraction, SHIELD_MIN_FRACTION, SHIELD_MAX_FRACTION)
                                     dragOffsetX = 0f
                                 },
                                 onDragCancel = { dragOffsetX = 0f },
@@ -222,7 +261,7 @@ private fun DavidGoliathSlingPracticePreview() {
     BibleAdventuresTheme {
         DavidGoliathSlingPracticeContent(
             slingshotState = SlingshotGameState(),
-            onStoneReleased = { _, _ -> },
+            onStoneReleased = { _, _, _, _ -> },
             onContinue = {},
         )
     }

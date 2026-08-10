@@ -102,9 +102,9 @@ class DavidGoliathViewModel(
         }
     }
 
-    fun onStoneReleased(aimedPosition: Float, markPosition: Float) {
+    fun onStoneReleased(aimedPosition: Float, markPosition: Float, shieldMinFraction: Float, shieldMaxFraction: Float) {
         _uiState.update { current ->
-            val next = SlingshotGame.onStoneReleased(current.slingshotState, aimedPosition, markPosition)
+            val next = SlingshotGame.onStoneReleased(current.slingshotState, aimedPosition, markPosition, shieldMinFraction, shieldMaxFraction)
             if (next.lastOutcome == SlingshotOutcome.HIT) {
                 audioController.playSfx(SoundEffect.TARGET_HIT)
             }

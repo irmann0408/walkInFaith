@@ -94,7 +94,15 @@ class DavidGoliathFlowTest {
         // The mark moves on a real-time animation, so the clock is frozen and the
         // drag aims exactly at wherever it's currently frozen — guarantees a
         // deterministic hit regardless of animation phase or CI timing, with no
-        // production-code changes needed to support it.
+        // production-code changes needed to support it. Confirmed on-device:
+        // rememberInfiniteTransition-based animations don't progress once the
+        // test clock is frozen (a known Compose testing limitation, not
+        // something this codebase can work around from the test side) — they
+        // reliably stay at their initialValue (MARK_MIN_FRACTION) the whole
+        // time. The shield's fractional bounds in
+        // DavidGoliathSlingPracticeScreen.kt were positioned to genuinely
+        // include that value for exactly this reason, so this simple
+        // freeze-and-drag technique still produces a real hit.
         composeTestRule.mainClock.autoAdvance = false
         val markDescription = activity.getString(R.string.david_goliath_sling_target_mark_content_description)
         val stoneDescription = activity.getString(R.string.david_goliath_sling_stone_content_description)

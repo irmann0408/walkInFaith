@@ -491,16 +491,53 @@ inventing one for two scenes wasn't worth the complexity).
   pure engine, `game/puzzles/dodge/{DodgeGame,DodgeGameState}.kt`, mirroring
   `SlingshotGame`'s style (an outcome enum with no `FAILED` case, an
   `isComplete` property). **Confirmed design choice**: discrete/self-paced,
-  not real-time — a hazard just rests visibly in one of two lanes
-  (`DodgeLane.LEFT`/`RIGHT`) until the player taps the other lane, no clock,
-  no reflex pressure. This deliberately avoids stacking a second real-time
-  timing mechanic on top of Sling Practice, which is already flagged above as
-  this app's first (and still-open) timing/accessibility question — Dodge
-  needed no frozen-clock test choreography at all, just a plain tap sequence.
-  A wrong tap shows the existing `feedback_try_another_one` text and
-  re-shows the same beat; nothing is collected here (deliberately not framed
-  as a second "collect stones" scene, to avoid mechanic redundancy with
-  Choose the Stones).
+  not real-time — a hazard rolls into one of two lanes (`DodgeLane.LEFT`/
+  `RIGHT`) via a one-shot, bounded roll-in animation (a plain `tween`, not a
+  looping/infinite one), then settles and just sits there — no time limit —
+  until the player taps a side. **Addendum**: the first version had the rock
+  appear fully static with no motion at all, which read as disconnected from
+  "dodging" (feedback from playtesting on-device) — the bounded roll-in
+  animation fixed this while keeping the self-paced guarantee, since a
+  one-shot `tween` (unlike Sling Practice's genuinely continuous mark) still
+  lets Compose's normal idle-wait sync complete on its own; no frozen-clock
+  test choreography was needed either before or after this fix. This
+  deliberately avoids stacking a second real-time *input* timing mechanic on
+  top of Sling Practice, which is already flagged above as this app's first
+  (and still-open) timing/accessibility question. A wrong tap re-plays the
+  roll-in and shows the existing `feedback_try_another_one` text on the same
+  beat; nothing is collected here (deliberately not framed as a second
+  "collect stones" scene, to avoid mechanic redundancy with Choose the
+  Stones). **Addendum 2**: even with the rock rolling in, the scene still
+  didn't read as "dodging" — no character was ever rendered on screen (the
+  existing `CharacterPreview` component was only ever used on story-beat
+  screens like Intro, never during any gameplay scene, in this codebase or
+  Noah's Ark's). `DavidGoliathDodgeScreen.kt` now renders David via
+  `CharacterPreview` and slides him toward whichever lane the player taps.
+  This is the first gameplay scene in the app where the player's own
+  character is shown actively performing the mechanic. **Addendum 3, a bug
+  in Addendum 2**: the first version reset David to center via a
+  `LaunchedEffect` keyed on the beat index — but a correct dodge advances
+  the beat index on the very same tap that triggered the step, so the reset
+  fired immediately, canceling the step-to-lane animation before a frame of
+  it was ever visible (reported on-device as "David is stuck in the middle";
+  what actually visibly moved was the *next* beat's rock, freshly appearing
+  in whichever lane it happened to be in, coincidentally looking like a
+  reaction to the tap). Fixed by replacing the two independent effects with
+  one sequenced effect driving a single `Animatable<Float>` fraction: step
+  to the tapped lane, hold briefly so the result is visible, then return to
+  center — all inside one `LaunchedEffect(dodgeState)`, so the return can
+  never preempt the step. **Addendum 4**: fixing Addendum 3 surfaced a
+  related coupling — the rock's lane was still read directly from
+  `dodgeState.currentBeat`, which advances instantly on a correct tap, so
+  the rock repositioned in the exact same frame David started his step
+  animation, reading as "the rock moves with David" (reported on-device).
+  Fixed by introducing a UI-local `displayedBeat` that intentionally lags
+  the engine: it's only updated to `dodgeState.currentBeat` at the very end
+  of David's step → hold → return sequence, once he's back at center. The
+  rock's own roll-in effect is now keyed on `displayedBeat`, not
+  `dodgeState`, so a wrong tap (`TRY_AGAIN`, same beat) no longer re-plays
+  the rock's roll-in either — it now only reacts to a genuinely new hazard,
+  never to David's own movement.
 - New `SoundEffect.OBSTACLE_DODGED` added to `AudioController`'s enum,
   alongside `TARGET_HIT`.
 - Tests: new `DodgeGameTest.kt` (unit); `DavidGoliathViewModelTest.kt` gained
@@ -509,6 +546,109 @@ inventing one for two scenes wasn't worth the complexity).
   `onLaneTapped`'s sound-only-on-`DODGED` behavior; `DavidGoliathFlowTest.kt`
   gained the two new scenes' walkthrough steps in the right places in the
   existing full-chapter flow.
+
+### Chapter 2 addendum 5 — Sling Practice: the mark must be inside the shield to score
+Per the user's explicit request, Sling Practice's hit test changed from "did
+your aim match wherever the mark currently is" (anywhere on its track) to
+"did your aim match the mark, AND was the mark actually over the shield at
+that moment." Previously the shield was just background art the hit test
+never consulted — this makes the shield the actual target zone.
+- `SlingshotGame.onStoneReleased` gained two new parameters,
+  `shieldMinFraction`/`shieldMaxFraction`, on the same 0..1 fractional track
+  as `aimedPosition`/`markPosition` — `hit` now requires both `aimMatchesMark`
+  (unchanged tolerance check) AND `markPosition` falling inside that range.
+  Still never `FAILED`: a miss (wrong timing OR wrong aim) is always
+  instantly retriable.
+- **Judgment call**: the shield's fractional bounds
+  (`SHIELD_MIN_FRACTION = 0.10f`, `SHIELD_MAX_FRACTION = 0.40f` in
+  `DavidGoliathSlingPracticeScreen.kt`) are fixed constants, not derived from
+  the shield image's pixel size on a given device. The shield is now rendered
+  at exactly that width (`fillMaxWidth(0.3f)`, centered) instead of a fixed
+  120dp, so what's checked is what's drawn, identically across devices — and
+  the engine call needs no runtime geometry lookup, matching how
+  `MARK_MIN_FRACTION`/`MARK_MAX_FRACTION` were already plain constants.
+- The mark itself changed from a small icon to a line (a plain colored
+  `Box`, no new drawable), per the user's request to "hit exactly with the
+  line" — `ic_target_mark.xml` was deleted as now-unused. Initially a thin
+  vertical line; changed again per the user's follow-up request into a
+  horizontal line whose width matches the shield's own width exactly
+  (`maxWidth * (SHIELD_MAX_FRACTION - SHIELD_MIN_FRACTION)`), centered on
+  the same moving fraction — only its shape changed, the underlying
+  hit-test still only cares about that center fraction. The mark
+  still sweeps the same wide range (`MARK_MIN_FRACTION = 0.15f` to
+  `MARK_MAX_FRACTION = 0.85f`); the shield's narrower window means it's
+  genuinely outside the shield for much of its swing — timing the release to
+  when it's actually over the shield is now the real challenge, not just
+  tracking its position.
+- **Discovered while testing this on-device, changed the plan**: the shield
+  window was originally centered in the sweep (0.35–0.65). Making
+  `DavidGoliathFlowTest.kt` verify it required first confirming the mark
+  could be observed moving under the frozen test clock — and it couldn't.
+  `rememberInfiniteTransition`-based animations turn out not to progress at
+  all once `mainClock.autoAdvance = false`, confirmed three separate ways
+  (`advanceTimeBy` in a loop, a single large `advanceTimeBy` jump, and
+  toggling `autoAdvance` true with a real `Thread.sleep` in between) — all
+  three left the mark pinned at its exact `initialValue`
+  (`MARK_MIN_FRACTION`). This is a Compose testing environment limitation,
+  not a bug in the mechanic itself (real on-device play was already
+  confirmed working by the user before this was diagnosed). Rather than
+  build retry/polling machinery around a value the test genuinely cannot
+  move, the shield window was repositioned to `0.10–0.40` — genuinely
+  including `MARK_MIN_FRACTION` with margin on both sides — which let
+  `DavidGoliathFlowTest.kt` keep its original, simple "freeze once, drag
+  exactly there" technique unchanged. Same window width (0.3, matching the
+  mark's real on-device motion range) and the same "sometimes outside the
+  shield" design intent, just repositioned near the start/end of the swing
+  instead of centered — not a compromise on the actual feature, only on
+  which part of the sweep the scoring window sits over.
+- **Sharpens the design tension already noted above**: this makes Sling
+  Practice more timing-dependent than before (a scoring opportunity now only
+  exists for part of each swing, not the whole time), on top of it already
+  being this app's first real-time mechanic. Still never punishing —
+  unlimited retries, no attempt limit, no countdown — but worth keeping in
+  mind for future difficulty/accessibility tuning.
+- The shield gained a real content description (`david_goliath_sling_shield_content_description`,
+  previously `null`) for accessibility tools (no longer needed by the test
+  itself, per the above).
+- Tests: `SlingshotGameTest.kt`'s existing cases updated for the new
+  parameters; added cases for "aim matches mark but mark is outside the
+  shield → MISS" and a mark-just-inside/just-outside-the-shield boundary
+  case (using illustrative 0.35/0.65 bounds — the engine itself is agnostic
+  to the screen's actual constants). `DavidGoliathViewModelTest.kt` gained a
+  matching case. `DavidGoliathFlowTest.kt` needed no structural changes.
+
+### Chapter 2 addendum 6 — Sling Practice: fixed the shield being checked in the wrong place
+The user reported every release scored `MISS`, even when visually aiming
+right at the shield. Root cause: the shield `Image` was rendered with
+`Modifier.fillMaxWidth(width).align(Alignment.TopCenter)` — `align(TopCenter)`
+always centers a child at fraction 0.5 of its parent, **regardless of** what
+`SHIELD_MIN_FRACTION`/`SHIELD_MAX_FRACTION` were set to. So the shield was
+actually drawn around fraction 0.35–0.65 while the hit-test was checking
+0.10–0.40 (from addendum 5) — two windows that barely overlapped. What the
+player saw and what the engine checked were different rectangles.
+- Fixed by rendering the shield with an explicit `offset(x = ...)` + `width(
+  ...)`, the same positioning technique already used for the mark's line,
+  instead of `fillMaxWidth` + `align`. What's drawn and what's checked are
+  now the same numbers by construction — no more silent decoupling.
+- While fixing this, also made the hit-test perimeter and the mark's line
+  width both derive from the shield artwork's actual visible top edge
+  (`ic_goliath_shield.xml`'s silhouette spans x=12..52 of its 64-wide
+  viewport — narrower than its own bounding box) rather than the full image
+  bounding box — directly implementing the user's request that the line's
+  width match "the top of the shield," and making "within the shield" mean
+  the shape a player can actually see, not its transparent padding.
+- New constants: `SHIELD_IMAGE_MIN_FRACTION`/`SHIELD_IMAGE_MAX_FRACTION`
+  (the bounding box, used only for rendering) and
+  `SHIELD_TOP_EDGE_LEFT_RATIO`/`SHIELD_TOP_EDGE_RIGHT_RATIO` (12/64, 52/64,
+  the vector's known silhouette ratio). `SHIELD_MIN_FRACTION`/
+  `SHIELD_MAX_FRACTION` (the actual hit-test perimeter) are now derived from
+  these rather than hand-picked, and still comfortably include
+  `MARK_MIN_FRACTION` with margin for `DavidGoliathFlowTest.kt`'s
+  freeze-and-drag technique.
+- No test changes needed — `SlingshotGame`'s unit tests already cover the
+  hit-test generically (arbitrary shield bounds), and
+  `DavidGoliathFlowTest.kt` still just drags to wherever the mark is frozen,
+  which now correctly falls inside the correctly-rendered shield.
 
 ## Next tasks
 

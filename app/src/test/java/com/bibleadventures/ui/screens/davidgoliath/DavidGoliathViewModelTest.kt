@@ -141,11 +141,21 @@ class DavidGoliathViewModelTest {
         val audioController = RecordingAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
-        viewModel.onStoneReleased(aimedPosition = 0.1f, markPosition = 0.9f)
+        viewModel.onStoneReleased(aimedPosition = 0.1f, markPosition = 0.9f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
         assertTrue(audioController.playedEffects.isEmpty())
 
-        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f)
+        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
         assertEquals(listOf(SoundEffect.TARGET_HIT), audioController.playedEffects)
+    }
+
+    @Test
+    fun `onStoneReleased does not play a sound when the aim matches the mark outside the shield`() {
+        val audioController = RecordingAudioController()
+        val viewModel = createViewModel(audioController = audioController)
+
+        viewModel.onStoneReleased(aimedPosition = 0.15f, markPosition = 0.15f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+
+        assertTrue(audioController.playedEffects.isEmpty())
     }
 
     @Test

@@ -207,6 +207,7 @@
     <string name="david_goliath_sling_practice_title">Sling Practice</string>
     <string name="david_goliath_sling_practice_instructions">Drag back and let go to help David aim true at the mark.</string>
     <string name="david_goliath_sling_target_mark_content_description">Target mark</string>
+    <string name="david_goliath_sling_shield_content_description">Goliath\'s shield</string>
     <string name="david_goliath_sling_stone_content_description">David\'s stone. Drag to aim, then let go.</string>
 
     <string name="david_goliath_lesson_title">Courage and Trusting God</string>
