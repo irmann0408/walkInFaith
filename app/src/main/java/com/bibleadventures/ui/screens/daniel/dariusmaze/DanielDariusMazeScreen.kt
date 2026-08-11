@@ -1,10 +1,7 @@
-package com.bibleadventures.ui.screens.goodsamaritan.explore
+package com.bibleadventures.ui.screens.daniel.dariusmaze
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,8 +18,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,10 +25,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -45,35 +37,39 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
-import com.bibleadventures.game.stories.GoodSamaritanContent
+import com.bibleadventures.game.puzzles.gridmaze.GridTileType
+import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
+import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
+/**
+ * King Darius's dawn hurry through the palace to the lions' den (Daniel
+ * 6:19) — a reuse of the generalized [com.bibleadventures.game.puzzles.gridmaze]
+ * engine, mirroring
+ * [com.bibleadventures.ui.screens.goodsamaritan.explore.GoodSamaritanExploreScreen]'s
+ * structure, but simpler: no collectible/checkpoint tile, just PATH/WALL/GOAL.
+ */
 @Composable
-fun GoodSamaritanExploreScreen(
-    viewModel: GoodSamaritanViewModel,
+fun DanielDariusMazeScreen(
+    viewModel: DanielViewModel,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    GoodSamaritanExploreContent(
+    DanielDariusMazeContent(
         gridMazeState = uiState.gridMazeState,
-        helpingBeatAcknowledged = uiState.helpingBeatAcknowledged,
         onDirectionPressed = viewModel::onDirectionPressed,
-        onHelpingBeatAcknowledged = viewModel::onHelpingBeatAcknowledged,
         onContinue = onContinue,
         modifier = modifier,
     )
 }
 
 @Composable
-private fun GoodSamaritanExploreContent(
+private fun DanielDariusMazeContent(
     gridMazeState: GridMazeState,
-    helpingBeatAcknowledged: Boolean,
     onDirectionPressed: (Direction) -> Unit,
-    onHelpingBeatAcknowledged: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -86,32 +82,29 @@ private fun GoodSamaritanExploreContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = stringResource(R.string.good_samaritan_explore_title),
+                    text = stringResource(R.string.daniel_darius_maze_title),
                     style = MaterialTheme.typography.headlineMedium,
                 )
                 Text(
-                    text = stringResource(R.string.good_samaritan_explore_instructions),
+                    text = stringResource(R.string.daniel_darius_maze_instructions),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                 )
 
-                // Non-interactive: a 10x10 grid can't give each cell a legible 48dp tap
-                // target on a phone screen, which is exactly why movement is via the
-                // D-pad below, not tap-on-tile.
+                // Non-interactive grid, same reasoning as GoodSamaritanExploreScreen:
+                // movement is via the D-pad below, not tap-on-tile.
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f, fill = false)
                         .aspectRatio(1f),
                 ) {
-                    GoodSamaritanContent.mapLayout.forEachIndexed { rowIndex, rowChars ->
+                    gridMazeState.grid.forEachIndexed { rowIndex, rowTiles ->
                         Row(modifier = Modifier.weight(1f)) {
-                            rowChars.forEachIndexed { colIndex, tileChar ->
-                                GridCell(
-                                    tileChar = tileChar,
+                            rowTiles.forEachIndexed { colIndex, tile ->
+                                DariusGridCell(
+                                    tile = tile,
                                     isPlayer = gridMazeState.playerPosition == GridPosition(rowIndex, colIndex),
-                                    isMedicineCollected = GridPosition(rowIndex, colIndex) in gridMazeState.collectedPositions,
-                                    isTravelerTreated = gridMazeState.checkpointActivated,
                                     modifier = Modifier.weight(1f).fillMaxSize(),
                                 )
                             }
@@ -132,55 +125,30 @@ private fun GoodSamaritanExploreContent(
                     )
                 }
             }
-
-            if (gridMazeState.checkpointActivated && !helpingBeatAcknowledged) {
-                HelpingBeatOverlay(onDismiss = onHelpingBeatAcknowledged)
-            }
         }
     }
 }
 
 @Composable
-private fun GridCell(
-    tileChar: Char,
-    isPlayer: Boolean,
-    isMedicineCollected: Boolean,
-    isTravelerTreated: Boolean,
-    modifier: Modifier = Modifier,
-) {
+private fun DariusGridCell(tile: GridTileType, isPlayer: Boolean, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
         when {
             isPlayer -> Image(
-                painter = painterResource(R.drawable.ic_player_marker),
-                contentDescription = stringResource(R.string.good_samaritan_player_content_description),
+                painter = painterResource(R.drawable.ic_darius_marker),
+                contentDescription = stringResource(R.string.daniel_darius_player_content_description),
                 modifier = Modifier.fillMaxSize(0.8f),
             )
-            tileChar == '#' -> Image(
-                painter = painterResource(R.drawable.ic_wall_rock),
+            tile == GridTileType.WALL -> Image(
+                painter = painterResource(R.drawable.ic_wall_palace),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
             )
-            tileChar == 'X' -> Image(
-                painter = painterResource(R.drawable.ic_wall_bandit),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-            )
-            tileChar == 'M' && !isMedicineCollected -> Image(
-                painter = painterResource(R.drawable.ic_medicine),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(0.8f),
-            )
-            tileChar == 'T' && !isTravelerTreated -> Image(
-                painter = painterResource(R.drawable.ic_traveler_injured),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(0.8f),
-            )
-            tileChar == 'I' -> Image(
-                painter = painterResource(R.drawable.ic_inn),
-                contentDescription = null,
+            tile == GridTileType.GOAL -> Image(
+                painter = painterResource(R.drawable.ic_den_goal),
+                contentDescription = stringResource(R.string.daniel_darius_den_content_description),
                 modifier = Modifier.fillMaxSize(0.8f),
             )
             else -> Unit
@@ -193,25 +161,25 @@ private fun DirectionalPad(onDirectionPressed: (Direction) -> Unit, modifier: Mo
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         DirectionButton(
             icon = Icons.Filled.KeyboardArrowUp,
-            contentDescription = stringResource(R.string.good_samaritan_direction_up),
+            contentDescription = stringResource(R.string.daniel_darius_direction_up),
             onClick = { onDirectionPressed(Direction.UP) },
         )
         Row {
             DirectionButton(
                 icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = stringResource(R.string.good_samaritan_direction_left),
+                contentDescription = stringResource(R.string.daniel_darius_direction_left),
                 onClick = { onDirectionPressed(Direction.LEFT) },
             )
             Spacer(modifier = Modifier.width(56.dp))
             DirectionButton(
                 icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = stringResource(R.string.good_samaritan_direction_right),
+                contentDescription = stringResource(R.string.daniel_darius_direction_right),
                 onClick = { onDirectionPressed(Direction.RIGHT) },
             )
         }
         DirectionButton(
             icon = Icons.Filled.KeyboardArrowDown,
-            contentDescription = stringResource(R.string.good_samaritan_direction_down),
+            contentDescription = stringResource(R.string.daniel_darius_direction_down),
             onClick = { onDirectionPressed(Direction.DOWN) },
         )
     }
@@ -227,59 +195,14 @@ private fun DirectionButton(icon: ImageVector, contentDescription: String, onCli
     }
 }
 
-/**
- * An automatic story beat, not a Choice scene — Luke 10:34 describes a
- * specific, non-branching sequence of care, so there's nothing real to pick.
- * Consumes all touches so the D-pad underneath can't be pressed while it's up.
- */
-@Composable
-private fun HelpingBeatOverlay(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.6f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
-        contentAlignment = Alignment.Center,
-    ) {
-        ElevatedCard(
-            modifier = Modifier.widthIn(max = 400.dp).padding(24.dp),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.good_samaritan_helping_beat_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-                Column(
-                    modifier = Modifier.padding(top = 12.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    GoodSamaritanContent.helpingBeatLines.forEach { lineRes ->
-                        Text(text = stringResource(lineRes), style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onDismiss,
-                )
-            }
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
-private fun GoodSamaritanExplorePreview() {
+private fun DanielDariusMazePreview() {
     BibleAdventuresTheme {
-        val grid = GoodSamaritanContent.mapLayout.map { row -> row.map { com.bibleadventures.game.puzzles.gridmaze.GridTileType.PATH } }
-        GoodSamaritanExploreContent(
+        val grid = DanielContent.dariusMapLayout.map { row -> row.map { GridTileType.PATH } }
+        DanielDariusMazeContent(
             gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(0, 0)),
-            helpingBeatAcknowledged = false,
             onDirectionPressed = {},
-            onHelpingBeatAcknowledged = {},
             onContinue = {},
         )
     }

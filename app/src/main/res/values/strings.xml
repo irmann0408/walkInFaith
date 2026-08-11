@@ -92,6 +92,11 @@
     <string name="scripture_luke_10_33_title">The Good Samaritan\'s Compassion</string>
     <string name="scripture_luke_10_33_text">"But a certain Samaritan, as he traveled, came where he was. When he saw him, he was moved with compassion,"</string>
 
+    <string name="badge_faithful_heart_title">Faithful Heart</string>
+    <string name="badge_faithful_heart_description">Stayed faithful to God through prayer, even when it was risky, just like Daniel.</string>
+    <string name="scripture_daniel_6_22_title">Daniel\'s Deliverance</string>
+    <string name="scripture_daniel_6_22_text">"My God has sent his angel, and has shut the lions\' mouths, and they have not hurt me, because innocence was found in me before him; and also before you, O king, I have done no harm."</string>
+
     <string name="action_continue">Continue</string>
     <string name="action_return_to_map">Return to Map</string>
     <string name="feedback_great_job">Great job!</string>
@@ -236,6 +241,57 @@
 
     <string name="good_samaritan_lesson_title">Kindness and Helping Others</string>
     <string name="good_samaritan_lesson_text">The Good Samaritan stopped to help even though the hurt man was a stranger. God wants us to be a good neighbor to everyone we meet, not just our friends.</string>
+
+    <string name="daniel_intro_line_1">Daniel served King Darius faithfully, and he prayed to God every single day.</string>
+    <string name="daniel_intro_line_2">Some jealous officials tricked the king into signing a law that could get Daniel thrown to the lions.</string>
+
+    <string name="daniel_stealth_context_title">Hurrying to Pray</string>
+    <string name="daniel_stealth_context_line_1">When Daniel heard about the new law, he did not hide his faith — he went to pray just as he always did.</string>
+    <string name="daniel_stealth_context_line_2">Some officials were watching, hoping to catch him. Help Daniel hurry to his prayer room.</string>
+
+    <string name="daniel_stealth_title">Hurry to the Prayer Room</string>
+    <string name="daniel_stealth_instructions">An official is blocking one side! Tap the clear side for Daniel to hurry through.</string>
+    <string name="daniel_stealth_lane_left">Step Left</string>
+    <string name="daniel_stealth_lane_right">Step Right</string>
+    <string name="daniel_stealth_official_content_description">An official blocking the way</string>
+
+    <string name="daniel_choice_title">Daniel\'s Prayer</string>
+    <string name="daniel_choice_instructions">Choose what Daniel says as he kneels to pray.</string>
+    <string name="daniel_choice_option_1">"Thank you, God, for your faithfulness."</string>
+    <string name="daniel_choice_option_2">"I will trust you, no matter what happens."</string>
+    <string name="daniel_choice_option_3">"I am not afraid, because you are with me."</string>
+    <string name="daniel_choice_reaction_1">Daniel knelt by his open window and prayed, just as he always did.</string>
+    <string name="daniel_choice_reaction_2">Daniel prayed boldly, trusting God completely — even knowing the law.</string>
+    <string name="daniel_choice_reaction_3">Daniel\'s prayer rang out through the open window, unafraid.</string>
+
+    <string name="daniel_lions_den_context_title">Into the Lions\' Den</string>
+    <string name="daniel_lions_den_context_line_1">The officials found Daniel praying, just as they hoped, and told the king.</string>
+    <string name="daniel_lions_den_context_line_2">King Darius was very sad, but the law could not be changed — Daniel was lowered into the lions\' den.</string>
+
+    <string name="daniel_lions_den_title">The Angel\'s Shield</string>
+    <string name="daniel_lions_den_instructions">Tap the lights in order to form a shield of light around Daniel.</string>
+    <string name="daniel_light_1">First Beam of Light</string>
+    <string name="daniel_light_2">Second Beam of Light</string>
+    <string name="daniel_light_3">Third Beam of Light</string>
+    <string name="daniel_light_4">Fourth Beam of Light</string>
+    <string name="daniel_light_5">Fifth Beam of Light</string>
+    <string name="daniel_lions_den_lions_content_description">The lions, now calm</string>
+
+    <string name="daniel_darius_context_title">Darius\'s Long Night</string>
+    <string name="daniel_darius_context_line_1">King Darius could not eat or sleep all night, worried for Daniel.</string>
+    <string name="daniel_darius_context_line_2">As soon as the sun rose, he ran to the lions\' den as fast as he could.</string>
+
+    <string name="daniel_darius_maze_title">Race to the Den</string>
+    <string name="daniel_darius_maze_instructions">Use the arrows to help King Darius hurry through the palace to the lions\' den.</string>
+    <string name="daniel_darius_player_content_description">King Darius</string>
+    <string name="daniel_darius_den_content_description">The lions\' den</string>
+    <string name="daniel_darius_direction_up">Up</string>
+    <string name="daniel_darius_direction_down">Down</string>
+    <string name="daniel_darius_direction_left">Left</string>
+    <string name="daniel_darius_direction_right">Right</string>
+
+    <string name="daniel_lesson_title">Faithfulness and Prayer</string>
+    <string name="daniel_lesson_text">Daniel kept praying to God even when it was risky, and God kept him safe. When we stay faithful, God is with us no matter what happens.</string>
 
     <string name="reward_title">Adventure Complete!</string>
     <string name="reward_stars_content_description">%1$d out of %2$d stars earned</string>

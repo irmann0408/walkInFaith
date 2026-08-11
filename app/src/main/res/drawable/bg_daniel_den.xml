@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="300dp"
+    android:viewportWidth="300"
+    android:viewportHeight="300">
+    <!-- Base: the dim lions' den floor -->
+    <path android:fillColor="#FF3A3040" android:pathData="M0,0 L300,0 L300,300 L0,300 Z" />
+
+    <!-- A soft glow at the top, where the angel's shield of light will form -->
+    <path android:fillColor="#FFFFD54A" android:fillAlpha="0.12" android:pathData="M0,0 L300,0 L300,150 L0,150 Z" />
+</vector>

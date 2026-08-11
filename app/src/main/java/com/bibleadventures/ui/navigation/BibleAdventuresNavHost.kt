@@ -13,6 +13,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.bibleadventures.R
 import com.bibleadventures.domain.model.ChapterId
+import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.NoahsArkContent
@@ -21,6 +22,14 @@ import com.bibleadventures.ui.components.StoryBeatScreen
 import com.bibleadventures.ui.screens.badges.BadgesScreen
 import com.bibleadventures.ui.screens.character.CharacterScreen
 import com.bibleadventures.ui.screens.comingsoon.ComingSoonScreen
+import com.bibleadventures.ui.screens.daniel.DanielViewModel
+import com.bibleadventures.ui.screens.daniel.choice.DanielChoiceScreen
+import com.bibleadventures.ui.screens.daniel.dariusmaze.DanielDariusMazeScreen
+import com.bibleadventures.ui.screens.daniel.intro.DanielIntroScreen
+import com.bibleadventures.ui.screens.daniel.lesson.DanielLessonScreen
+import com.bibleadventures.ui.screens.daniel.lionsden.DanielLionsDenScreen
+import com.bibleadventures.ui.screens.daniel.reward.DanielRewardScreen
+import com.bibleadventures.ui.screens.daniel.stealth.DanielStealthScreen
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.davidgoliath.choice.DavidGoliathChoiceScreen
 import com.bibleadventures.ui.screens.davidgoliath.choosestones.DavidGoliathChooseStonesScreen
@@ -90,6 +99,8 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                         navController.navigate(Destination.DavidGoliath.Intro.route)
                     } else if (chapterId == ChapterId.GOOD_SAMARITAN) {
                         navController.navigate(Destination.GoodSamaritan.Intro.route)
+                    } else if (chapterId == ChapterId.DANIEL) {
+                        navController.navigate(Destination.Daniel.Intro.route)
                     }
                 },
             )
@@ -103,6 +114,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         noahsArkGraph(navController)
         davidGoliathGraph(navController)
         goodSamaritanGraph(navController)
+        danielGraph(navController)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
                 backStackEntry.arguments?.getString(Destination.ComingSoon.ARG_FEATURE_TITLE).orEmpty()
@@ -398,5 +410,112 @@ private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController)
 @Composable
 private fun NavHostController.goodSamaritanViewModel(entry: NavBackStackEntry): GoodSamaritanViewModel {
     val parentEntry = remember(entry) { getBackStackEntry(Destination.GoodSamaritan.GRAPH_ROUTE) }
+    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
+}
+
+private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
+    navigation(
+        startDestination = Destination.Daniel.Intro.route,
+        route = Destination.Daniel.GRAPH_ROUTE,
+    ) {
+        composable(Destination.Daniel.Intro.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            DanielIntroScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.Daniel.StealthContext.route)
+                },
+            )
+        }
+        composable(Destination.Daniel.StealthContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.daniel_stealth_context_title,
+                lineRes = DanielContent.stealthContextLines,
+                onContinue = { navController.navigate(Destination.Daniel.Stealth.route) },
+            )
+        }
+        composable(Destination.Daniel.Stealth.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            DanielStealthScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("stealth")
+                    navController.navigate(Destination.Daniel.Choice.route)
+                },
+            )
+        }
+        composable(Destination.Daniel.Choice.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            DanielChoiceScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("choice")
+                    navController.navigate(Destination.Daniel.LionsDenContext.route)
+                },
+            )
+        }
+        composable(Destination.Daniel.LionsDenContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.daniel_lions_den_context_title,
+                lineRes = DanielContent.lionsDenContextLines,
+                onContinue = { navController.navigate(Destination.Daniel.LionsDen.route) },
+            )
+        }
+        composable(Destination.Daniel.LionsDen.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            DanielLionsDenScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("lions_den")
+                    navController.navigate(Destination.Daniel.DariusContext.route)
+                },
+            )
+        }
+        composable(Destination.Daniel.DariusContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.daniel_darius_context_title,
+                lineRes = DanielContent.dariusContextLines,
+                onContinue = { navController.navigate(Destination.Daniel.DariusMaze.route) },
+            )
+        }
+        composable(Destination.Daniel.DariusMaze.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            DanielDariusMazeScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("darius_maze")
+                    navController.navigate(Destination.Daniel.Lesson.route)
+                },
+            )
+        }
+        composable(Destination.Daniel.Lesson.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            DanielLessonScreen(
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson")
+                    navController.navigate(Destination.Daniel.Reward.route)
+                },
+            )
+        }
+        composable(Destination.Daniel.Reward.route) { entry ->
+            DanielRewardScreen(
+                viewModel = navController.danielViewModel(entry),
+                onReturnToMap = {
+                    // Clears the whole Daniel back stack so Back from the map can't
+                    // re-enter a finished run or re-trigger onChapterFinished().
+                    navController.navigate(Destination.WorldMap.route) {
+                        popUpTo(Destination.WorldMap.route)
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavHostController.danielViewModel(entry: NavBackStackEntry): DanielViewModel {
+    val parentEntry = remember(entry) { getBackStackEntry(Destination.Daniel.GRAPH_ROUTE) }
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }

@@ -33,20 +33,20 @@ object GridMazeGame {
         var nextState = state.copy(playerPosition = next, lastOutcome = GridMazeOutcome.MOVED)
 
         when (nextTile) {
-            GridTileType.MEDICINE -> {
-                if (next !in state.medicineCollected) {
+            GridTileType.COLLECTIBLE -> {
+                if (next !in state.collectedPositions) {
                     nextState = nextState.copy(
-                        medicineCollected = state.medicineCollected + next,
-                        lastOutcome = GridMazeOutcome.MEDICINE_COLLECTED,
+                        collectedPositions = state.collectedPositions + next,
+                        lastOutcome = GridMazeOutcome.COLLECTED,
                     )
                 }
             }
-            GridTileType.TRAVELER -> {
-                if (!state.travelerTreated) {
-                    nextState = if (state.hasMedicine) {
-                        nextState.copy(travelerTreated = true, lastOutcome = GridMazeOutcome.TRAVELER_TREATED)
+            GridTileType.CHECKPOINT -> {
+                if (!state.checkpointActivated) {
+                    nextState = if (state.hasCollectible) {
+                        nextState.copy(checkpointActivated = true, lastOutcome = GridMazeOutcome.CHECKPOINT_ACTIVATED)
                     } else {
-                        nextState.copy(lastOutcome = GridMazeOutcome.TRAVELER_NEEDS_MEDICINE)
+                        nextState.copy(lastOutcome = GridMazeOutcome.CHECKPOINT_NEEDS_COLLECTIBLE)
                     }
                 }
             }

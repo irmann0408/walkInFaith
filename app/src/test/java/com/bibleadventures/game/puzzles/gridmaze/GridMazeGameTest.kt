@@ -12,9 +12,9 @@ class GridMazeGameTest {
     // # T #
     // . . I
     private val testGrid = listOf(
-        listOf(GridTileType.PATH, GridTileType.MEDICINE, GridTileType.PATH),
-        listOf(GridTileType.WALL, GridTileType.TRAVELER, GridTileType.WALL),
-        listOf(GridTileType.PATH, GridTileType.PATH, GridTileType.INN),
+        listOf(GridTileType.PATH, GridTileType.COLLECTIBLE, GridTileType.PATH),
+        listOf(GridTileType.WALL, GridTileType.CHECKPOINT, GridTileType.WALL),
+        listOf(GridTileType.PATH, GridTileType.PATH, GridTileType.GOAL),
     )
 
     private fun initialState() = GridMazeState(grid = testGrid, playerPosition = GridPosition(0, 0))
@@ -36,47 +36,63 @@ class GridMazeGameTest {
     }
 
     @Test
-    fun `stepping onto medicine collects it and is idempotent on revisit`() {
+    fun `stepping onto a collectible collects it and is idempotent on revisit`() {
         var state = GridMazeGame.onDirectionPressed(initialState(), Direction.RIGHT)
 
-        assertEquals(GridMazeOutcome.MEDICINE_COLLECTED, state.lastOutcome)
-        assertTrue(state.hasMedicine)
-        assertEquals(setOf(GridPosition(0, 1)), state.medicineCollected)
+        assertEquals(GridMazeOutcome.COLLECTED, state.lastOutcome)
+        assertTrue(state.hasCollectible)
+        assertEquals(setOf(GridPosition(0, 1)), state.collectedPositions)
 
         state = GridMazeGame.onDirectionPressed(state, Direction.LEFT)
         state = GridMazeGame.onDirectionPressed(state, Direction.RIGHT)
 
         assertEquals(GridMazeOutcome.MOVED, state.lastOutcome)
-        assertEquals(setOf(GridPosition(0, 1)), state.medicineCollected)
+        assertEquals(setOf(GridPosition(0, 1)), state.collectedPositions)
     }
 
     @Test
-    fun `reaching the traveler without medicine leaves them untreated`() {
-        val stateNextToTraveler = GridMazeState(grid = testGrid, playerPosition = GridPosition(0, 1))
+    fun `reaching the checkpoint without a collectible leaves it unactivated`() {
+        val stateNextToCheckpoint = GridMazeState(grid = testGrid, playerPosition = GridPosition(0, 1))
 
-        val result = GridMazeGame.onDirectionPressed(stateNextToTraveler, Direction.DOWN)
+        val result = GridMazeGame.onDirectionPressed(stateNextToCheckpoint, Direction.DOWN)
 
-        assertEquals(GridMazeOutcome.TRAVELER_NEEDS_MEDICINE, result.lastOutcome)
-        assertFalse(result.travelerTreated)
+        assertEquals(GridMazeOutcome.CHECKPOINT_NEEDS_COLLECTIBLE, result.lastOutcome)
+        assertFalse(result.checkpointActivated)
     }
 
     @Test
-    fun `reaching the traveler with medicine treats them`() {
+    fun `reaching the checkpoint with a collectible activates it`() {
         var state = initialState()
-        state = GridMazeGame.onDirectionPressed(state, Direction.RIGHT) // collect medicine
-        state = GridMazeGame.onDirectionPressed(state, Direction.DOWN) // reach traveler
+        state = GridMazeGame.onDirectionPressed(state, Direction.RIGHT) // collect
+        state = GridMazeGame.onDirectionPressed(state, Direction.DOWN) // reach checkpoint
 
-        assertEquals(GridMazeOutcome.TRAVELER_TREATED, state.lastOutcome)
-        assertTrue(state.travelerTreated)
+        assertEquals(GridMazeOutcome.CHECKPOINT_ACTIVATED, state.lastOutcome)
+        assertTrue(state.checkpointActivated)
     }
 
     @Test
-    fun `the inn only completes the chapter once the traveler is treated`() {
-        val untreatedAtInn = GridMazeState(grid = testGrid, playerPosition = GridPosition(2, 2))
-        assertFalse(untreatedAtInn.isComplete)
+    fun `the goal only completes the chapter once the checkpoint is activated`() {
+        val unactivatedAtGoal = GridMazeState(grid = testGrid, playerPosition = GridPosition(2, 2))
+        assertFalse(unactivatedAtGoal.isComplete)
 
-        val treatedAtInn = untreatedAtInn.copy(travelerTreated = true)
-        assertTrue(treatedAtInn.isComplete)
+        val activatedAtGoal = unactivatedAtGoal.copy(checkpointActivated = true)
+        assertTrue(activatedAtGoal.isComplete)
+    }
+
+    @Test
+    fun `a map with no checkpoint tile completes on reaching the goal alone`() {
+        // . . .
+        // . # .
+        // . . I
+        val checkpointFreeGrid = listOf(
+            listOf(GridTileType.PATH, GridTileType.PATH, GridTileType.PATH),
+            listOf(GridTileType.PATH, GridTileType.WALL, GridTileType.PATH),
+            listOf(GridTileType.PATH, GridTileType.PATH, GridTileType.GOAL),
+        )
+
+        val atGoal = GridMazeState(grid = checkpointFreeGrid, playerPosition = GridPosition(2, 2))
+
+        assertTrue(atGoal.isComplete)
     }
 
     @Test
@@ -84,7 +100,7 @@ class GridMazeGameTest {
         val completeState = GridMazeState(
             grid = testGrid,
             playerPosition = GridPosition(2, 2),
-            travelerTreated = true,
+            checkpointActivated = true,
         )
 
         val result = GridMazeGame.onDirectionPressed(completeState, Direction.UP)

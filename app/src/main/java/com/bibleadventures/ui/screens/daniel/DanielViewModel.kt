@@ -1,4 +1,4 @@
-package com.bibleadventures.ui.screens.goodsamaritan
+package com.bibleadventures.ui.screens.daniel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,15 +7,21 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
+import com.bibleadventures.game.puzzles.dodge.DodgeGame
+import com.bibleadventures.game.puzzles.dodge.DodgeGameState
+import com.bibleadventures.game.puzzles.dodge.DodgeLane
+import com.bibleadventures.game.puzzles.dodge.DodgeOutcome
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeGame
-import com.bibleadventures.game.puzzles.gridmaze.GridMazeOutcome
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
-import com.bibleadventures.game.rewards.GoodSamaritanReward
+import com.bibleadventures.game.puzzles.sequence.SequenceGame
+import com.bibleadventures.game.puzzles.sequence.SequenceGameState
+import com.bibleadventures.game.puzzles.sequence.SequenceOutcome
+import com.bibleadventures.game.rewards.DanielReward
 import com.bibleadventures.game.rewards.RewardCalculator
-import com.bibleadventures.game.stories.GoodSamaritanContent
+import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,23 +32,24 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class GoodSamaritanRewardResult(val stars: Int)
+data class DanielRewardResult(val stars: Int)
 
-data class GoodSamaritanUiState(
+data class DanielUiState(
+    val dodgeState: DodgeGameState = DodgeGameState(beats = DanielContent.stealthBeats),
+    val selectedChoiceId: String? = null,
+    val sequenceState: SequenceGameState = SequenceGameState(pointIds = DanielContent.lionsDenPointIds),
     val gridMazeState: GridMazeState,
-    /** Whether the player has dismissed the "helping" story beat shown once the traveler is treated. */
-    val helpingBeatAcknowledged: Boolean = false,
-    val reward: GoodSamaritanRewardResult? = null,
+    val reward: DanielRewardResult? = null,
 )
 
-class GoodSamaritanViewModel(
+class DanielViewModel(
     private val progressionService: ProgressionService,
     private val profileRepository: PlayerProfileRepository,
     private val audioController: AudioController,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(createInitialState())
-    val uiState: StateFlow<GoodSamaritanUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<DanielUiState> = _uiState.asStateFlow()
 
     val characterCustomization: StateFlow<CharacterCustomization> = profileRepository.profile
         .map { it.character }
@@ -52,27 +59,40 @@ class GoodSamaritanViewModel(
             initialValue = CharacterCustomization(),
         )
 
-    fun onDirectionPressed(direction: Direction) {
+    fun onLaneTapped(lane: DodgeLane) {
         _uiState.update { current ->
-            val next = GridMazeGame.onDirectionPressed(current.gridMazeState, direction)
-            when (next.lastOutcome) {
-                GridMazeOutcome.COLLECTED, GridMazeOutcome.CHECKPOINT_ACTIVATED ->
-                    audioController.playSfx(SoundEffect.ITEM_COLLECTED)
-                else -> Unit
+            val next = DodgeGame.onLaneTapped(current.dodgeState, lane)
+            if (next.lastOutcome == DodgeOutcome.DODGED) {
+                audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
             }
-            current.copy(gridMazeState = next)
+            current.copy(dodgeState = next)
         }
     }
 
-    /** Dismisses the "helping" story beat overlay once the player has read it. */
-    fun onHelpingBeatAcknowledged() {
-        _uiState.update { it.copy(helpingBeatAcknowledged = true) }
+    fun onChoiceSelected(choiceId: String) {
+        _uiState.update { it.copy(selectedChoiceId = choiceId) }
+    }
+
+    fun onLightPointTapped(pointId: String) {
+        _uiState.update { current ->
+            val next = SequenceGame.onPointTapped(current.sequenceState, pointId)
+            when (next.lastOutcome) {
+                SequenceOutcome.POINT_CONNECTED, SequenceOutcome.COMPLETE ->
+                    audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+                else -> Unit
+            }
+            current.copy(sequenceState = next)
+        }
+    }
+
+    fun onDirectionPressed(direction: Direction) {
+        _uiState.update { current -> current.copy(gridMazeState = GridMazeGame.onDirectionPressed(current.gridMazeState, direction)) }
     }
 
     /** Records mid-adventure progress so "Continue Adventure" and a future resume can see it. */
     fun onSceneCompleted(sceneId: String) {
         viewModelScope.launch {
-            profileRepository.markSceneCompleted(ChapterId.GOOD_SAMARITAN, sceneId)
+            profileRepository.markSceneCompleted(ChapterId.DANIEL, sceneId)
         }
     }
 
@@ -82,32 +102,30 @@ class GoodSamaritanViewModel(
         viewModelScope.launch {
             val stars = RewardCalculator.calculateStars(chapterCompleted = true)
             progressionService.completeChapter(
-                chapterId = ChapterId.GOOD_SAMARITAN,
+                chapterId = ChapterId.DANIEL,
                 stars = stars,
-                badgeId = GoodSamaritanReward.badge.id,
-                scriptureCardId = GoodSamaritanReward.scriptureCard.id,
+                badgeId = DanielReward.badge.id,
+                scriptureCardId = DanielReward.scriptureCard.id,
             )
             audioController.playSfx(SoundEffect.REWARD_CELEBRATION)
-            _uiState.update { it.copy(reward = GoodSamaritanRewardResult(stars = stars)) }
+            _uiState.update { it.copy(reward = DanielRewardResult(stars = stars)) }
         }
     }
 
-    private fun createInitialState(): GoodSamaritanUiState {
-        val grid = GoodSamaritanContent.mapLayout.map { row ->
+    private fun createInitialState(): DanielUiState {
+        val grid = DanielContent.dariusMapLayout.map { row ->
             row.map { cell ->
                 when (cell) {
-                    '#', 'X' -> GridTileType.WALL
-                    'M' -> GridTileType.COLLECTIBLE
-                    'T' -> GridTileType.CHECKPOINT
-                    'I' -> GridTileType.GOAL
+                    '#' -> GridTileType.WALL
+                    'D' -> GridTileType.GOAL
                     else -> GridTileType.PATH
                 }
             }
         }
-        val startRow = GoodSamaritanContent.mapLayout.indexOfFirst { it.contains('S') }
-        val startCol = GoodSamaritanContent.mapLayout[startRow].indexOf('S')
+        val startRow = DanielContent.dariusMapLayout.indexOfFirst { it.contains('S') }
+        val startCol = DanielContent.dariusMapLayout[startRow].indexOf('S')
 
-        return GoodSamaritanUiState(
+        return DanielUiState(
             gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(startRow, startCol)),
         )
     }

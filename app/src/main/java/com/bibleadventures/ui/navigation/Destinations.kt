@@ -62,6 +62,24 @@ sealed class Destination(val route: String) {
         }
     }
 
+    /** Nested graph — every scene shares one graph-scoped `DanielViewModel`. */
+    sealed class Daniel(route: String) : Destination(route) {
+        data object Intro : Daniel("daniel/intro")
+        data object StealthContext : Daniel("daniel/stealth_context")
+        data object Stealth : Daniel("daniel/stealth")
+        data object Choice : Daniel("daniel/choice")
+        data object LionsDenContext : Daniel("daniel/lions_den_context")
+        data object LionsDen : Daniel("daniel/lions_den")
+        data object DariusContext : Daniel("daniel/darius_context")
+        data object DariusMaze : Daniel("daniel/darius_maze")
+        data object Lesson : Daniel("daniel/lesson")
+        data object Reward : Daniel("daniel/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "daniel"
+        }
+    }
+
     /** Temporary landing spot for menu items not yet implemented. */
     data class ComingSoon(val featureTitle: String) : Destination("coming_soon") {
         companion object {

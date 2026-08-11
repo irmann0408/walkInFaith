@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-08-10 (swapped Daniel and Feeding the 5,000 chapter order)
+Last updated: 2026-08-11 (Chapter 4 — Daniel and the Lions complete)
 
 ## Current milestone
 
-**Chapter 3 — The Good Samaritan: COMPLETE**
+**Chapter 4 — Daniel and the Lions: COMPLETE**
 
 ## Completed features
 
@@ -800,15 +800,109 @@ Updated `ChapterUnlockRulesTest`'s out-of-order-completion case and
 `GoodSamaritanFlowTest`'s final "next chapter unlocked" assertion (and its
 name) to expect Daniel instead of Feeding the 5,000.
 
+### Chapter 4 — Daniel and the Lions
+The fourth full chapter, unlocked automatically once the Good Samaritan is
+completed. Scene flow: Intro → Hurrying to Pray context card → Stealth
+(dodge reskin) → Choice (Daniel's prayer) → Into the Lions' Den context
+card (caught, sentenced, and thrown in, combined into one card rather than
+a separate scene) → Lions' Den (new sequence puzzle) → Darius's Long Night
+context card → Darius's Maze (grid-maze reuse) → Lesson → Reward. Leaner
+than David & Goliath's 12 scenes, matching this codebase's stated
+anti-padding bias; no "recharge courage" beat or courage-points resource
+from the user's original blueprint — this app has no resource/currency
+system anywhere, and the prayer moment is fully carried by the Choice
+scene's flavor text instead.
+- **Two Biblical-accuracy corrections to the user's blueprint**, made
+  during planning by re-reading the actual text rather than assuming the
+  blueprint's framing: (1) "a decree maze to find the stamp that frees
+  Daniel" isn't accurate — Daniel 6:8/6:15 are explicit that even King
+  Darius couldn't revoke his own sealed decree, so the real drama is his
+  own powerlessness, not a search for a loophole. Reframed as **Darius's
+  dawn hurry through the palace to the den** (6:19), same grid-maze
+  gameplay shape, accurate story. (2) "stealth to hide from guards"
+  undersells the actual courage in the passage — Daniel 6:10 says he
+  prayed "with his windows open... as he did before," i.e. he deliberately
+  did *not* hide, which is exactly how he was caught. Reframed the
+  dodge-based scene as hurrying past officials trying to block his path
+  (obstacle avoidance, not concealment); the real "praying boldly and
+  visibly" beat is carried by the Choice scene instead.
+- **Generalized `game/puzzles/gridmaze/`** for reuse beyond Good
+  Samaritan's medicine/traveler/inn semantics — the "extract once a second
+  real consumer exists" precedent (`ContentDefs.kt`'s), applied to an
+  engine this time rather than a content shape. `GridTileType.MEDICINE/
+  TRAVELER/INN` → `.COLLECTIBLE/.CHECKPOINT/.GOAL` (pure rename); `isComplete`
+  gained a derived `hasCheckpointTile` check so a map with no checkpoint
+  tile at all (Darius's maze) just needs the goal reached, while a map that
+  has one (Good Samaritan's) still gates completion on it being activated
+  first. Good Samaritan's actual gameplay is bit-for-bit identical after
+  this change — confirmed by its full unit + instrumented suite passing
+  unchanged. Every call site updated: `GoodSamaritanViewModel.kt`,
+  `GoodSamaritanExploreScreen.kt`, `GridMazeGameTest.kt` (plus one new
+  checkpoint-free completion case), `GoodSamaritanViewModelTest.kt`.
+- **New `game/puzzles/sequence/{SequenceGameState,SequenceGame}.kt` engine**
+  for the Lions' Den "connect in order" puzzle — the user explicitly chose
+  building a new small engine over reusing an existing one. No position
+  data in the engine itself (point layout is screen-side content in
+  `DanielContent.kt`, same separation as `GridMazeGameState`'s newer
+  no-Compose-dependency style). **Never FAILED, and never resets
+  progress**: tapping a point out of order sets `SequenceOutcome.OUT_OF_ORDER`
+  but leaves `connectedIds` untouched — matches this codebase's
+  demonstrated maximum-forgiveness bias (`GridMazeGame`'s wall-bump,
+  `DodgeGame`'s wrong-lane both already preserve prior progress); resetting
+  all connected points would have been this app's first-ever
+  "lose your progress" punishment. 5 points (not `DodgeBeat`'s precedent of
+  3) so the connected shape reads as an actual arc/dome once complete, not
+  just a line.
+- **Stealth** reuses `game/puzzles/dodge/` completely unmodified — a
+  literal reskin (`DanielStealthScreen.kt` mirrors
+  `DavidGoliathDodgeScreen.kt`'s structure exactly: the `displayedBeat`-lag
+  pattern, the sequenced `Animatable` step-hold-return effect), only the
+  art and copy changed (an official blocking the hallway, not a rolling
+  rock).
+- **Darius's Maze** reuses the generalized `gridmaze` engine with a
+  `PATH`/`WALL`/`GOAL`-only 7x7 map (no collectible/checkpoint tile) —
+  `DanielDariusMazeScreen.kt` mirrors `GoodSamaritanExploreScreen.kt`'s
+  D-pad structure but renders directly off `GridMazeState.grid`'s parsed
+  tile types rather than raw map characters. Map **verified solvable by
+  hand (BFS)** and the 28-move `dariusSolutionPath` derived from that same
+  walk, then **confirmed on-device via a temporary screenshot capture**
+  before trusting it — Good Samaritan's own map shipped with a single
+  mistyped character that only surfaced on a real device (Chapter 3's
+  section above), so this was treated as a required check, not optional,
+  per the plan.
+- **Badge/scripture card**: "Faithful Heart" + Daniel 6:22, added to
+  `RewardCatalog`. The scripture text was sourced from the actual World
+  English Bible (public domain) via WebFetch (cross-checked against two
+  independent sources), same standard as every prior chapter's card.
+- **Manual on-device visual verification**: since the Lions' Den (Canvas
+  polyline + lion state swap) and Darius's Maze (new map/marker art) are
+  the two genuinely new visual surfaces this chapter introduces, a
+  temporary screenshot-capture pass (`composeTestRule.onRoot().captureToImage()`,
+  pulled via `adb pull`, then removed from the committed test) confirmed
+  the stealth hallway, the lights' arc/dome shape and lion calm-state
+  swap, and the maze's D-pad/wall/goal rendering all read correctly at
+  real phone size before considering the chapter done.
+- Tests: `SequenceGameTest.kt` (unit, mirrors `DodgeGameTest.kt`'s style —
+  out-of-order preserves progress, re-tapping a connected point is a
+  no-op, full sequence completes, once-complete is a no-op);
+  `DanielViewModelTest.kt` (unit, using the shared
+  `FakePlayerProfileRepository`); new instrumented `DanielFlowTest.kt`,
+  which completes Noah's Ark, David and Goliath, **and** Good Samaritan
+  itself first (this device's save state persists across test runs, and
+  Daniel is locked until all three prior chapters are done), then replays
+  the hand-verified stealth/choice/lights/`dariusSolutionPath` sequence.
+  `GoodSamaritanFlowTest.kt` and `DavidGoliathFlowTest.kt` were re-run
+  specifically to confirm the gridmaze rename caused zero regression.
+
 ## Next tasks
 
 Nothing currently planned. If work resumes later, the natural next step per
-the current order is either **Chapter 4 — Daniel and the Lions** (now
-unlocked once the Good Samaritan is completed) or **Milestone 6 — Parent
-Area**: a parental gate, progress summary, settings (music/sound/narration
-toggles), and reset-progress functionality (spec section 17). No
-`settings/` package exists yet — still deferred until that milestone
-actually needs it (spec section 5/26).
+the current order is either **Chapter 5 — Feeding the 5,000** (now unlocked
+once Daniel and the Lions is completed) or **Milestone 6 — Parent Area**: a
+parental gate, progress summary, settings (music/sound/narration toggles),
+and reset-progress functionality (spec section 17). No `settings/` package
+exists yet — still deferred until that milestone actually needs it (spec
+section 5/26).
 
 ## Architectural decisions log
 
@@ -862,3 +956,18 @@ actually needs it (spec section 5/26).
   (spec, non-negotiable) is treated as a hard constraint on any future mechanic
   proposal, not just existing ones; redesign around it rather than special-casing
   an exception.
+- **"Extract once a second real consumer exists" applies to engines, not just content
+  shapes.** `game/puzzles/gridmaze/` was Good-Samaritan-specific (`MEDICINE`/
+  `TRAVELER`/`INN`) until Daniel's Darius maze needed the same D-pad/grid mechanic
+  with different completion semantics — generalized in place (rename + a derived
+  `hasCheckpointTile` check) rather than building a second grid-maze engine or
+  speculatively generalizing earlier. Re-verify the original consumer's full test
+  suite (unit + instrumented) after any such generalization, since the refactor
+  touches already-shipped, real gameplay.
+- **A blueprint's narrative framing is a starting draft, not a source of truth** —
+  re-check it against the actual scripture text before building on it, the same way
+  scripture-card verse text is always sourced fresh rather than assumed. Daniel and
+  the Lions' blueprint had two real inaccuracies (a "decree maze to find a stamp"
+  that contradicts Daniel 6:8/6:15's actual point, and "hiding from guards" that
+  undersells 6:10's deliberate openness) caught and corrected during planning, not
+  after.
