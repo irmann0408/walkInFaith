@@ -524,7 +524,9 @@
     <string name="jericho_camp_context_line_2">Joshua chose twelve men, one from each tribe, to carry twelve stones from the riverbed and build a memorial.</string>
 
     <string name="jericho_camp_title">Setting Up Camp</string>
-    <string name="jericho_camp_instructions">Tap each stone to add it to the memorial, so the people will always remember what God did here.</string>
+    <string name="jericho_camp_instructions">Drag each stone onto the monument to stack it, so the people will always remember what God did here.</string>
+    <string name="jericho_camp_progress_label">%1$d of %2$d stones placed</string>
+    <string name="jericho_camp_dropzone_content_description">Place the stone here</string>
     <string name="jericho_camp_stone_1">Stone 1</string>
     <string name="jericho_camp_stone_2">Stone 2</string>
     <string name="jericho_camp_stone_3">Stone 3</string>
@@ -547,9 +549,9 @@
     <string name="jericho_walls_context_line_2">God told Joshua exactly what to do: march around the city once a day, for six days, without a sound.</string>
 
     <string name="jericho_six_day_march_title">The Silent March</string>
-    <string name="jericho_six_day_march_instructions">Tap in rhythm to march one lap around the wall — once for each of the six days. No shouting, no talking, just steady steps.</string>
+    <string name="jericho_six_day_march_instructions">Tap each lane in rhythm as the footprints arrive, to march one lap around the wall — once for each of the six days. No shouting, no talking, just steady steps.</string>
+    <string name="jericho_six_day_march_lane_content_description">March lane %1$d</string>
     <string name="jericho_march_day_label">Day %1$d of %2$d</string>
-    <string name="jericho_march_tap_content_description">Tap to march</string>
     <string name="jericho_march_on_beat">Marching strong!</string>
     <string name="jericho_march_off_beat">Keep in step…</string>
 
@@ -558,11 +560,13 @@
     <string name="jericho_seventh_day_context_line_2">Seven priests would carry seven trumpets — and this time, when the trumpets sounded, the people would shout.</string>
 
     <string name="jericho_fast_march_title">Seven Times Around</string>
-    <string name="jericho_fast_march_instructions">Faster now! Tap in rhythm to complete all seven laps around the wall.</string>
+    <string name="jericho_fast_march_instructions">Faster now! Tap each lane in rhythm to complete all seven laps around the wall.</string>
+    <string name="jericho_fast_march_lane_content_description">March lane %1$d</string>
     <string name="jericho_march_lap_label">Lap %1$d of %2$d</string>
 
     <string name="jericho_blow_shofar_title">Blow the Shofar</string>
-    <string name="jericho_blow_shofar_instructions">Tap the trumpet notes to sound the shofar.</string>
+    <string name="jericho_blow_shofar_instructions">Follow the message below to tap each trumpet note in order.</string>
+    <string name="jericho_blow_shofar_next_note_label">Tap the %1$s next</string>
     <string name="jericho_shofar_note_red">Red note</string>
     <string name="jericho_shofar_note_orange">Orange note</string>
     <string name="jericho_shofar_note_yellow">Yellow note</string>

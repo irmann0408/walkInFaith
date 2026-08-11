@@ -1,6 +1,5 @@
 package com.bibleadventures.ui.screens.jericho.blowshofar
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -25,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -35,19 +33,20 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.sequence.SequenceGameState
-import com.bibleadventures.game.puzzles.sequence.SequenceOutcome
 import com.bibleadventures.game.stories.JerichoContent
-import com.bibleadventures.game.stories.ShofarNoteDef
+import com.bibleadventures.game.stories.ShofarNotePlacement
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
 /**
  * Reuses `game/puzzles/sequence` exactly as-is (already Daniel's Lions'
- * Den mechanic) — tap the 5 colored notes in the right order to sound the
- * shofar. As in Lions' Den, the order isn't told upfront: an out-of-order
- * tap safely re-prompts without losing progress, so the order is
- * discovered by trying, never punished.
+ * Den mechanic) — but unlike Lions' Den's discovery-based order, this
+ * screen is guided: an on-screen message names which colored note to tap
+ * next, updating after each correct tap. Both the required tap order and
+ * each note's screen position are shuffled fresh every playthrough (see
+ * [JerichoViewModel]'s `newShofarPlacements`), so the puzzle stays real
+ * despite the guidance — you can't just memorize a fixed layout or order.
  */
 @Composable
 fun JerichoBlowShofarScreen(
@@ -60,6 +59,7 @@ fun JerichoBlowShofarScreen(
 
     JerichoBlowShofarContent(
         shofarState = uiState.shofarState,
+        placements = uiState.shofarPlacements,
         onNoteTapped = viewModel::onShofarNoteTapped,
         onContinue = onContinue,
         previouslyCompleted = previouslyCompleted,
@@ -79,6 +79,7 @@ private fun colorFor(noteId: String): Color = when (noteId) {
 @Composable
 private fun JerichoBlowShofarContent(
     shofarState: SequenceGameState,
+    placements: List<ShofarNotePlacement>,
     onNoteTapped: (String) -> Unit,
     onContinue: () -> Unit,
     previouslyCompleted: Boolean = false,
@@ -102,13 +103,14 @@ private fun JerichoBlowShofarContent(
                 modifier = Modifier.padding(top = 8.dp),
             )
 
-            val feedback = when (shofarState.lastOutcome) {
-                SequenceOutcome.POINT_CONNECTED, SequenceOutcome.COMPLETE -> stringResource(R.string.feedback_great_job)
-                SequenceOutcome.OUT_OF_ORDER -> stringResource(R.string.feedback_try_another_one)
-                SequenceOutcome.NONE -> ""
+            val nextNote = shofarState.nextExpectedId?.let { id -> placements.first { it.id == id } }
+            val instruction = if (nextNote != null) {
+                stringResource(R.string.jericho_blow_shofar_next_note_label, stringResource(nextNote.nameRes))
+            } else {
+                stringResource(R.string.feedback_great_job)
             }
             Box(modifier = Modifier.height(32.dp)) {
-                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
+                Text(text = instruction, style = MaterialTheme.typography.titleLarge)
             }
 
             BoxWithConstraints(
@@ -116,28 +118,12 @@ private fun JerichoBlowShofarContent(
                     .fillMaxWidth()
                     .aspectRatio(1f),
             ) {
-                val connectedOffsets = shofarState.connectedIds.map { id ->
-                    JerichoContent.shofarNotes.first { it.id == id }.position
-                }
-                if (connectedOffsets.size > 1) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        for (i in 0 until connectedOffsets.size - 1) {
-                            drawLine(
-                                color = Color(0xFFFFD54A),
-                                start = Offset(size.width * connectedOffsets[i].x, size.height * connectedOffsets[i].y),
-                                end = Offset(size.width * connectedOffsets[i + 1].x, size.height * connectedOffsets[i + 1].y),
-                                strokeWidth = 6f,
-                            )
-                        }
-                    }
-                }
-
-                JerichoContent.shofarNotes.forEach { note ->
+                placements.forEach { placement ->
                     NoteTarget(
-                        note = note,
-                        isConnected = note.id in shofarState.connectedIds,
-                        onClick = { onNoteTapped(note.id) },
-                        modifier = Modifier.offset(x = maxWidth * note.position.x - 24.dp, y = maxHeight * note.position.y - 24.dp),
+                        placement = placement,
+                        isConnected = placement.id in shofarState.connectedIds,
+                        onClick = { onNoteTapped(placement.id) },
+                        modifier = Modifier.offset(x = maxWidth * placement.position.x - 24.dp, y = maxHeight * placement.position.y - 24.dp),
                     )
                 }
             }
@@ -163,18 +149,18 @@ private fun JerichoBlowShofarContent(
 
 @Composable
 private fun NoteTarget(
-    note: ShofarNoteDef,
+    placement: ShofarNotePlacement,
     isConnected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val name = stringResource(note.nameRes)
+    val name = stringResource(placement.nameRes)
 
     Box(
         modifier = modifier
             .size(48.dp)
             .clip(CircleShape)
-            .background(colorFor(note.id))
+            .background(colorFor(placement.id))
             .clickable(onClickLabel = name, onClick = onClick)
             .semantics { contentDescription = name },
         contentAlignment = Alignment.Center,
@@ -188,9 +174,13 @@ private fun NoteTarget(
 @Preview(showBackground = true)
 @Composable
 private fun JerichoBlowShofarPreview() {
+    val previewPlacements = JerichoContent.shofarNoteColors.mapIndexed { index, def ->
+        ShofarNotePlacement(def.id, def.nameRes, JerichoContent.shofarNotePositionSlots[index])
+    }
     BibleAdventuresTheme {
         JerichoBlowShofarContent(
-            shofarState = SequenceGameState(pointIds = JerichoContent.shofarNotes.map { it.id }),
+            shofarState = SequenceGameState(pointIds = previewPlacements.map { it.id }),
+            placements = previewPlacements,
             onNoteTapped = {},
             onContinue = {},
         )

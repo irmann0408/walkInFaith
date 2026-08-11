@@ -1,17 +1,12 @@
 package com.bibleadventures.ui.screens.jericho
 
-import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bibleadventures.R
 import com.bibleadventures.audio.AudioController
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
-import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGame
-import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGame
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.puzzles.sequence.SequenceGame
@@ -19,9 +14,12 @@ import com.bibleadventures.game.puzzles.sequence.SequenceGameState
 import com.bibleadventures.game.puzzles.sequence.SequenceOutcome
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
+import com.bibleadventures.game.puzzles.stackbuild.StackBuildGame
+import com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState
 import com.bibleadventures.game.rewards.JerichoReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.JerichoContent
+import com.bibleadventures.game.stories.ShofarNotePlacement
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,13 +29,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 data class JerichoRewardResult(val stars: Int)
 
 data class JerichoUiState(
     val selectedChoiceId: String? = null,
     val spiesEscapeState: SlidingPuzzleGameState,
-    val campState: HiddenObjectGameState,
+    val campState: StackBuildGameState,
     val sixDayMarchState: RhythmLaneGameState = RhythmLaneGameState(
         chart = JerichoContent.sixDayMarchChart,
         requiredHits = JerichoContent.SIX_DAY_MARCH_REQUIRED_HITS,
@@ -46,7 +45,8 @@ data class JerichoUiState(
         chart = JerichoContent.fastMarchChart,
         requiredHits = JerichoContent.FAST_MARCH_REQUIRED_HITS,
     ),
-    val shofarState: SequenceGameState = SequenceGameState(pointIds = JerichoContent.shofarNotes.map { it.id }),
+    val shofarState: SequenceGameState,
+    val shofarPlacements: List<ShofarNotePlacement>,
     val shoutTaps: Int = 0,
     val reward: JerichoRewardResult? = null,
 ) {
@@ -100,19 +100,20 @@ class JerichoViewModel(
         }
     }
 
-    fun onCampStoneTapped(itemId: String) {
+    /** Called only once the screen has confirmed a drag ended within the monument's snap radius — not on every drag. */
+    fun onCampStonePlaced(stoneId: String) {
         _uiState.update { current ->
-            val next = HiddenObjectGame.onItemTapped(current.campState, itemId)
-            if (next.foundIds.size > current.campState.foundIds.size) {
+            val next = StackBuildGame.onItemPlaced(current.campState, stoneId)
+            if (next.placedOrder.size > current.campState.placedOrder.size) {
                 audioController.playSfx(SoundEffect.ITEM_COLLECTED)
             }
             current.copy(campState = next)
         }
     }
 
-    fun onSixDayMarchTapped(nowMs: Long) {
+    fun onSixDayMarchTapped(lane: Int, nowMs: Long) {
         _uiState.update { current ->
-            val next = RhythmLaneGame.onLaneTapped(current.sixDayMarchState, lane = 0, nowMs = nowMs)
+            val next = RhythmLaneGame.onLaneTapped(current.sixDayMarchState, lane, nowMs)
             if (next.hits > current.sixDayMarchState.hits) {
                 audioController.playSfx(SoundEffect.TARGET_HIT)
             }
@@ -128,9 +129,9 @@ class JerichoViewModel(
         _uiState.update { current -> current.copy(sixDayMarchState = RhythmLaneGame.onTimeAdvanced(current.sixDayMarchState, nowMs)) }
     }
 
-    fun onFastMarchTapped(nowMs: Long) {
+    fun onFastMarchTapped(lane: Int, nowMs: Long) {
         _uiState.update { current ->
-            val next = RhythmLaneGame.onLaneTapped(current.fastMarchState, lane = 0, nowMs = nowMs)
+            val next = RhythmLaneGame.onLaneTapped(current.fastMarchState, lane, nowMs)
             if (next.hits > current.fastMarchState.hits) {
                 audioController.playSfx(SoundEffect.TARGET_HIT)
             }
@@ -193,12 +194,21 @@ class JerichoViewModel(
     }
 
     private fun createInitialState(): JerichoUiState {
-        val stoneItems = JerichoContent.campStones.map { def ->
-            HiddenItem(id = def.id, position = Offset.Zero, iconRes = R.drawable.ic_stone_smooth, contentDescriptionRes = def.nameRes)
-        }
+        val random = Random.Default
+        val shofarPlacements = newShofarPlacements(random)
         return JerichoUiState(
             spiesEscapeState = SlidingPuzzleGame.newShuffled(size = JerichoContent.SPIES_ESCAPE_GRID_SIZE),
-            campState = HiddenObjectGameState(items = stoneItems),
+            campState = StackBuildGameState(itemIds = JerichoContent.campStones.map { it.id }),
+            shofarState = SequenceGameState(pointIds = JerichoContent.shofarNoteColors.map { it.id }.shuffled(random)),
+            shofarPlacements = shofarPlacements,
         )
+    }
+
+    /** Shuffles which color lands at which screen slot — the required tap order is shuffled separately (see [createInitialState]), so neither layout nor order can be memorized across playthroughs. */
+    private fun newShofarPlacements(random: Random = Random.Default): List<ShofarNotePlacement> {
+        val shuffledPositions = JerichoContent.shofarNotePositionSlots.shuffled(random)
+        return JerichoContent.shofarNoteColors.mapIndexed { index, def ->
+            ShofarNotePlacement(id = def.id, nameRes = def.nameRes, position = shuffledPositions[index])
+        }
     }
 }

@@ -42,8 +42,8 @@ class JerichoViewModelTest {
     fun `initial camp state holds all 12 stones, none placed`() {
         val state = createViewModel().uiState.value.campState
 
-        assertEquals(JerichoContent.campStones.size, state.items.size)
-        assertTrue(state.foundIds.isEmpty())
+        assertEquals(JerichoContent.campStones.size, state.itemIds.size)
+        assertTrue(state.placedOrder.isEmpty())
         assertFalse(state.isComplete)
     }
 
@@ -69,46 +69,47 @@ class JerichoViewModelTest {
     }
 
     @Test
-    fun `onCampStoneTapped places a stone and plays a sound only once per stone`() {
+    fun `onCampStonePlaced stacks a stone and plays a sound only once per stone`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val stoneId = JerichoContent.campStones[0].id
 
-        viewModel.onCampStoneTapped(stoneId)
-        viewModel.onCampStoneTapped(stoneId) // already placed, re-tap is a no-op
+        viewModel.onCampStonePlaced(stoneId)
+        viewModel.onCampStonePlaced(stoneId) // already placed, re-placing is a no-op
 
-        assertTrue(stoneId in viewModel.uiState.value.campState.foundIds)
+        assertEquals(listOf(stoneId), viewModel.uiState.value.campState.placedOrder)
         assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
     }
 
     @Test
-    fun `placing every stone completes the camp scene`() {
+    fun `stones can be placed in any order`() {
         val viewModel = createViewModel()
+        val shuffledIds = JerichoContent.campStones.map { it.id }.reversed()
 
-        JerichoContent.campStones.forEach { viewModel.onCampStoneTapped(it.id) }
+        shuffledIds.forEach { viewModel.onCampStonePlaced(it) }
 
+        assertEquals(shuffledIds, viewModel.uiState.value.campState.placedOrder)
         assertTrue(viewModel.uiState.value.campState.isComplete)
     }
 
     @Test
     fun `onSixDayMarchTapped on the beat increases hits, never a failure`() {
         val viewModel = createViewModel()
-        val hitTimeMs = JerichoContent.sixDayMarchChart.notes.first().hitTimeMs
+        val note = JerichoContent.sixDayMarchChart.notes.first()
 
-        viewModel.onSixDayMarchTapped(hitTimeMs)
+        viewModel.onSixDayMarchTapped(note.lane, note.hitTimeMs)
 
         assertEquals(1, viewModel.uiState.value.sixDayMarchState.hits)
         assertFalse(viewModel.uiState.value.sixDayMarchState.isComplete)
     }
 
     @Test
-    fun `six taps completes the six-day march and plays a sound exactly once`() {
+    fun `tapping all six notes across all three lanes completes the six-day march and plays a sound exactly once`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
-        val chart = JerichoContent.sixDayMarchChart
 
-        (0 until JerichoContent.SIX_DAY_MARCH_REQUIRED_HITS).forEach { loopIndex ->
-            viewModel.onSixDayMarchTapped(loopIndex * chart.loopDurationMs + chart.notes.first().hitTimeMs)
+        JerichoContent.sixDayMarchChart.notes.forEach { note ->
+            viewModel.onSixDayMarchTapped(note.lane, note.hitTimeMs)
         }
 
         assertTrue(viewModel.uiState.value.sixDayMarchState.isComplete)
@@ -116,24 +117,31 @@ class JerichoViewModelTest {
     }
 
     @Test
-    fun `seven taps completes the fast march`() {
+    fun `tapping all seven notes across all three lanes completes the fast march`() {
         val viewModel = createViewModel()
-        val chart = JerichoContent.fastMarchChart
 
-        (0 until JerichoContent.FAST_MARCH_REQUIRED_HITS).forEach { loopIndex ->
-            viewModel.onFastMarchTapped(loopIndex * chart.loopDurationMs + chart.notes.first().hitTimeMs)
+        JerichoContent.fastMarchChart.notes.forEach { note ->
+            viewModel.onFastMarchTapped(note.lane, note.hitTimeMs)
         }
 
         assertTrue(viewModel.uiState.value.fastMarchState.isComplete)
     }
 
     @Test
+    fun `initial shofar arrangement covers all 5 colors at 5 distinct positions`() {
+        val placements = createViewModel().uiState.value.shofarPlacements
+
+        assertEquals(JerichoContent.shofarNoteColors.map { it.id }.toSet(), placements.map { it.id }.toSet())
+        assertEquals(5, placements.map { it.position }.toSet().size)
+    }
+
+    @Test
     fun `onShofarNoteTapped plays a sound only on the correct next note, advancing through all 5`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
-        val notesInOrder = JerichoContent.shofarNotes.map { it.id }
+        val notesInOrder = viewModel.uiState.value.shofarState.pointIds
 
-        viewModel.onShofarNoteTapped(notesInOrder[4]) // out of order
+        viewModel.onShofarNoteTapped(notesInOrder[4]) // out of order — index 0 is expected first
         assertTrue(audioController.playedEffects.isEmpty())
 
         notesInOrder.forEach { viewModel.onShofarNoteTapped(it) }

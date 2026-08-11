@@ -106,9 +106,15 @@ class JerichoFlowTest {
         // Scene 3b: Crossing the Jordan context.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 4: Setting Up Camp — 12 memorial stones, order-independent.
+        // Scene 4: Setting Up Camp — 12 memorial stones, drag each onto the
+        // monument in any order; waitForIdle() lets each snap animation (and
+        // the resulting tray re-layout) settle before the next drag starts.
         JerichoContent.campStones.forEach { stone ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)).performClick()
+            dragOntoContentDescription(
+                itemNode = composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)),
+                targetContentDescription = activity.getString(R.string.jericho_camp_dropzone_content_description),
+            )
+            composeTestRule.waitForIdle()
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -116,23 +122,21 @@ class JerichoFlowTest {
         composeTestRule.onNodeWithText(continueLabel).performClick()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 5: The Silent March — six taps, one per day, on the beat.
-        completeMarch(JerichoContent.sixDayMarchChart, JerichoContent.SIX_DAY_MARCH_REQUIRED_HITS)
+        // Scene 5: The Silent March — six taps across three lanes, one per day, on the beat.
+        completeMarch(JerichoContent.sixDayMarchChart, JerichoContent.SIX_DAY_MARCH_REQUIRED_HITS, R.string.jericho_six_day_march_lane_content_description)
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         // Scene 5b: The Seventh Day context.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         // Scene 6: Seven Times Around — the same march mechanic again, faster.
-        completeMarch(JerichoContent.fastMarchChart, JerichoContent.FAST_MARCH_REQUIRED_HITS)
+        completeMarch(JerichoContent.fastMarchChart, JerichoContent.FAST_MARCH_REQUIRED_HITS, R.string.jericho_fast_march_lane_content_description)
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 7: Blow the Shofar — tap the 5 notes in the order defined by
-        // JerichoContent.shofarNotes (list order *is* the correct order, same
-        // shape as Daniel's Lions' Den).
-        JerichoContent.shofarNotes.forEach { note ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(note.nameRes)).performClick()
-        }
+        // Scene 7: Blow the Shofar — order and screen positions are shuffled
+        // per playthrough, so tap whichever color the on-screen "Tap the ___
+        // next" message currently names, five times.
+        completeBlowShofar()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         // Scene 8: Shout! — a plain tap counter, every tap makes progress.
@@ -567,27 +571,53 @@ class JerichoFlowTest {
     }
 
     /**
-     * Freezes the Compose test clock and advances it to [chart]'s single
-     * beat's exact `hitTimeMs` in turn, looping through as many chart
-     * iterations as needed to reach [requiredHits] — same deterministic
-     * frozen-clock technique as Esther's corridor, reused here for
-     * Jericho's single-lane march (both `SixDayMarch` and `FastMarch`
-     * share the one "Tap to march" content description).
+     * Freezes the Compose test clock and advances it to each of [chart]'s
+     * authored notes' exact `hitTimeMs` in turn, tapping that note's lane —
+     * same deterministic frozen-clock technique as Esther's corridor
+     * (`completeCorridorRhythmLane`), reused here now that both `SixDayMarch`
+     * and `FastMarch` share Corridor's 3-lane layout. Loops through the
+     * chart as many times as needed to reach [requiredHits].
      */
-    private fun completeMarch(chart: RhythmLaneChart, requiredHits: Int) {
+    private fun completeMarch(chart: RhythmLaneChart, requiredHits: Int, laneContentDescriptionRes: Int) {
         val activity = composeTestRule.activity
-        val tapDescription = activity.getString(R.string.jericho_march_tap_content_description)
-        val hitTimeMs = chart.notes.first().hitTimeMs
+        val laneDescriptions = (1..3).map { activity.getString(laneContentDescriptionRes, it) }
 
         composeTestRule.mainClock.autoAdvance = false
         var currentMs = 0L
-        repeat(requiredHits) { loopIndex ->
-            val targetMs = loopIndex * chart.loopDurationMs + hitTimeMs
-            composeTestRule.mainClock.advanceTimeBy(targetMs - currentMs)
-            currentMs = targetMs
-            composeTestRule.onNodeWithContentDescription(tapDescription).performClick()
+        var hits = 0
+        var loopIndex = 0L
+        while (hits < requiredHits) {
+            chart.notes.forEach { note ->
+                if (hits < requiredHits) {
+                    val targetMs = loopIndex * chart.loopDurationMs + note.hitTimeMs
+                    composeTestRule.mainClock.advanceTimeBy(targetMs - currentMs)
+                    currentMs = targetMs
+                    composeTestRule.onNodeWithContentDescription(laneDescriptions[note.lane]).performClick()
+                    hits++
+                }
+            }
+            loopIndex++
         }
         composeTestRule.mainClock.autoAdvance = true
+    }
+
+    /**
+     * Order and screen positions are shuffled per playthrough, so this reads
+     * the live "Tap the ___ next" instruction each step (checking each of
+     * the 5 known color names against the current on-screen label) and taps
+     * whichever note it currently names — deterministic without assuming a
+     * fixed order, same "interrogate live state" discipline as
+     * [solveSlidingPuzzle]'s BFS solver.
+     */
+    private fun completeBlowShofar() {
+        val activity = composeTestRule.activity
+        repeat(JerichoContent.shofarNoteColors.size) {
+            val note = JerichoContent.shofarNoteColors.first { def ->
+                val label = activity.getString(R.string.jericho_blow_shofar_next_note_label, activity.getString(def.nameRes))
+                composeTestRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithContentDescription(activity.getString(note.nameRes)).performClick()
+        }
     }
 
     private fun dragOntoText(itemNode: SemanticsNodeInteraction, targetText: String) {

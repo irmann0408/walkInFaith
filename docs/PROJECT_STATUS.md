@@ -1,10 +1,18 @@
 # Project Status
 
-Last updated: 2026-08-11 (The Battle of Jericho rebuilt with 4 real
-mini-puzzles, replacing its old 4-flashcard "March and the Shout," which
-was too easy; Esther's tail end trimmed — Reveal Haman's Plot and 5
-surrounding screens collapsed into just the Lesson; Corridor Courage Meter
-replaced with a 3-lane rhythm mini-game; the 5-chapter Esther arc
+Last updated: 2026-08-12 (Setting Up Camp reworked from tap-to-collect into
+a real drag-and-stack puzzle — drag each of the 12 stones onto a growing
+monument, with a forgiving "gentle snap" radius and an animated slide-into-
+place; new `stackbuild` engine. Three of Jericho's mini-puzzles reworked
+after playtesting: The Silent March and Seven Times Around now use Esther's
+Corridor's 3-lane scrolling layout, paced slow/fast, with a footprint
+marker instead of a star; Blow the Shofar now guides the player with an
+on-screen "tap this next" message and shuffles both the tap order and each
+note's screen position every playthrough; The Battle of Jericho rebuilt
+with 4 real mini-puzzles, replacing its old 4-flashcard "March and the
+Shout," which was too easy; Esther's tail end trimmed — Reveal Haman's Plot
+and 5 surrounding screens collapsed into just the Lesson; Corridor Courage
+Meter replaced with a 3-lane rhythm mini-game; the 5-chapter Esther arc
 consolidated back into one chapter, "Esther's Rescue of Her People," per
 playtesting feedback that the split felt disjointed; real Audio/Narration/
 Settings also complete)
@@ -1615,6 +1623,133 @@ genuinely hard even for adults and wrong for this app's 7+ audience.
   itself is untouched, since Esther no longer uses it but nothing else
   needed removing there.
 
+### Three Jericho mini-puzzles reworked after playtesting
+
+The just-shipped Jericho rebuild (previous addendum) got real playtesting
+feedback: the two march scenes' single pulsing footprint felt thin next to
+Esther's Corridor, and Blow the Shofar's pure-discovery order (no hint,
+same as Daniel's Lions' Den) didn't land the same way here. No engine
+changes — `rhythmlane` and `sequence` are already chart/order-agnostic —
+this was entirely screen-level presentation and content.
+
+- **The Silent March and Seven Times Around now use Corridor's exact
+  3-lane layout**, not just its scroll mechanic — confirmed explicitly with
+  the user rather than assumed, since a single-lane version of the
+  scrolling visual was also a reasonable reading of "like the Corridor."
+  Both screens were rewritten around the same `Row` of 3 `NoteLane`-style
+  columns, `BoxWithConstraints` scroll track, and fixed hit-zone `Box` that
+  `EstherCorridorScreen` uses, with two deltas: the scrolling marker is
+  `ic_march_footprint` (already existed, already used by the previous
+  pulsing version) instead of Corridor's star-shaped `ic_courage_marker`,
+  and each screen tunes its own `TRAVEL_DURATION_MS`/`NOTE_GRACE_MS` for a
+  slow vs. fast feel (2200ms/400ms vs. 900ms/200ms, against Corridor's
+  1500ms/300ms) — starting values to refine after a longer on-device
+  playtest, same as every rhythm-mechanic tuning pass in this project.
+  `sixDayMarchChart`/`fastMarchChart` moved from a single note replayed
+  every loop (lane always `0`) to 6/7 notes spread across all 3 lanes in
+  one loop each — required-hit counts (6, 7) are unchanged, so "Day X of
+  6"/"Lap X of 7" still reads directly off `hits`. Both viewmodel methods
+  (`onSixDayMarchTapped`/`onFastMarchTapped`) gained a `lane: Int`
+  parameter, mirroring `EstherViewModel.onCorridorLaneTapped` exactly.
+  Charts still loop forever regardless of completion, so the
+  no-failure-state guarantee is untouched.
+- **Blow the Shofar is now guided, not discovery-based** — deliberately
+  reversing that screen's original design intent (which explicitly mirrored
+  Lions' Den's "order isn't told upfront"). An on-screen message now names
+  the next required color (`jericho_blow_shofar_next_note_label`, "Tap the
+  %1$s next"), reading `SequenceGameState.nextExpectedId` — a property that
+  already existed on the engine and was simply never wired up to the
+  screen. The connecting-line `Canvas` between tapped notes was removed
+  entirely (no longer needed once the message tells you the order); the
+  per-note checkmark stays. To keep this a real puzzle despite the
+  guidance, **both the required tap order and each note's screen position
+  are now shuffled fresh every playthrough** (`JerichoViewModel.newShofarPlacements`,
+  `Random.Default`, same "randomize at construction time" precedent as
+  `SlidingPuzzleGame.newShuffled`) — confirmed explicitly with the user
+  after an initial draft plan assumed the *positions* were still fixed.
+  `JerichoContent.shofarNotes` (fixed list, order-is-tap-order, embedded
+  position) split into `shofarNoteColors` (id + name only) and
+  `shofarNotePositionSlots` (an unordered pool of the same 5 coordinates);
+  a new `ShofarNotePlacement` data class carries one playthrough's actual
+  color→position assignment, stored on `JerichoUiState.shofarPlacements`.
+- **Test technique**: `JerichoFlowTest.kt`'s march helper now mirrors
+  `EstherFlowTest`'s `completeCorridorRhythmLane()` exactly (frozen
+  `mainClock.advanceTimeBy(...)` to each note's authored `hitTimeMs`,
+  tapping that note's lane), parameterized by which screen's lane
+  content-description string to use. The shofar helper can no longer tap a
+  fixed id sequence since the order is now random — it instead reads the
+  live "Tap the ___ next" text each step (checking each of the 5 known
+  color names against the current on-screen label to find the one that
+  currently matches) and taps whichever note it currently names, the same
+  "interrogate live state instead of assuming a fixed one" discipline
+  already used by the sliding-puzzle BFS solver test. Full `./gradlew
+  build` green; `JerichoFlowTest` passed twice back-to-back on-device
+  (first inside the full 19-test suite — only the known pre-existing
+  `WorldMapNavigationTest` flakiness from accumulated real save data on
+  this device failed, not a regression — then again in isolation).
+
+### Setting Up Camp rebuilt as a real drag-and-stack puzzle
+
+Setting Up Camp (12 memorial stones) was still a tap-to-collect grid reusing
+`hiddenobject` — flagged as another "just tapping the screen" puzzle, same
+complaint that drove the two reworks above. Rebuilt around a new engine and
+a real drag gesture.
+
+- **New engine, `game/puzzles/stackbuild/`**: none of the existing engines
+  fit "drag any remaining item, in whatever order the player picks, onto
+  one target, tracking that append-only order" — `hiddenobject` has no
+  order concept at all, `dragsort` sorts into categories (not one growing
+  pile), `sequence` tracks order but *requires* a specific one.
+  `StackBuildGameState(itemIds, placedOrder = emptyList())` — `placedOrder`
+  is the "strict stacking array" this puzzle needed, an immutable
+  append-only `List<String>` (this codebase's idiomatic equivalent of a
+  stack/linked list — every state holder here is an immutable data class,
+  never a mutable array/linked-list type). `StackBuildGame.onItemPlaced`
+  only appends; whether a drop counts (the "gentle snap" radius check) is
+  screen-side geometry, not engine logic — same split already used for
+  `dragsort` (screen hit-tests, engine only validates the resolved
+  target). Confirmed with the user: any stone, any order — Joshua 4 doesn't
+  rank the tribes' stones, so this is honest to the text, not an invented
+  difficulty layer.
+- **Screen**: reuses the `detectDragGestures` + `Modifier.offset` +
+  `boundsInRoot()` idiom already proven twice in this app
+  (`NoahsArkOrganizeArkScreen`, `DavidGoliathSlingPracticeScreen`), adapted
+  from multiple category bins to one fixed drop zone. New to this
+  codebase: an `Animatable`-driven snap animation (spring physics, plus a
+  small scale pulse for a bounce) once a drop lands within the snap radius,
+  instead of instant placement — first use of `Animatable`/`animateTo`
+  anywhere in this app. A miss just resets instantly, no penalty. Already-
+  placed stones render as a rising stack at the drop zone (each level
+  offset upward from the last) instead of vanishing into a checklist — the
+  "final monument" visual. Completion audio is unchanged
+  (`SoundEffect.ITEM_COLLECTED` per placement, same as before) — no new
+  celebration effects; that was in an earlier draft of this request and the
+  user walked it back before implementation.
+- **A real bug found on-device, not caught by unit tests or the build**:
+  the drag gesture's `pointerInput(stoneId) { detectDragGestures(...) }`
+  captured the drop zone's center in a closure at first launch and never
+  saw it update once the drop zone's real screen position was measured —
+  the gesture-detector coroutine only relaunches when its *keys* change,
+  and `stoneId` never does, so every drop measured its distance against
+  `Offset.Zero` and silently failed every time. Invisible to unit tests
+  (pure Kotlin, no layout) and invisible to a quick glance at the compiling
+  code — only surfaced as "the puzzle can't be completed" on the full
+  instrumented flow test. Diagnosed by writing a small isolated Compose
+  test (`createAndroidComposeRule` mounting just this screen's content with
+  local state, no full nav chain) to iterate faster than the full 19-test
+  suite, then confirmed with a one-off log statement showing the drop
+  zone's captured center was still `(0, 0)` after real layout had already
+  happened. Fixed by keying `pointerInput` on the drop zone center too, so
+  the detector relaunches and recaptures the fresh value. **Lesson for the
+  next real-drag screen in this app**: any `pointerInput` closure that
+  reads a value computed from `onGloballyPositioned` (not just static
+  content like an item's own id) needs that value in its key list, not
+  just identifiers that never change.
+- Full `./gradlew build` green; full instrumented suite 19/19 twice
+  back-to-back on-device after the fix (the first attempt, before the fix,
+  failed exactly where predicted — camp puzzle never reached 12/12, so its
+  Continue button never rendered).
+
 ## Next tasks
 
 The natural next step per the current order is either **Chapter 7 —
@@ -1768,3 +1903,20 @@ Settings" above).
   state. Any future engine with both an "already complete" input guard and
   a from-solved shuffle generator should route the shuffle through a
   guard-free internal function, not the public player-facing one.
+- **A `pointerInput(key) { detectDragGestures(...) }` closure must include
+  every value it reads that can change after first composition in its key
+  list — not just a stable per-item identifier.** Setting Up Camp's drag
+  gesture read a drop zone's center (captured via `onGloballyPositioned`,
+  necessarily unknown until after the first layout pass) inside a
+  `pointerInput(stoneId) { ... }` block; since the gesture-detector
+  coroutine only relaunches when its keys change, and `stoneId` never
+  does, the closure stayed pinned to the stale `Offset.Zero` value it
+  captured at first launch forever, so every drop's distance check failed
+  silently. Invisible to unit tests (pure Kotlin state has no layout) and
+  to the compiling build — only surfaced on the full instrumented flow
+  test as "the puzzle can never be completed." Fixed by adding the
+  changing value to `pointerInput`'s key list. When debugging a real-drag
+  screen that behaves correctly during the gesture but never registers the
+  drop, a small isolated `createAndroidComposeRule` test mounting just that
+  screen's content composable with local state (no full nav chain) is a
+  much faster iteration loop than re-running the whole flow test.
