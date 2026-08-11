@@ -137,7 +137,7 @@ class DavidGoliathViewModel(
                 chapterId = ChapterId.DAVID_GOLIATH,
                 stars = stars,
                 badgeId = DavidGoliathReward.badge.id,
-                scriptureCardId = DavidGoliathReward.scriptureCard.id,
+                scriptureCardIds = listOf(DavidGoliathReward.scriptureCard.id),
             )
             audioController.playSfx(SoundEffect.REWARD_CELEBRATION)
             _uiState.update { it.copy(reward = DavidGoliathRewardResult(stars = stars)) }

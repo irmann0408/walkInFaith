@@ -19,6 +19,6 @@ interface PlayerProfileRepository {
         chapterId: ChapterId,
         stars: Int,
         badgeId: String,
-        scriptureCardId: String,
+        scriptureCardIds: List<String>,
     )
 }

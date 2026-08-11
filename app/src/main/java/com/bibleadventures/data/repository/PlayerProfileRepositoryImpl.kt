@@ -35,7 +35,7 @@ class PlayerProfileRepositoryImpl(
         chapterId: ChapterId,
         stars: Int,
         badgeId: String,
-        scriptureCardId: String,
+        scriptureCardIds: List<String>,
     ) {
         localDataSource.update { current ->
             val existing = current.progressByChapter[chapterId] ?: AdventureProgress(chapterId = chapterId)
@@ -45,7 +45,7 @@ class PlayerProfileRepositoryImpl(
                 completedChapters = current.completedChapters + chapterId,
                 stars = current.stars + stars,
                 badges = current.badges + badgeId,
-                scriptureCards = current.scriptureCards + scriptureCardId,
+                scriptureCards = current.scriptureCards + scriptureCardIds,
             )
         }
     }

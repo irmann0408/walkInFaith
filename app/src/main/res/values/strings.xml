@@ -78,25 +78,9 @@
     <string name="chapter_daniel_description">Stay faithful with Daniel, even when it feels scary to pray.</string>
     <string name="chapter_daniel_lesson">Faithfulness and prayer.</string>
 
-    <string name="chapter_esther_new_queen_title">Esther: The New Queen</string>
-    <string name="chapter_esther_new_queen_description">Help Esther prepare for the palace while keeping Mordecai\'s wise advice.</string>
-    <string name="chapter_esther_new_queen_lesson">Humility and quiet obedience.</string>
-
-    <string name="chapter_esther_secret_plot_title">Esther: The Secret Plot</string>
-    <string name="chapter_esther_secret_plot_description">Help Mordecai slip past the guards to warn the king of danger.</string>
-    <string name="chapter_esther_secret_plot_lesson">Watchfulness and honesty.</string>
-
-    <string name="chapter_esther_threat_title">Esther: The Threat</string>
-    <string name="chapter_esther_threat_description">Gather messengers to warn the city of Haman\'s wicked law.</string>
-    <string name="chapter_esther_threat_lesson">Standing together in hard times.</string>
-
-    <string name="chapter_esther_brave_approach_title">Esther: The Brave Approach</string>
-    <string name="chapter_esther_brave_approach_description">Walk with Esther as she bravely approaches the king.</string>
-    <string name="chapter_esther_brave_approach_lesson">Courage and speaking up at the right time.</string>
-
-    <string name="chapter_esther_banquets_rescue_title">Esther: The Banquets &amp; Rescue</string>
-    <string name="chapter_esther_banquets_rescue_description">Prepare the banquet and help Esther bravely reveal Haman\'s plot.</string>
-    <string name="chapter_esther_banquets_rescue_lesson">Boldness saves lives.</string>
+    <string name="chapter_esther_title">Esther\'s Rescue of Her People</string>
+    <string name="chapter_esther_description">Help Esther bravely approach the king and save her people from Haman\'s wicked plot.</string>
+    <string name="chapter_esther_lesson">Courage and speaking up at the right time.</string>
 
     <string name="chapter_jericho_title">The Battle of Jericho</string>
     <string name="chapter_jericho_description">March around the walls of Jericho and trust an unusual plan.</string>

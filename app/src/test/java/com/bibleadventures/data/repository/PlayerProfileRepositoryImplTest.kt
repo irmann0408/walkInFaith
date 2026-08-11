@@ -71,7 +71,7 @@ class PlayerProfileRepositoryImplTest {
             chapterId = ChapterId.NOAHS_ARK,
             stars = 3,
             badgeId = "ARK_BUILDER",
-            scriptureCardId = "GENESIS_6_22",
+            scriptureCardIds = listOf("GENESIS_6_22"),
         )
 
         val profile = localDataSource.current()
@@ -87,8 +87,8 @@ class PlayerProfileRepositoryImplTest {
         val localDataSource = FakePlayerProfileLocalDataSource()
         val repository = PlayerProfileRepositoryImpl(localDataSource)
 
-        repository.completeChapter(ChapterId.NOAHS_ARK, stars = 3, badgeId = "ARK_BUILDER", scriptureCardId = "GENESIS_6_22")
-        repository.completeChapter(ChapterId.DAVID_GOLIATH, stars = 2, badgeId = "BRAVE_HEART", scriptureCardId = "SAMUEL_17_45")
+        repository.completeChapter(ChapterId.NOAHS_ARK, stars = 3, badgeId = "ARK_BUILDER", scriptureCardIds = listOf("GENESIS_6_22"))
+        repository.completeChapter(ChapterId.DAVID_GOLIATH, stars = 2, badgeId = "BRAVE_HEART", scriptureCardIds = listOf("SAMUEL_17_45"))
 
         assertEquals(5, localDataSource.current().stars)
     }

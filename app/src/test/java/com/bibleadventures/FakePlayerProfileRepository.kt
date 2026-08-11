@@ -39,7 +39,7 @@ class FakePlayerProfileRepository(
         chapterId: ChapterId,
         stars: Int,
         badgeId: String,
-        scriptureCardId: String,
+        scriptureCardIds: List<String>,
     ) {
         state.value = state.value.let { current ->
             val progress = (current.progressByChapter[chapterId] ?: AdventureProgress(chapterId = chapterId))
@@ -49,7 +49,7 @@ class FakePlayerProfileRepository(
                 completedChapters = current.completedChapters + chapterId,
                 stars = current.stars + stars,
                 badges = current.badges + badgeId,
-                scriptureCards = current.scriptureCards + scriptureCardId,
+                scriptureCards = current.scriptureCards + scriptureCardIds,
             )
         }
     }

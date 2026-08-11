@@ -114,7 +114,7 @@ class DanielViewModel(
                 chapterId = ChapterId.DANIEL,
                 stars = stars,
                 badgeId = DanielReward.badge.id,
-                scriptureCardId = DanielReward.scriptureCard.id,
+                scriptureCardIds = listOf(DanielReward.scriptureCard.id),
             )
             audioController.playSfx(SoundEffect.REWARD_CELEBRATION)
             _uiState.update { it.copy(reward = DanielRewardResult(stars = stars)) }

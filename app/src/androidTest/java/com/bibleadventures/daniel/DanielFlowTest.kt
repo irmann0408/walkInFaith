@@ -104,9 +104,9 @@ class DanielFlowTest {
         composeTestRule.onNodeWithText(activity.getString(R.string.badge_faithful_heart_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
 
-        // Back on the World Map: Daniel completed, Esther: The New Queen unlocked.
+        // Back on the World Map: Daniel completed, Esther unlocked.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_new_queen_title)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_title)).assertExists()
     }
 
     /** Walks Noah's Ark end to end (mirrors NoahsArkFlowTest) so David & Goliath unlocks. */

@@ -17,11 +17,7 @@ import com.bibleadventures.R
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.DavidGoliathContent
-import com.bibleadventures.game.stories.EstherNewQueenContent
-import com.bibleadventures.game.stories.EstherSecretPlotContent
-import com.bibleadventures.game.stories.EstherBanquetsRescueContent
-import com.bibleadventures.game.stories.EstherBraveApproachContent
-import com.bibleadventures.game.stories.EstherThreatContent
+import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.game.stories.NoahsArkContent
@@ -47,34 +43,17 @@ import com.bibleadventures.ui.screens.davidgoliath.lesson.DavidGoliathLessonScre
 import com.bibleadventures.ui.screens.davidgoliath.reward.DavidGoliathRewardScreen
 import com.bibleadventures.ui.screens.davidgoliath.sheepcounting.DavidGoliathSheepCountingScreen
 import com.bibleadventures.ui.screens.davidgoliath.slingpractice.DavidGoliathSlingPracticeScreen
-import com.bibleadventures.ui.screens.esthernewqueen.EstherNewQueenViewModel
-import com.bibleadventures.ui.screens.esthernewqueen.choice.EstherNewQueenChoiceScreen
-import com.bibleadventures.ui.screens.esthernewqueen.intro.EstherNewQueenIntroScreen
-import com.bibleadventures.ui.screens.esthernewqueen.lesson.EstherNewQueenLessonScreen
-import com.bibleadventures.ui.screens.esthernewqueen.reward.EstherNewQueenRewardScreen
-import com.bibleadventures.ui.screens.esthernewqueen.royalattire.EstherNewQueenRoyalAttireScreen
-import com.bibleadventures.ui.screens.esthersecretplot.EstherSecretPlotViewModel
-import com.bibleadventures.ui.screens.esthersecretplot.courtyardstealth.EstherSecretPlotCourtyardStealthScreen
-import com.bibleadventures.ui.screens.esthersecretplot.intro.EstherSecretPlotIntroScreen
-import com.bibleadventures.ui.screens.esthersecretplot.lesson.EstherSecretPlotLessonScreen
-import com.bibleadventures.ui.screens.esthersecretplot.reward.EstherSecretPlotRewardScreen
-import com.bibleadventures.ui.screens.estherbanquetsrescue.EstherBanquetsRescueViewModel
-import com.bibleadventures.ui.screens.estherbanquetsrescue.banquetjigsaw.EstherBanquetsRescueBanquetJigsawScreen
-import com.bibleadventures.ui.screens.estherbanquetsrescue.intro.EstherBanquetsRescueIntroScreen
-import com.bibleadventures.ui.screens.estherbanquetsrescue.lesson.EstherBanquetsRescueLessonScreen
-import com.bibleadventures.ui.screens.estherbanquetsrescue.revealhaman.EstherBanquetsRescueRevealHamanScreen
-import com.bibleadventures.ui.screens.estherbanquetsrescue.reward.EstherBanquetsRescueRewardScreen
-import com.bibleadventures.ui.screens.estherbraveapproach.EstherBraveApproachViewModel
-import com.bibleadventures.ui.screens.estherbraveapproach.choice.EstherBraveApproachChoiceScreen
-import com.bibleadventures.ui.screens.estherbraveapproach.corridor.EstherBraveApproachCorridorScreen
-import com.bibleadventures.ui.screens.estherbraveapproach.intro.EstherBraveApproachIntroScreen
-import com.bibleadventures.ui.screens.estherbraveapproach.lesson.EstherBraveApproachLessonScreen
-import com.bibleadventures.ui.screens.estherbraveapproach.reward.EstherBraveApproachRewardScreen
-import com.bibleadventures.ui.screens.estherthreat.EstherThreatViewModel
-import com.bibleadventures.ui.screens.estherthreat.intro.EstherThreatIntroScreen
-import com.bibleadventures.ui.screens.estherthreat.lesson.EstherThreatLessonScreen
-import com.bibleadventures.ui.screens.estherthreat.messengersudoku.EstherThreatMessengerSudokuScreen
-import com.bibleadventures.ui.screens.estherthreat.reward.EstherThreatRewardScreen
+import com.bibleadventures.ui.screens.esther.EstherViewModel
+import com.bibleadventures.ui.screens.esther.corridor.EstherCorridorScreen
+import com.bibleadventures.ui.screens.esther.courtyardstealth.EstherCourtyardStealthScreen
+import com.bibleadventures.ui.screens.esther.decisionchoice.EstherDecisionChoiceScreen
+import com.bibleadventures.ui.screens.esther.greetingchoice.EstherGreetingChoiceScreen
+import com.bibleadventures.ui.screens.esther.intro.EstherIntroScreen
+import com.bibleadventures.ui.screens.esther.lesson.EstherLessonScreen
+import com.bibleadventures.ui.screens.esther.messengersudoku.EstherMessengerSudokuScreen
+import com.bibleadventures.ui.screens.esther.revealhaman.EstherRevealHamanScreen
+import com.bibleadventures.ui.screens.esther.reward.EstherRewardScreen
+import com.bibleadventures.ui.screens.esther.royalattire.EstherRoyalAttireScreen
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.explore.GoodSamaritanExploreScreen
 import com.bibleadventures.ui.screens.goodsamaritan.intro.GoodSamaritanIntroScreen
@@ -147,16 +126,8 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                         navController.navigate(Destination.GoodSamaritan.Intro.route)
                     } else if (chapterId == ChapterId.DANIEL) {
                         navController.navigate(Destination.Daniel.Intro.route)
-                    } else if (chapterId == ChapterId.ESTHER_NEW_QUEEN) {
-                        navController.navigate(Destination.EstherNewQueen.Intro.route)
-                    } else if (chapterId == ChapterId.ESTHER_SECRET_PLOT) {
-                        navController.navigate(Destination.EstherSecretPlot.Intro.route)
-                    } else if (chapterId == ChapterId.ESTHER_THREAT) {
-                        navController.navigate(Destination.EstherThreat.Intro.route)
-                    } else if (chapterId == ChapterId.ESTHER_BRAVE_APPROACH) {
-                        navController.navigate(Destination.EstherBraveApproach.Intro.route)
-                    } else if (chapterId == ChapterId.ESTHER_BANQUETS_RESCUE) {
-                        navController.navigate(Destination.EstherBanquetsRescue.Intro.route)
+                    } else if (chapterId == ChapterId.ESTHER) {
+                        navController.navigate(Destination.Esther.Intro.route)
                     } else if (chapterId == ChapterId.JERICHO) {
                         navController.navigate(Destination.Jericho.Intro.route)
                     }
@@ -173,11 +144,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         davidGoliathGraph(navController)
         goodSamaritanGraph(navController)
         danielGraph(navController)
-        estherNewQueenGraph(navController)
-        estherSecretPlotGraph(navController)
-        estherThreatGraph(navController)
-        estherBraveApproachGraph(navController)
-        estherBanquetsRescueGraph(navController)
+        estherGraph(navController)
         jerichoGraph(navController)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
@@ -608,386 +575,190 @@ private fun NavHostController.danielViewModel(entry: NavBackStackEntry): DanielV
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 
-private fun NavGraphBuilder.estherNewQueenGraph(navController: NavHostController) {
+private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
     navigation(
-        startDestination = Destination.EstherNewQueen.Intro.route,
-        route = Destination.EstherNewQueen.GRAPH_ROUTE,
+        startDestination = Destination.Esther.Intro.route,
+        route = Destination.Esther.GRAPH_ROUTE,
     ) {
-        composable(Destination.EstherNewQueen.Intro.route) { entry ->
-            val viewModel = navController.estherNewQueenViewModel(entry)
-            EstherNewQueenIntroScreen(
+        composable(Destination.Esther.Intro.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
+            EstherIntroScreen(
                 viewModel = viewModel,
                 onContinue = {
                     viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.EstherNewQueen.SearchContext.route)
+                    navController.navigate(Destination.Esther.SearchContext.route)
                 },
             )
         }
-        composable(Destination.EstherNewQueen.SearchContext.route) {
+        composable(Destination.Esther.SearchContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_new_queen_search_context_title,
-                lineRes = EstherNewQueenContent.searchContextLines,
-                onContinue = { navController.navigate(Destination.EstherNewQueen.RoyalAttire.route) },
+                lineRes = EstherContent.searchContextLines,
+                onContinue = { navController.navigate(Destination.Esther.RoyalAttire.route) },
             )
         }
-        composable(Destination.EstherNewQueen.RoyalAttire.route) { entry ->
-            val viewModel = navController.estherNewQueenViewModel(entry)
+        composable(Destination.Esther.RoyalAttire.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            EstherNewQueenRoyalAttireScreen(
+            EstherRoyalAttireScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "royal_attire" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("royal_attire")
-                    navController.navigate(Destination.EstherNewQueen.CrownedContext.route)
+                    navController.navigate(Destination.Esther.CrownedContext.route)
                 },
             )
         }
-        composable(Destination.EstherNewQueen.CrownedContext.route) {
+        composable(Destination.Esther.CrownedContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_new_queen_crowned_context_title,
-                lineRes = EstherNewQueenContent.crownedContextLines,
-                onContinue = { navController.navigate(Destination.EstherNewQueen.Choice.route) },
+                lineRes = EstherContent.crownedContextLines,
+                onContinue = { navController.navigate(Destination.Esther.GreetingChoice.route) },
             )
         }
-        composable(Destination.EstherNewQueen.Choice.route) { entry ->
-            val viewModel = navController.estherNewQueenViewModel(entry)
-            EstherNewQueenChoiceScreen(
+        composable(Destination.Esther.GreetingChoice.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
+            EstherGreetingChoiceScreen(
                 viewModel = viewModel,
                 onContinue = {
-                    viewModel.onSceneCompleted("choice")
-                    navController.navigate(Destination.EstherNewQueen.Lesson.route)
+                    viewModel.onSceneCompleted("greeting_choice")
+                    navController.navigate(Destination.Esther.DangerContext.route)
                 },
             )
         }
-        composable(Destination.EstherNewQueen.Lesson.route) { entry ->
-            val viewModel = navController.estherNewQueenViewModel(entry)
-            EstherNewQueenLessonScreen(
-                onContinue = {
-                    viewModel.onSceneCompleted("lesson")
-                    navController.navigate(Destination.EstherNewQueen.Reward.route)
-                },
-            )
-        }
-        composable(Destination.EstherNewQueen.Reward.route) { entry ->
-            EstherNewQueenRewardScreen(
-                viewModel = navController.estherNewQueenViewModel(entry),
-                onReturnToMap = {
-                    // Clears the whole chapter back stack so Back from the map can't
-                    // re-enter a finished run or re-trigger onChapterFinished().
-                    navController.navigate(Destination.WorldMap.route) {
-                        popUpTo(Destination.WorldMap.route)
-                        launchSingleTop = true
-                    }
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun NavHostController.estherNewQueenViewModel(entry: NavBackStackEntry): EstherNewQueenViewModel {
-    val parentEntry = remember(entry) { getBackStackEntry(Destination.EstherNewQueen.GRAPH_ROUTE) }
-    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
-}
-
-private fun NavGraphBuilder.estherSecretPlotGraph(navController: NavHostController) {
-    navigation(
-        startDestination = Destination.EstherSecretPlot.Intro.route,
-        route = Destination.EstherSecretPlot.GRAPH_ROUTE,
-    ) {
-        composable(Destination.EstherSecretPlot.Intro.route) { entry ->
-            val viewModel = navController.estherSecretPlotViewModel(entry)
-            EstherSecretPlotIntroScreen(
-                viewModel = viewModel,
-                onContinue = {
-                    viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.EstherSecretPlot.DangerContext.route)
-                },
-            )
-        }
-        composable(Destination.EstherSecretPlot.DangerContext.route) {
+        composable(Destination.Esther.DangerContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_secret_plot_danger_context_title,
-                lineRes = EstherSecretPlotContent.dangerContextLines,
-                onContinue = { navController.navigate(Destination.EstherSecretPlot.CourtyardStealth.route) },
+                lineRes = EstherContent.dangerContextLines,
+                onContinue = { navController.navigate(Destination.Esther.CourtyardStealth.route) },
             )
         }
-        composable(Destination.EstherSecretPlot.CourtyardStealth.route) { entry ->
-            val viewModel = navController.estherSecretPlotViewModel(entry)
+        composable(Destination.Esther.CourtyardStealth.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            EstherSecretPlotCourtyardStealthScreen(
+            EstherCourtyardStealthScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "courtyard_stealth" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("courtyard_stealth")
-                    navController.navigate(Destination.EstherSecretPlot.WarnedContext.route)
+                    navController.navigate(Destination.Esther.WarnedContext.route)
                 },
             )
         }
-        composable(Destination.EstherSecretPlot.WarnedContext.route) {
+        composable(Destination.Esther.WarnedContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_secret_plot_warned_context_title,
-                lineRes = EstherSecretPlotContent.warnedContextLines,
-                onContinue = { navController.navigate(Destination.EstherSecretPlot.Lesson.route) },
+                lineRes = EstherContent.warnedContextLines,
+                onContinue = { navController.navigate(Destination.Esther.DecreeContext.route) },
             )
         }
-        composable(Destination.EstherSecretPlot.Lesson.route) { entry ->
-            val viewModel = navController.estherSecretPlotViewModel(entry)
-            EstherSecretPlotLessonScreen(
-                onContinue = {
-                    viewModel.onSceneCompleted("lesson")
-                    navController.navigate(Destination.EstherSecretPlot.Reward.route)
-                },
-            )
-        }
-        composable(Destination.EstherSecretPlot.Reward.route) { entry ->
-            EstherSecretPlotRewardScreen(
-                viewModel = navController.estherSecretPlotViewModel(entry),
-                onReturnToMap = {
-                    // Clears the whole chapter back stack so Back from the map can't
-                    // re-enter a finished run or re-trigger onChapterFinished().
-                    navController.navigate(Destination.WorldMap.route) {
-                        popUpTo(Destination.WorldMap.route)
-                        launchSingleTop = true
-                    }
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun NavHostController.estherSecretPlotViewModel(entry: NavBackStackEntry): EstherSecretPlotViewModel {
-    val parentEntry = remember(entry) { getBackStackEntry(Destination.EstherSecretPlot.GRAPH_ROUTE) }
-    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
-}
-
-private fun NavGraphBuilder.estherThreatGraph(navController: NavHostController) {
-    navigation(
-        startDestination = Destination.EstherThreat.Intro.route,
-        route = Destination.EstherThreat.GRAPH_ROUTE,
-    ) {
-        composable(Destination.EstherThreat.Intro.route) { entry ->
-            val viewModel = navController.estherThreatViewModel(entry)
-            EstherThreatIntroScreen(
-                viewModel = viewModel,
-                onContinue = {
-                    viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.EstherThreat.DecreeContext.route)
-                },
-            )
-        }
-        composable(Destination.EstherThreat.DecreeContext.route) {
+        composable(Destination.Esther.DecreeContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_threat_decree_context_title,
-                lineRes = EstherThreatContent.decreeContextLines,
-                onContinue = { navController.navigate(Destination.EstherThreat.MessengerSudoku.route) },
+                lineRes = EstherContent.decreeContextLines,
+                onContinue = { navController.navigate(Destination.Esther.MessengerSudoku.route) },
             )
         }
-        composable(Destination.EstherThreat.MessengerSudoku.route) { entry ->
-            val viewModel = navController.estherThreatViewModel(entry)
+        composable(Destination.Esther.MessengerSudoku.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            EstherThreatMessengerSudokuScreen(
+            EstherMessengerSudokuScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "messenger_sudoku" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("messenger_sudoku")
-                    navController.navigate(Destination.EstherThreat.MourningContext.route)
+                    navController.navigate(Destination.Esther.MourningContext.route)
                 },
             )
         }
-        composable(Destination.EstherThreat.MourningContext.route) {
+        composable(Destination.Esther.MourningContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_threat_mourning_context_title,
-                lineRes = EstherThreatContent.mourningContextLines,
-                onContinue = { navController.navigate(Destination.EstherThreat.Lesson.route) },
+                lineRes = EstherContent.mourningContextLines,
+                onContinue = { navController.navigate(Destination.Esther.DecisionChoice.route) },
             )
         }
-        composable(Destination.EstherThreat.Lesson.route) { entry ->
-            val viewModel = navController.estherThreatViewModel(entry)
-            EstherThreatLessonScreen(
-                onContinue = {
-                    viewModel.onSceneCompleted("lesson")
-                    navController.navigate(Destination.EstherThreat.Reward.route)
-                },
-            )
-        }
-        composable(Destination.EstherThreat.Reward.route) { entry ->
-            EstherThreatRewardScreen(
-                viewModel = navController.estherThreatViewModel(entry),
-                onReturnToMap = {
-                    // Clears the whole chapter back stack so Back from the map can't
-                    // re-enter a finished run or re-trigger onChapterFinished().
-                    navController.navigate(Destination.WorldMap.route) {
-                        popUpTo(Destination.WorldMap.route)
-                        launchSingleTop = true
-                    }
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun NavHostController.estherThreatViewModel(entry: NavBackStackEntry): EstherThreatViewModel {
-    val parentEntry = remember(entry) { getBackStackEntry(Destination.EstherThreat.GRAPH_ROUTE) }
-    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
-}
-
-private fun NavGraphBuilder.estherBraveApproachGraph(navController: NavHostController) {
-    navigation(
-        startDestination = Destination.EstherBraveApproach.Intro.route,
-        route = Destination.EstherBraveApproach.GRAPH_ROUTE,
-    ) {
-        composable(Destination.EstherBraveApproach.Intro.route) { entry ->
-            val viewModel = navController.estherBraveApproachViewModel(entry)
-            EstherBraveApproachIntroScreen(
+        composable(Destination.Esther.DecisionChoice.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
+            EstherDecisionChoiceScreen(
                 viewModel = viewModel,
                 onContinue = {
-                    viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.EstherBraveApproach.Choice.route)
+                    viewModel.onSceneCompleted("decision_choice")
+                    navController.navigate(Destination.Esther.FastingContext.route)
                 },
             )
         }
-        composable(Destination.EstherBraveApproach.Choice.route) { entry ->
-            val viewModel = navController.estherBraveApproachViewModel(entry)
-            EstherBraveApproachChoiceScreen(
-                viewModel = viewModel,
-                onContinue = {
-                    viewModel.onSceneCompleted("choice")
-                    navController.navigate(Destination.EstherBraveApproach.FastingContext.route)
-                },
-            )
-        }
-        composable(Destination.EstherBraveApproach.FastingContext.route) {
+        composable(Destination.Esther.FastingContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_brave_approach_fasting_context_title,
-                lineRes = EstherBraveApproachContent.fastingContextLines,
-                onContinue = { navController.navigate(Destination.EstherBraveApproach.Corridor.route) },
+                lineRes = EstherContent.fastingContextLines,
+                onContinue = { navController.navigate(Destination.Esther.Corridor.route) },
             )
         }
-        composable(Destination.EstherBraveApproach.Corridor.route) { entry ->
-            val viewModel = navController.estherBraveApproachViewModel(entry)
+        composable(Destination.Esther.Corridor.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            EstherBraveApproachCorridorScreen(
+            EstherCorridorScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "corridor" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("corridor")
-                    navController.navigate(Destination.EstherBraveApproach.ScepterContext.route)
+                    navController.navigate(Destination.Esther.ScepterContext.route)
                 },
             )
         }
-        composable(Destination.EstherBraveApproach.ScepterContext.route) {
+        composable(Destination.Esther.ScepterContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_brave_approach_scepter_context_title,
-                lineRes = EstherBraveApproachContent.scepterContextLines,
-                onContinue = { navController.navigate(Destination.EstherBraveApproach.Lesson.route) },
+                lineRes = EstherContent.scepterContextLines,
+                onContinue = { navController.navigate(Destination.Esther.PlanningContext.route) },
             )
         }
-        composable(Destination.EstherBraveApproach.Lesson.route) { entry ->
-            val viewModel = navController.estherBraveApproachViewModel(entry)
-            EstherBraveApproachLessonScreen(
-                onContinue = {
-                    viewModel.onSceneCompleted("lesson")
-                    navController.navigate(Destination.EstherBraveApproach.Reward.route)
-                },
-            )
-        }
-        composable(Destination.EstherBraveApproach.Reward.route) { entry ->
-            EstherBraveApproachRewardScreen(
-                viewModel = navController.estherBraveApproachViewModel(entry),
-                onReturnToMap = {
-                    // Clears the whole chapter back stack so Back from the map can't
-                    // re-enter a finished run or re-trigger onChapterFinished().
-                    navController.navigate(Destination.WorldMap.route) {
-                        popUpTo(Destination.WorldMap.route)
-                        launchSingleTop = true
-                    }
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun NavHostController.estherBraveApproachViewModel(entry: NavBackStackEntry): EstherBraveApproachViewModel {
-    val parentEntry = remember(entry) { getBackStackEntry(Destination.EstherBraveApproach.GRAPH_ROUTE) }
-    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
-}
-
-private fun NavGraphBuilder.estherBanquetsRescueGraph(navController: NavHostController) {
-    navigation(
-        startDestination = Destination.EstherBanquetsRescue.Intro.route,
-        route = Destination.EstherBanquetsRescue.GRAPH_ROUTE,
-    ) {
-        composable(Destination.EstherBanquetsRescue.Intro.route) { entry ->
-            val viewModel = navController.estherBanquetsRescueViewModel(entry)
-            EstherBanquetsRescueIntroScreen(
-                viewModel = viewModel,
-                onContinue = {
-                    viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.EstherBanquetsRescue.PlanningContext.route)
-                },
-            )
-        }
-        composable(Destination.EstherBanquetsRescue.PlanningContext.route) {
+        composable(Destination.Esther.PlanningContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_banquets_rescue_planning_context_title,
-                lineRes = EstherBanquetsRescueContent.planningContextLines,
-                onContinue = { navController.navigate(Destination.EstherBanquetsRescue.BanquetJigsaw.route) },
+                lineRes = EstherContent.planningContextLines,
+                onContinue = { navController.navigate(Destination.Esther.SecondBanquetContext.route) },
             )
         }
-        composable(Destination.EstherBanquetsRescue.BanquetJigsaw.route) { entry ->
-            val viewModel = navController.estherBanquetsRescueViewModel(entry)
-            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            EstherBanquetsRescueBanquetJigsawScreen(
-                viewModel = viewModel,
-                previouslyCompleted = "banquet_jigsaw" in previouslyCompletedSceneIds,
-                onContinue = {
-                    viewModel.onSceneCompleted("banquet_jigsaw")
-                    navController.navigate(Destination.EstherBanquetsRescue.SecondBanquetContext.route)
-                },
-            )
-        }
-        composable(Destination.EstherBanquetsRescue.SecondBanquetContext.route) {
+        composable(Destination.Esther.SecondBanquetContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_banquets_rescue_second_banquet_context_title,
-                lineRes = EstherBanquetsRescueContent.secondBanquetContextLines,
-                onContinue = { navController.navigate(Destination.EstherBanquetsRescue.RevealHaman.route) },
+                lineRes = EstherContent.secondBanquetContextLines,
+                onContinue = { navController.navigate(Destination.Esther.RevealHaman.route) },
             )
         }
-        composable(Destination.EstherBanquetsRescue.RevealHaman.route) { entry ->
-            val viewModel = navController.estherBanquetsRescueViewModel(entry)
+        composable(Destination.Esther.RevealHaman.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            EstherBanquetsRescueRevealHamanScreen(
+            EstherRevealHamanScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "reveal_haman" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("reveal_haman")
-                    navController.navigate(Destination.EstherBanquetsRescue.SavedContext.route)
+                    navController.navigate(Destination.Esther.SavedContext.route)
                 },
             )
         }
-        composable(Destination.EstherBanquetsRescue.SavedContext.route) {
+        composable(Destination.Esther.SavedContext.route) {
             StoryBeatScreen(
                 titleRes = R.string.esther_banquets_rescue_saved_context_title,
-                lineRes = EstherBanquetsRescueContent.savedContextLines,
-                onContinue = { navController.navigate(Destination.EstherBanquetsRescue.Lesson.route) },
+                lineRes = EstherContent.savedContextLines,
+                onContinue = { navController.navigate(Destination.Esther.Lesson.route) },
             )
         }
-        composable(Destination.EstherBanquetsRescue.Lesson.route) { entry ->
-            val viewModel = navController.estherBanquetsRescueViewModel(entry)
-            EstherBanquetsRescueLessonScreen(
+        composable(Destination.Esther.Lesson.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
+            EstherLessonScreen(
                 onContinue = {
                     viewModel.onSceneCompleted("lesson")
-                    navController.navigate(Destination.EstherBanquetsRescue.Reward.route)
+                    navController.navigate(Destination.Esther.Reward.route)
                 },
             )
         }
-        composable(Destination.EstherBanquetsRescue.Reward.route) { entry ->
-            EstherBanquetsRescueRewardScreen(
-                viewModel = navController.estherBanquetsRescueViewModel(entry),
+        composable(Destination.Esther.Reward.route) { entry ->
+            EstherRewardScreen(
+                viewModel = navController.estherViewModel(entry),
                 onReturnToMap = {
                     // Clears the whole chapter back stack so Back from the map can't
                     // re-enter a finished run or re-trigger onChapterFinished().
@@ -1002,8 +773,8 @@ private fun NavGraphBuilder.estherBanquetsRescueGraph(navController: NavHostCont
 }
 
 @Composable
-private fun NavHostController.estherBanquetsRescueViewModel(entry: NavBackStackEntry): EstherBanquetsRescueViewModel {
-    val parentEntry = remember(entry) { getBackStackEntry(Destination.EstherBanquetsRescue.GRAPH_ROUTE) }
+private fun NavHostController.estherViewModel(entry: NavBackStackEntry): EstherViewModel {
+    val parentEntry = remember(entry) { getBackStackEntry(Destination.Esther.GRAPH_ROUTE) }
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 

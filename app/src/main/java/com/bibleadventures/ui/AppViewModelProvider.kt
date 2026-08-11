@@ -9,11 +9,7 @@ import com.bibleadventures.ui.screens.badges.BadgesViewModel
 import com.bibleadventures.ui.screens.character.CharacterViewModel
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
-import com.bibleadventures.ui.screens.esthernewqueen.EstherNewQueenViewModel
-import com.bibleadventures.ui.screens.esthersecretplot.EstherSecretPlotViewModel
-import com.bibleadventures.ui.screens.estherbanquetsrescue.EstherBanquetsRescueViewModel
-import com.bibleadventures.ui.screens.estherbraveapproach.EstherBraveApproachViewModel
-import com.bibleadventures.ui.screens.estherthreat.EstherThreatViewModel
+import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.screens.mainmenu.MainMenuViewModel
@@ -64,23 +60,7 @@ object AppViewModelProvider {
         }
         initializer {
             val container = bibleAdventuresApplication().container
-            EstherNewQueenViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
-        }
-        initializer {
-            val container = bibleAdventuresApplication().container
-            EstherSecretPlotViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
-        }
-        initializer {
-            val container = bibleAdventuresApplication().container
-            EstherThreatViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
-        }
-        initializer {
-            val container = bibleAdventuresApplication().container
-            EstherBraveApproachViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
-        }
-        initializer {
-            val container = bibleAdventuresApplication().container
-            EstherBanquetsRescueViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
+            EstherViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
         }
         initializer {
             val container = bibleAdventuresApplication().container

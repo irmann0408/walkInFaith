@@ -90,7 +90,7 @@ class JerichoViewModel(
                 chapterId = ChapterId.JERICHO,
                 stars = stars,
                 badgeId = JerichoReward.badge.id,
-                scriptureCardId = JerichoReward.scriptureCard.id,
+                scriptureCardIds = listOf(JerichoReward.scriptureCard.id),
             )
             audioController.playSfx(SoundEffect.REWARD_CELEBRATION)
             _uiState.update { it.copy(reward = JerichoRewardResult(stars = stars)) }

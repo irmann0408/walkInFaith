@@ -94,7 +94,7 @@ class GoodSamaritanViewModel(
                 chapterId = ChapterId.GOOD_SAMARITAN,
                 stars = stars,
                 badgeId = GoodSamaritanReward.badge.id,
-                scriptureCardId = GoodSamaritanReward.scriptureCard.id,
+                scriptureCardIds = listOf(GoodSamaritanReward.scriptureCard.id),
             )
             audioController.playSfx(SoundEffect.REWARD_CELEBRATION)
             _uiState.update { it.copy(reward = GoodSamaritanRewardResult(stars = stars)) }

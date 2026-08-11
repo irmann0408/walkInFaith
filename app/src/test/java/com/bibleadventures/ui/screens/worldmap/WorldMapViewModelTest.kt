@@ -39,7 +39,7 @@ private class FakePlayerProfileRepository(
         chapterId: ChapterId,
         stars: Int,
         badgeId: String,
-        scriptureCardId: String,
+        scriptureCardIds: List<String>,
     ) {
         state.value = state.value.let { current ->
             val progress = (current.progressByChapter[chapterId] ?: AdventureProgress(chapterId = chapterId))
@@ -48,7 +48,7 @@ private class FakePlayerProfileRepository(
                 progressByChapter = current.progressByChapter + (chapterId to progress),
                 completedChapters = current.completedChapters + chapterId,
                 badges = current.badges + badgeId,
-                scriptureCards = current.scriptureCards + scriptureCardId,
+                scriptureCards = current.scriptureCards + scriptureCardIds,
             )
         }
     }
@@ -80,7 +80,7 @@ class WorldMapViewModelTest {
         backgroundScope.launch { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
-        repository.completeChapter(ChapterId.NOAHS_ARK, stars = 3, badgeId = "ARK_BUILDER", scriptureCardId = "GENESIS_6_22")
+        repository.completeChapter(ChapterId.NOAHS_ARK, stars = 3, badgeId = "ARK_BUILDER", scriptureCardIds = listOf("GENESIS_6_22"))
         advanceUntilIdle()
 
         val nodes = viewModel.uiState.value.nodes.associateBy { it.chapter.id }

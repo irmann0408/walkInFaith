@@ -15,11 +15,7 @@ object RewardCatalog {
         DavidGoliathReward.badge,
         GoodSamaritanReward.badge,
         DanielReward.badge,
-        EstherNewQueenReward.badge,
-        EstherSecretPlotReward.badge,
-        EstherThreatReward.badge,
-        EstherBraveApproachReward.badge,
-        EstherBanquetsRescueReward.badge,
+        EstherReward.badge,
         JerichoReward.badge,
     )
     val scriptureCards: List<ScriptureCard> = listOf(
@@ -27,11 +23,6 @@ object RewardCatalog {
         DavidGoliathReward.scriptureCard,
         GoodSamaritanReward.scriptureCard,
         DanielReward.scriptureCard,
-        EstherNewQueenReward.scriptureCard,
-        EstherSecretPlotReward.scriptureCard,
-        EstherThreatReward.scriptureCard,
-        EstherBraveApproachReward.scriptureCard,
-        EstherBanquetsRescueReward.scriptureCard,
         JerichoReward.scriptureCard,
-    )
+    ) + EstherReward.scriptureCards
 }

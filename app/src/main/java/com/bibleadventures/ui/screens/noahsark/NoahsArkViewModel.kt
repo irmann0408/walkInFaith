@@ -120,7 +120,7 @@ class NoahsArkViewModel(
                 chapterId = ChapterId.NOAHS_ARK,
                 stars = stars,
                 badgeId = NoahsArkReward.badge.id,
-                scriptureCardId = NoahsArkReward.scriptureCard.id,
+                scriptureCardIds = listOf(NoahsArkReward.scriptureCard.id),
             )
             audioController.playSfx(SoundEffect.REWARD_CELEBRATION)
             _uiState.update { it.copy(reward = NoahsArkRewardResult(stars = stars)) }

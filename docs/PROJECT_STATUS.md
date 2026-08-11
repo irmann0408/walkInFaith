@@ -1,17 +1,18 @@
 # Project Status
 
-Last updated: 2026-08-11 (Esther rebuilt as a 5-chapter arc — The New Queen,
-The Secret Plot, The Threat, The Brave Approach, The Banquets & Rescue —
-replacing the original single Esther chapter; real Audio/Narration/Settings
-and Chapter 6 — The Battle of Jericho also complete)
+Last updated: 2026-08-11 (the 5-chapter Esther arc consolidated back into one
+chapter, "Esther's Rescue of Her People," per playtesting feedback that the
+split felt disjointed; real Audio/Narration/Settings and Chapter 6 — The
+Battle of Jericho also complete)
 
 ## Current milestone
 
-**The Esther arc (5 chapters) rebuild: COMPLETE** (chain now runs Noah's
-Ark → David & Goliath → Good Samaritan → Daniel → Esther: The New Queen →
-Esther: The Secret Plot → Esther: The Threat → Esther: The Brave Approach →
-Esther: The Banquets & Rescue → Jericho → Feeding the 5,000 → Jesus Calms
-the Storm)
+**Esther consolidation: COMPLETE** (chain now runs Noah's Ark → David &
+Goliath → Good Samaritan → Daniel → Esther's Rescue of Her People → Jericho →
+Feeding the 5,000 → Jesus Calms the Storm). This reverses the immediately
+preceding 5-chapter Esther-arc split (still documented below for history) —
+see "Chapters 5a–5e consolidated back into one chapter" further down for
+what changed and why.
 
 ## Completed features
 
@@ -1243,14 +1244,127 @@ this landed.
   "jump to any puzzle from a picker screen" idea that turned out not to
   be what was wanted; the actual ask was narrower and this is it.
 
+### Chapters 5a–5e consolidated back into one chapter — Esther's Rescue of Her People
+Playtesting feedback on the 5-chapter Esther arc (previous section): the
+split felt disjointed as 5 separate top-level chapters. Reverted to one
+chapter, **Esther's Rescue of Her People** (`ChapterId.ESTHER`, revived;
+`requiredChapter = DANIEL`; `JERICHO.requiredChapter` now points back to
+`ESTHER`), treating each of the 5 mini-games as a sequential puzzle inside
+it — all 5 scripture verses still earned along the way, but only **one**
+badge for completing the whole chapter (not a new "shared reward" concept:
+just `completeChapter` now taking a list of scripture card ids instead of
+one). The **Banquet Jigsaw mini-game is dropped entirely**, per explicit
+feedback that it duplicated Organize the Ark's `dragsort` mechanic and was
+also too easy on top of that — the banquet-preparation beats it used to gate
+are now narrative-only context cards, no puzzle attached.
+
+- **The one real architecture change**: `PlayerProfileRepository.completeChapter`'s
+  `scriptureCardId: String` parameter became `scriptureCardIds: List<String>`
+  (`current.scriptureCards + scriptureCardIds` — a `Set<String> + Collection<String>`
+  — needed no other logic change). Every already-shipped chapter's
+  `onChapterFinished()` call site now wraps its existing single id in
+  `listOf(...)`; confirmed via code reading that `ScriptureCardsViewModel`
+  and the `Badge`/`ScriptureCard.chapterId` display lookups in
+  `BadgesScreen.kt`/`ScriptureCardsScreen.kt` had no 1-card-per-chapter
+  assumption baked in, so this one signature change was sufficient.
+- **The 5 split-era `ChapterId` enum constants are kept, just permanently
+  unreferenced** — `ESTHER_NEW_QUEEN`, `ESTHER_SECRET_PLOT`, `ESTHER_THREAT`,
+  `ESTHER_BRAVE_APPROACH`, `ESTHER_BANQUETS_RESCUE` are never deleted or
+  renamed, same rule as every previous chapter retirement in this log:
+  real devices already have real completed-chapter save data referencing
+  those exact names from playtesting the 5-chapter version, and deleting
+  the constants would fail `kotlinx.serialization` decoding, silently
+  resetting that save via the existing corrupted-data fallback. One
+  concrete, observed consequence: a device with real progress under the old
+  5-chapter ids shows Jericho as locked again after this change, since
+  `ESTHER` itself (the id the new single chapter actually completes under)
+  was never marked complete by that old save data — the chapter has to be
+  replayed once under its new identity. No data is lost or corrupted, but
+  it's a real, expected side effect of a chapter-identity consolidation
+  worth calling out, not a bug.
+- **One `EstherContent.kt`/`EstherReward.kt`/`ui/screens/esther/EstherViewModel.kt`**
+  merge all 5 retired chapters' content/reward/logic verbatim (no gameplay
+  changes — every puzzle engine, piece of content, and screen already
+  existed and worked; this was pure reorganization) except `foodItems`/
+  `zoneCategories`, dropped with the jigsaw. `EstherReward` holds one badge
+  (`COURAGEOUS_HEART`, reused from the old Brave Approach chapter as-is)
+  and `scriptureCards: List<ScriptureCard>` (all 5 reused as-is). The two
+  Choice scenes' formerly-identical `selectedChoiceId`/`onChoiceSelected`
+  now have distinct names (`selectedGreetingChoiceId`/`onGreetingChoiceSelected`,
+  `selectedDecisionChoiceId`/`onDecisionChoiceSelected`) since both now live
+  in one ViewModel.
+- **7 of the 8 existing puzzle/choice screens were reused, re-parented into
+  `ui/screens/esther/<scene>/`** and re-pointed at the single `EstherViewModel`
+  — everything else about them (UI, gating logic, the `previouslyCompleted`
+  skip-already-done handling) is unchanged. The Banquet Jigsaw screen was
+  **not** carried over, deleted with the rest of the old `estherbanquetsrescue`
+  package. New Intro/Lesson/Reward screens replace the old 5×3: Lesson keeps
+  the original single-chapter's "Courage and Speaking Up" text (Brave
+  Approach's lesson, now the whole chapter's closing lesson — a revert, not
+  new copy) alongside a highlighted Esther 4:14 card; Reward renders all 5
+  `ScriptureCardView`s plus the one badge in a `Modifier.verticalScroll(...)`
+  Column, since 5 cards don't fit one screen.
+- **Scene flow**: Intro → context → Royal Attire → context → Choice
+  (greeting) → context → Courtyard Stealth → context → context → Messenger
+  Sudoku → context → Choice ("if I perish, I perish") → context → Corridor
+  Courage Meter → context → context (banquet preparation, narrative only,
+  no puzzle) → context → Reveal Haman's Plot → context → Lesson → Reward.
+  Every former sub-chapter's own separate Intro dialogue beat was dropped in
+  favor of just its context cards, to keep the merged flow's screen count
+  close to the original 5-chapter total's per-chapter shape rather than
+  compounding 5 chapters' worth of intros into one long chain.
+- **A real bug found and fixed during on-device verification, only visible
+  once the Reward screen actually scrolled**: `performClick()` on the new
+  Reward screen's "Return to Map" button — now laid out below 5 scripture
+  cards, off-screen at zero scroll offset — didn't reliably register on a
+  real device from the instrumented test; `EstherFlowTest.kt` and
+  `JerichoFlowTest.kt`'s `completeEsther(...)` helper both needed an
+  explicit `performScrollTo()` on that button before `performClick()`
+  (content inside `Modifier.verticalScroll` is composed eagerly, so
+  `performScrollTo()` — not `performScrollToNode` on a tagged container,
+  which is for `LazyColumn`-style lazy composition — is the right tool
+  here, same distinction already noted for the World Map's `LazyColumn` in
+  the Esther-arc-split section above). This is a test-technique fix, not an
+  app behavior bug — a real player scrolling to see the button can always
+  tap it once visible; flagged here as a reminder that a scrollable reward
+  screen with a below-the-fold primary action is worth a UX look if this
+  pattern repeats for a future multi-card-reward chapter.
+- Old files deleted wholesale: the 5 `ui/screens/esther{newqueen,secretplot,
+  threat,braveapproach,banquetsrescue}/` packages, `game/stories/Esther{NewQueen,
+  SecretPlot,Threat,BraveApproach,BanquetsRescue}Content.kt`,
+  `game/rewards/Esther{...}Reward.kt`, their 5 `*ViewModelTest.kt` files, and
+  `EstherArcFlowTest.kt`. Per-scene string resources (e.g.
+  `esther_secret_plot_stealth_title`) were kept under their existing names
+  rather than renamed to a uniform prefix — string-resource names carry no
+  persisted-data implications, and renaming ~150 entries for cosmetic
+  consistency wasn't worth the risk/effort. Only the chapter-catalog-level
+  strings (`chapter_esther_new_queen_title` etc.) were removed and replaced
+  with one new `chapter_esther_title`/`_description`/`_lesson` set — the
+  original pre-split title text, "Esther's Rescue of Her People," couldn't
+  be reused verbatim since those specific string entries no longer existed
+  after the split removed them.
+- **Tests**: one merged `EstherViewModelTest.kt` (replacing the 5 retired
+  ones' assertions). One new instrumented `EstherFlowTest.kt` (replacing
+  `EstherArcFlowTest.kt`) walking the whole merged chapter in a single test.
+  `JerichoFlowTest.kt`'s `completeEstherArc(...)` prerequisite helper
+  reverted to a single-chapter `completeEsther(...)`. `DanielFlowTest.kt`'s
+  final assertion reverted from `chapter_esther_new_queen_title` back to
+  `chapter_esther_title`. Full `./gradlew build` green (unit tests + lint +
+  both build variants); full instrumented suite run twice back-to-back
+  on-device, 19/19 clean both times after the scroll-to-button fix above.
+- This was request #1 of 3 the user flagged in the same message; #2 and #3
+  weren't described yet and aren't started.
+
 ## Next tasks
 
-Nothing currently planned. If work resumes later, the natural next step per
-the current order is either **Chapter 7 — Feeding the 5,000** (now unlocked
-once The Battle of Jericho is completed) or the rest of **Milestone 6 —
-Parent Area**: a parental gate, progress summary, and reset-progress
-functionality (spec section 17) — the audio/narration toggles portion of
-Settings is already built (see "Audio, Narration & Settings" above).
+Two more requests the user flagged but hasn't described yet (from the same
+message as the Esther consolidation above) — pick those up when stated.
+Otherwise, the natural next step per the current order is either **Chapter
+7 — Feeding the 5,000** (now unlocked once The Battle of Jericho is
+completed) or the rest of **Milestone 6 — Parent Area**: a parental gate,
+progress summary, and reset-progress functionality (spec section 17) — the
+audio/narration toggles portion of Settings is already built (see "Audio,
+Narration & Settings" above).
 
 ## Architectural decisions log
 
@@ -1343,3 +1457,17 @@ Settings is already built (see "Audio, Narration & Settings" above).
   destination) is just `dragsort`'s existing many-items-to-few-categories
   model with every category holding exactly one item; no engine changes
   needed, only new content.
+- **A chapter split can be reverted back into one chapter** just as
+  cleanly as a chapter can be split into several (the Esther arc rebuild
+  above) — the same "never delete/rename an already-persisted `ChapterId`
+  enum constant" rule applies in both directions. Reverting the split kept
+  all 5 split-era constants permanently unreferenced-but-present in the
+  enum, for the same reason the original chapter's `ESTHER` constant was
+  kept unreferenced during the split: real devices have real save data
+  keyed on whichever names existed at the time.
+- **One chapter completion can award multiple scripture cards but only one
+  badge** — `PlayerProfileRepository.completeChapter` takes
+  `scriptureCardIds: List<String>` (not a single id) precisely so a chapter
+  built from several sequential mini-puzzles can hand out a verse per
+  puzzle while still landing on one collectible badge for finishing the
+  whole thing, without inventing a new "multi-part chapter" reward concept.

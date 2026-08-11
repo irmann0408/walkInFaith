@@ -19,7 +19,7 @@ class ProgressionService(
     val chapterStatuses: Flow<Map<ChapterId, ChapterStatus>> = repository.profile
         .map { profile -> ChapterUnlockRules.computeStatuses(catalog, profile.completedChapters) }
 
-    suspend fun completeChapter(chapterId: ChapterId, stars: Int, badgeId: String, scriptureCardId: String) {
-        repository.completeChapter(chapterId, stars, badgeId, scriptureCardId)
+    suspend fun completeChapter(chapterId: ChapterId, stars: Int, badgeId: String, scriptureCardIds: List<String>) {
+        repository.completeChapter(chapterId, stars, badgeId, scriptureCardIds)
     }
 }
