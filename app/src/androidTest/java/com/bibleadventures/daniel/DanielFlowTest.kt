@@ -36,7 +36,7 @@ class DanielFlowTest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun completingDaniel_awardsStarsAndUnlocksFeeding5000OnTheWorldMap() {
+    fun completingDaniel_awardsStarsAndUnlocksEstherOnTheWorldMap() {
         val activity = composeTestRule.activity
         val continueLabel = activity.getString(R.string.action_continue)
 
@@ -104,9 +104,9 @@ class DanielFlowTest {
         composeTestRule.onNodeWithText(activity.getString(R.string.badge_faithful_heart_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
 
-        // Back on the World Map: Daniel completed, Feeding the 5,000 unlocked.
+        // Back on the World Map: Daniel completed, Esther's Rescue unlocked.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_feeding_5000_title)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_title)).assertExists()
     }
 
     /** Walks Noah's Ark end to end (mirrors NoahsArkFlowTest) so David & Goliath unlocks. */

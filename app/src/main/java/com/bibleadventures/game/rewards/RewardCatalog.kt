@@ -10,11 +10,20 @@ import com.bibleadventures.domain.model.ScriptureCard
  * same reasoning as `ChapterCatalog`'s fixed list.
  */
 object RewardCatalog {
-    val badges: List<Badge> = listOf(NoahsArkReward.badge, DavidGoliathReward.badge, GoodSamaritanReward.badge, DanielReward.badge)
+    val badges: List<Badge> = listOf(
+        NoahsArkReward.badge,
+        DavidGoliathReward.badge,
+        GoodSamaritanReward.badge,
+        DanielReward.badge,
+        EstherReward.badge,
+        JerichoReward.badge,
+    )
     val scriptureCards: List<ScriptureCard> = listOf(
         NoahsArkReward.scriptureCard,
         DavidGoliathReward.scriptureCard,
         GoodSamaritanReward.scriptureCard,
         DanielReward.scriptureCard,
+        EstherReward.scriptureCard,
+        JerichoReward.scriptureCard,
     )
 }

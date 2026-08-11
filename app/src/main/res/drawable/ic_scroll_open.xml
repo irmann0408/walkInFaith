@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- The same scroll, unrolled and open — the truth spoken at last. Shape-changed from ic_scroll_sealed, never color-only. -->
+    <path android:fillColor="#FFF5EDDD" android:pathData="M8,14 L56,14 L56,50 L8,50 Z" />
+    <path android:fillColor="#FFC9A16A" android:pathData="M8,10 L56,10 L56,14 L8,14 Z" />
+    <path android:fillColor="#FFC9A16A" android:pathData="M8,50 L56,50 L56,54 L8,54 Z" />
+    <path android:fillColor="#FFA08C6E" android:pathData="M16,22 L48,22 L48,26 L16,26 Z" />
+    <path android:fillColor="#FFA08C6E" android:pathData="M16,30 L48,30 L48,34 L16,34 Z" />
+    <path android:fillColor="#FFA08C6E" android:pathData="M16,38 L40,38 L40,42 L16,42 Z" />
+</vector>

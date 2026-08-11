@@ -1,10 +1,13 @@
 # Project Status
 
-Last updated: 2026-08-11 (Chapter 4 — Daniel and the Lions complete)
+Last updated: 2026-08-11 (real Audio/Narration/Settings + Chapter 5 — Esther's
+Rescue of Her People + Chapter 6 — The Battle of Jericho complete)
 
 ## Current milestone
 
-**Chapter 4 — Daniel and the Lions: COMPLETE**
+**Chapter 6 — The Battle of Jericho: COMPLETE** (chain now runs Noah's Ark →
+David & Goliath → Good Samaritan → Daniel → Esther → Jericho → Feeding the
+5,000 → Jesus Calms the Storm)
 
 ## Completed features
 
@@ -336,8 +339,9 @@ time the chapter is (re)started, same mechanism the Matching shuffle already rel
 - Launcher icon is a placeholder vector shape, not final art.
 - minSdk 24 devices fall back to a non-adaptive icon; no legacy PNG mipmap was
   generated (only the `mipmap-anydpi-v26` adaptive icon exists). Cosmetic only.
-- No `settings/` package yet — deferred until Milestone 6/7 need it.
-- David & Goliath through Jesus Calms the Storm still exist only as `ChapterCatalog`
+- `settings/` (audio toggles only) now exists — see "Audio, Narration & Settings"
+  below. The rest of Milestone 6 (parental gate, progress reset) is still deferred.
+- Feeding the 5,000 and Jesus Calms the Storm still exist only as `ChapterCatalog`
   entries with no gameplay — expected per spec section 7, each lands in its own future
   milestone.
 - All Noah's Ark art (animals, supplies, badge, backgrounds) is simple placeholder
@@ -894,15 +898,204 @@ scene's flavor text instead.
   `GoodSamaritanFlowTest.kt` and `DavidGoliathFlowTest.kt` were re-run
   specifically to confirm the gridmaze rename caused zero regression.
 
+### Audio, Narration & Settings
+Real audio, inserted ahead of its originally-planned Milestone 7 slot at the
+user's explicit request, specifically so Jericho's trumpets could actually
+be heard. This environment has no audio-recording capability and no way to
+license real music/instrument/voice samples — confirmed by checking: no
+`ffmpeg`/`sox` available, only Python 3 stdlib (`wave`/`struct`/`math`,
+no external deps). Scope is deliberately just the 3 audio toggles + real
+playback + narration — the rest of Milestone 6 (parental gate, progress
+reset) stays deferred.
+- **Big existing-architecture win, confirmed by reading the current code**:
+  `AudioController.playSfx(...)` was already called throughout every
+  shipped chapter's ViewModel — only `NoOpAudioController` was ever wired
+  in `AppContainer`. Swapping in a real implementation made every existing
+  chapter's sound effects work retroactively with zero ViewModel changes.
+  `playMusic(...)` had zero call sites anywhere (confirmed by grep) — added
+  fresh: `WorldMapScreen` plays `MusicTrack.WORLD_MAP` on entry, every
+  chapter's Intro screen plays one shared `MusicTrack.ADVENTURE` loop
+  (avoids a track-per-chapter enum; easy to split later).
+- **`RealAudioController`** (`audio/RealAudioController.kt`, replaces
+  `NoOpAudioController` in `AppContainer`): `SoundPool` for short SFX,
+  one looping `MediaPlayer` for music, `android.speech.tts.TextToSpeech`
+  for narration. Holds a small internal `CoroutineScope` collecting
+  `playerProfileRepository.profile` to keep a live `AudioSettings`
+  snapshot, since none of `AudioController`'s methods are `suspend`.
+  **Bug caught and fixed before it shipped**: `MediaPlayer.create(...)`
+  calls the blocking `prepare()` internally, which stalled the calling
+  thread (a screen-entry `LaunchedEffect`, typically the Compose main
+  thread) — switched to `setDataSource(...)` + `prepareAsync()` with an
+  `onPreparedListener`, keeping `playMusic` non-blocking.
+- **`AudioController` interface changes**: gained `speak(text: String)`/
+  `stopSpeaking()`; `SoundEffect` gained `TRUMPET_FANFARE` (Jericho's wall-
+  collapse payoff); `MusicTrack.NOAHS_ARK` renamed to `ADVENTURE` (never
+  persisted, safe to rename — unlike `ChapterId`).
+- **Synthesized placeholder audio** (`scripts/generate_placeholder_audio.py`,
+  pure Python stdlib, re-runnable/deterministic): 7 short SFX plus 2
+  looping ~12-15s ambient music beds, written to `app/src/main/res/raw/`.
+  Clearly placeholder — additive-harmonic synthesis for a brassier trumpet
+  timbre — swappable for licensed assets later without touching any
+  Kotlin code, same "placeholder art now" precedent as every drawable in
+  this app.
+- **Narration wiring**: new `ui/LocalAudioController.kt`
+  (`staticCompositionLocalOf<AudioController>`, provided once at the
+  `MainActivity` root) reaches `AudioController` from any composable,
+  including shared ones, without threading a parameter through every
+  screen/ViewModel. `StoryBeatScreen.kt` speaks its lines once on first
+  composition plus a replay speaker-icon button — since it's the one
+  shared context-card component, this alone covers narration for every
+  chapter's context cards at once. The same small pattern (`LaunchedEffect`
+  + replay icon) was then applied individually to all 4 existing chapters'
+  own Intro/Lesson screens (Noah's Ark, David & Goliath, Good Samaritan,
+  Daniel) — mechanical, not shared, since those aren't common components.
+- **New `ui/screens/settings/{SettingsScreen,SettingsViewModel}.kt`** — 3
+  toggle switches (Music, Sound Effects, Narration), mirrors
+  `CharacterViewModel`'s immediate-save-on-change shape. `PlayerProfile`
+  gained a nested `AudioSettings` (`musicEnabled`/`soundEffectsEnabled`/
+  `narrationEnabled`, all default `true`) — same one-save-file rule as
+  everything else. Main Menu's "Settings" item now routes to the real
+  screen instead of `ComingSoonScreen` (removed from `comingSoonTitles`).
+- **A real, reproducible regression found and fixed, not just documented
+  away**: after this milestone, `CharacterNavigationTest`/
+  `SettingsNavigationTest` started failing consistently (not the
+  previously-documented occasional flakiness) when run as part of the full
+  suite, always at the same point, even on a fresh install — ruling out
+  device-state pollution. Root cause: `onHairstyleSelected`/toggle changes
+  write to DataStore asynchronously, and `uiState` only reflects the
+  change once the repository's `Flow` re-emits — a pre-existing marginal
+  timing gap that this milestone's new always-on `AudioController` Flow
+  collector (added background load for the whole suite run, not just one
+  screen) pushed past Compose's idle-wait margin (which only covers
+  pending recomposition, not arbitrary async I/O). Fixed the tests
+  themselves with `composeTestRule.waitUntil(...)` instead of an immediate
+  `assertExists()` right after a persistence-triggering action — the
+  correct fix, since real users don't tap at automated-test speed.
+- Tests: `FakeAudioController.kt` extracted as a shared test utility
+  (`app/src/test/java/com/bibleadventures/FakeAudioController.kt`, mirrors
+  the `FakePlayerProfileRepository` precedent) replacing 4 duplicated
+  private `RecordingAudioController` copies across every existing
+  `*ViewModelTest.kt`; new `SettingsViewModelTest.kt`; new
+  `SettingsNavigationTest.kt` (instrumented). Full instrumented suite
+  re-run twice clean after the timing fix.
+
+### Chapter 5 — Esther's Rescue of Her People
+The fifth full chapter, unlocked automatically once Daniel and the Lions is
+completed. Scene flow: Intro → The King's Trouble context → Haman's Anger
+context → Choice (Esther's decision) → The Golden Scepter context → The
+Two Banquets (new mechanic) → The Truth Revealed context → Lesson →
+Reward.
+- **Content checked against the actual text**, not assumed from a title:
+  Esther becomes queen and hides her identity (ch. 2); Mordecai uncovers
+  an assassination plot against the king (2:21-23) — this detail matters
+  later; Haman is promoted, Mordecai won't bow, Haman plots to destroy the
+  Jews (ch. 3); "such a time as this" (4:14) and "if I perish, I perish"
+  (4:16); the golden scepter (5:1-2); she deliberately doesn't ask her
+  request at the first banquet, waiting for the second (5:3-8, 7:1-6);
+  Mordecai is honored (ch. 6); Haman's plot is exposed and turned back on
+  him (ch. 7); a new decree and Purim (chs. 8-9). **Deliberately not
+  depicted**: chapter 9's violent Jewish self-defense battle; Haman's fate
+  is described only abstractly ("his own plot was turned against him"),
+  matching this app's no-violence rule the same way Good Samaritan's
+  bandits and Daniel's den never show harm on-screen.
+- **The Two Banquets mechanic**: 3 steps using the new shared
+  `game/puzzles/decisionpath` engine (see below) — `wait`/`wait`/
+  `speak_now`, teaching discernment/timing rather than a fixed rule.
+  Visual payoff: a sealed scroll icon (`ic_scroll_sealed.xml`) swaps to an
+  unsealed, open one (`ic_scroll_open.xml`) on completion — shape-changed,
+  never color-only.
+- **Badge/scripture card**: "Courageous Heart" + Esther 4:14, added to
+  `RewardCatalog`. WEB text sourced via WebFetch (cross-checked against
+  two independent sources), same standard as every prior chapter's card.
+- Tests: `EstherViewModelTest.kt` (unit, shared `FakePlayerProfileRepository`/
+  `FakeAudioController`); new instrumented `EstherFlowTest.kt`, which
+  completes Noah's Ark, David & Goliath, Good Samaritan, **and** Daniel
+  first (all four are prerequisites), then replays the banquet sequence.
+  Manual on-device screenshot check confirmed the scroll shape-change and
+  the Wait/Speak Now option cards read clearly at real phone size.
+
+### Chapter 6 — The Battle of Jericho
+The sixth full chapter, unlocked automatically once Esther's Rescue of Her
+People is completed — and the chapter that finally closes the loop back to
+the original chain's tail (completing it unlocks Feeding the 5,000). Scene
+flow: Intro → Rahab's House context → Rahab Helps the Spies (narrative-
+only) → Choice (trusting an unusual plan) → The March and the Shout (new
+mechanic) → Rahab is Saved context → Lesson → Reward.
+- **Content checked against the actual text**: two spies scout Jericho and
+  stay at Rahab's house (Joshua 2); soldiers search for them, Rahab hides
+  and lies to protect them, lowers them by a rope through her window; they
+  promise to spare her family if she ties a scarlet cord in that window;
+  God's plan is marching around the walls once a day for 6 days with
+  priests, trumpets, and the Ark, completely silent except the trumpets —
+  6:10 is explicit the people were commanded not to make a sound until
+  told to shout; on day 7 they march around 7 times, then shout, and the
+  wall falls down flat (6:20); Rahab and her family are kept safe as
+  promised. **Deliberately not depicted**: the conquest/destruction that
+  follows once the walls fall in the text — the chapter ends at "the wall
+  fell, and Rahab's family was safe," the accurate non-violent stopping
+  point and the natural narrative climax.
+- **Judgment call — Rahab's helping beat is narrative-only, not a second
+  puzzle**, per your explicit steer that the march itself, not stealth or
+  hiding, is this chapter's real point: "unconventional obedience...
+  instead of using weapons... following instructions is more important
+  than relying on brute force." `Destination.Jericho.RahabHelping` is its
+  own `StoryBeatScreen`-based route rather than an overlay tied to puzzle
+  completion (unlike Good Samaritan's, there's no "treatment" state to key
+  off here).
+- **The March and the Shout mechanic**: 4 steps using the new shared
+  `game/puzzles/decisionpath` engine. Step 1 "The First Day": correct
+  `march_quietly` vs. wrong `attack_gate`. Step 2 "More Days of Marching":
+  correct `stay_silent` vs. wrong `shout_now` (too early). Step 3 "The
+  Seventh Day": correct `march_seven_times` vs. wrong `break_wall_by_force`.
+  Step 4 "Now, Shout!": correct `blow_horns_and_shout` vs. wrong
+  `stay_silent` — deliberately the same option that was *correct* at step
+  2, now wrong, reinforcing that obedience means following the *current*
+  instruction, not a fixed rule. Every wrong option across all 4 steps is
+  a brute-force/premature alternative — the mechanic itself teaches
+  "obey the plan, don't force it," not just the surrounding narration.
+  "Force" option icons stay abstract (a crossed-out "no" symbol, never a
+  wielded weapon or depicted impact), matching the bandit-wall and
+  Goliath-shield precedents. On the final correct tap, `JerichoViewModel`
+  plays the new `SoundEffect.TRUMPET_FANFARE` — the whole reason the audio
+  milestone above exists — and `ic_jericho_wall_intact.xml` swaps to
+  `ic_jericho_wall_fallen.xml`, shape-changed rubble, never color-only.
+- **New shared engine `game/puzzles/decisionpath/{DecisionPathGameState,
+  DecisionPathGame}.kt`** (used by both this chapter and Esther's banquet):
+  a fixed sequence of decision points, each with a couple of options and
+  exactly one correct answer per step; an incorrect tap is never a failure
+  state, just re-prompts the same step with all prior progress kept — same
+  shape as `DodgeGame`'s binary lane pick, generalized to N options with a
+  per-step-configurable correct answer. **Judgment call**: interpreted as
+  one shared new engine with two unrelated-feeling scenes (Esther's
+  patience/timing vs. Jericho's obedience/force), the same relationship
+  `game/puzzles/matching/` already has to Sheep Counting and Animal
+  Matching in this exact codebase, rather than two structurally-identical
+  packages — flagged as a judgment call at plan time, easy to split later
+  if that turns out to be the wrong read.
+- **Badge/scripture card**: "Faithful Steps" + Joshua 6:20, added to
+  `RewardCatalog`. WEB text sourced via WebFetch (cross-checked against
+  two independent sources) — the full verse, including "they took the
+  city," is quoted accurately on the scripture card even though the
+  chapter's own gameplay stops short of depicting the conquest that phrase
+  refers to; the card quotes scripture honestly, the story beats choose
+  what to depict.
+- Tests: `DecisionPathGameTest.kt` (unit, mirrors `DodgeGameTest.kt`'s
+  style); `JerichoViewModelTest.kt` (unit, including a case confirming
+  `TRUMPET_FANFARE` plays only on the final correct step, never on a wrong
+  or non-final tap); new instrumented `JerichoFlowTest.kt`, which
+  completes all five prior chapters first, then replays the march
+  sequence and confirms Feeding the 5,000 unlocks afterward. Manual
+  on-device screenshot check confirmed the wall-intact/wall-fallen shape
+  change and the "no force" icon read clearly at real phone size.
+
 ## Next tasks
 
 Nothing currently planned. If work resumes later, the natural next step per
-the current order is either **Chapter 5 — Feeding the 5,000** (now unlocked
-once Daniel and the Lions is completed) or **Milestone 6 — Parent Area**: a
-parental gate, progress summary, settings (music/sound/narration toggles),
-and reset-progress functionality (spec section 17). No `settings/` package
-exists yet — still deferred until that milestone actually needs it (spec
-section 5/26).
+the current order is either **Chapter 7 — Feeding the 5,000** (now unlocked
+once The Battle of Jericho is completed) or the rest of **Milestone 6 —
+Parent Area**: a parental gate, progress summary, and reset-progress
+functionality (spec section 17) — the audio/narration toggles portion of
+Settings is already built (see "Audio, Narration & Settings" above).
 
 ## Architectural decisions log
 

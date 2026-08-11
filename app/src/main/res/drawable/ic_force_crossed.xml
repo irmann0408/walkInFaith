@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- An abstract "not this way" symbol — never a weapon or depicted impact. -->
+    <path
+        android:strokeColor="#FF8C3A3A"
+        android:strokeWidth="6"
+        android:pathData="M32,32 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0" />
+    <path android:strokeColor="#FF8C3A3A" android:strokeWidth="6" android:pathData="M18,18 L46,46" />
+</vector>

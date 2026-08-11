@@ -14,4 +14,6 @@ enum class ChapterId {
     FEEDING_5000,
     DANIEL,
     JESUS_CALMS_STORM,
+    ESTHER,
+    JERICHO,
 }

@@ -1,9 +1,8 @@
 package com.bibleadventures.ui.screens.davidgoliath
 
+import com.bibleadventures.FakeAudioController
 import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
-import com.bibleadventures.audio.AudioController
-import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.dodge.DodgeLane
@@ -21,15 +20,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-private class RecordingAudioController : AudioController {
-    val playedEffects = mutableListOf<SoundEffect>()
-    override fun playMusic(track: MusicTrack) = Unit
-    override fun stopMusic() = Unit
-    override fun playSfx(effect: SoundEffect) {
-        playedEffects += effect
-    }
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class DavidGoliathViewModelTest {
 
@@ -38,7 +28,7 @@ class DavidGoliathViewModelTest {
 
     private fun createViewModel(
         repository: FakePlayerProfileRepository = FakePlayerProfileRepository(),
-        audioController: RecordingAudioController = RecordingAudioController(),
+        audioController: FakeAudioController = FakeAudioController(),
     ) = DavidGoliathViewModel(ProgressionService(repository), repository, audioController)
 
     @Test
@@ -84,7 +74,7 @@ class DavidGoliathViewModelTest {
 
     @Test
     fun `onSheepCountingItemTapped plays a sound only on a correct pair`() {
-        val audioController = RecordingAudioController()
+        val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val state = viewModel.uiState.value.sheepCountingState
         val pairKey = state.items.first().pairKey
@@ -112,7 +102,7 @@ class DavidGoliathViewModelTest {
 
     @Test
     fun `onLaneTapped plays a sound only when the correct lane is stepped to`() {
-        val audioController = RecordingAudioController()
+        val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val hazardLane = viewModel.uiState.value.dodgeState.beats.first().hazardLane
 
@@ -138,7 +128,7 @@ class DavidGoliathViewModelTest {
 
     @Test
     fun `onStoneReleased plays a sound only on a hit`() {
-        val audioController = RecordingAudioController()
+        val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
         viewModel.onStoneReleased(aimedPosition = 0.1f, markPosition = 0.9f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
@@ -150,7 +140,7 @@ class DavidGoliathViewModelTest {
 
     @Test
     fun `onStoneReleased does not play a sound when the aim matches the mark outside the shield`() {
-        val audioController = RecordingAudioController()
+        val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
         viewModel.onStoneReleased(aimedPosition = 0.15f, markPosition = 0.15f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)

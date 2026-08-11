@@ -1,5 +1,6 @@
 package com.bibleadventures.domain.repository
 
+import com.bibleadventures.domain.model.AudioSettings
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.model.PlayerProfile
@@ -9,6 +10,8 @@ interface PlayerProfileRepository {
     val profile: Flow<PlayerProfile>
 
     suspend fun updateCharacter(customization: CharacterCustomization)
+
+    suspend fun updateAudioSettings(audioSettings: AudioSettings)
 
     suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String)
 

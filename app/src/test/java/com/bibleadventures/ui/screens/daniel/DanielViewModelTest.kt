@@ -1,9 +1,8 @@
 package com.bibleadventures.ui.screens.daniel
 
+import com.bibleadventures.FakeAudioController
 import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
-import com.bibleadventures.audio.AudioController
-import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.dodge.DodgeLane
@@ -24,15 +23,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-private class RecordingAudioController : AudioController {
-    val playedEffects = mutableListOf<SoundEffect>()
-    override fun playMusic(track: MusicTrack) = Unit
-    override fun stopMusic() = Unit
-    override fun playSfx(effect: SoundEffect) {
-        playedEffects += effect
-    }
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class DanielViewModelTest {
 
@@ -41,7 +31,7 @@ class DanielViewModelTest {
 
     private fun createViewModel(
         repository: FakePlayerProfileRepository = FakePlayerProfileRepository(),
-        audioController: RecordingAudioController = RecordingAudioController(),
+        audioController: FakeAudioController = FakeAudioController(),
     ) = DanielViewModel(ProgressionService(repository), repository, audioController)
 
     @Test
@@ -58,7 +48,7 @@ class DanielViewModelTest {
 
     @Test
     fun `onLaneTapped plays a sound when Daniel dodges, not on a wrong step`() {
-        val audioController = RecordingAudioController()
+        val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
         val hazardLane = DanielContent.stealthBeats[0].hazardLane
@@ -81,7 +71,7 @@ class DanielViewModelTest {
 
     @Test
     fun `onLightPointTapped connects points in order and plays a sound`() {
-        val audioController = RecordingAudioController()
+        val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val pointIds = DanielContent.lionsDenPointIds
 

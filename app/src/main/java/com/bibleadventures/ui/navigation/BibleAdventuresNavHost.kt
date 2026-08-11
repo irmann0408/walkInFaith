@@ -15,7 +15,9 @@ import com.bibleadventures.R
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.DavidGoliathContent
+import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.GoodSamaritanContent
+import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.StoryBeatScreen
@@ -39,11 +41,23 @@ import com.bibleadventures.ui.screens.davidgoliath.lesson.DavidGoliathLessonScre
 import com.bibleadventures.ui.screens.davidgoliath.reward.DavidGoliathRewardScreen
 import com.bibleadventures.ui.screens.davidgoliath.sheepcounting.DavidGoliathSheepCountingScreen
 import com.bibleadventures.ui.screens.davidgoliath.slingpractice.DavidGoliathSlingPracticeScreen
+import com.bibleadventures.ui.screens.esther.EstherViewModel
+import com.bibleadventures.ui.screens.esther.banquet.EstherBanquetScreen
+import com.bibleadventures.ui.screens.esther.choice.EstherChoiceScreen
+import com.bibleadventures.ui.screens.esther.intro.EstherIntroScreen
+import com.bibleadventures.ui.screens.esther.lesson.EstherLessonScreen
+import com.bibleadventures.ui.screens.esther.reward.EstherRewardScreen
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.explore.GoodSamaritanExploreScreen
 import com.bibleadventures.ui.screens.goodsamaritan.intro.GoodSamaritanIntroScreen
 import com.bibleadventures.ui.screens.goodsamaritan.lesson.GoodSamaritanLessonScreen
 import com.bibleadventures.ui.screens.goodsamaritan.reward.GoodSamaritanRewardScreen
+import com.bibleadventures.ui.screens.jericho.JerichoViewModel
+import com.bibleadventures.ui.screens.jericho.choice.JerichoChoiceScreen
+import com.bibleadventures.ui.screens.jericho.intro.JerichoIntroScreen
+import com.bibleadventures.ui.screens.jericho.lesson.JerichoLessonScreen
+import com.bibleadventures.ui.screens.jericho.reward.JerichoRewardScreen
+import com.bibleadventures.ui.screens.jericho.wallmarch.JerichoWallMarchScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.noahsark.findanimals.NoahsArkFindAnimalsScreen
@@ -54,12 +68,12 @@ import com.bibleadventures.ui.screens.noahsark.missingitems.NoahsArkMissingItems
 import com.bibleadventures.ui.screens.noahsark.organizeark.NoahsArkOrganizeArkScreen
 import com.bibleadventures.ui.screens.noahsark.reward.NoahsArkRewardScreen
 import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsScreen
+import com.bibleadventures.ui.screens.settings.SettingsScreen
 import com.bibleadventures.ui.screens.worldmap.WorldMapScreen
 
 @Composable
 fun BibleAdventuresNavHost(navController: NavHostController = rememberNavController()) {
     val comingSoonTitles = mapOf(
-        MenuItemId.SETTINGS to stringResource(R.string.menu_settings),
         MenuItemId.PARENT_AREA to stringResource(R.string.menu_parent_area),
     )
 
@@ -75,6 +89,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                         MenuItemId.CONTINUE_ADVENTURE -> navController.navigate(Destination.WorldMap.route)
                         MenuItemId.BADGES -> navController.navigate(Destination.Badges.route)
                         MenuItemId.SCRIPTURE_CARDS -> navController.navigate(Destination.ScriptureCards.route)
+                        MenuItemId.SETTINGS -> navController.navigate(Destination.Settings.route)
                         else -> {
                             // No real destination exists yet for these; every other menu
                             // item routes to the placeholder until its owning milestone lands.
@@ -87,6 +102,9 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         }
         composable(Destination.Character.route) {
             CharacterScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Destination.Settings.route) {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
         composable(Destination.WorldMap.route) {
             WorldMapScreen(
@@ -101,6 +119,10 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                         navController.navigate(Destination.GoodSamaritan.Intro.route)
                     } else if (chapterId == ChapterId.DANIEL) {
                         navController.navigate(Destination.Daniel.Intro.route)
+                    } else if (chapterId == ChapterId.ESTHER) {
+                        navController.navigate(Destination.Esther.Intro.route)
+                    } else if (chapterId == ChapterId.JERICHO) {
+                        navController.navigate(Destination.Jericho.Intro.route)
                     }
                 },
             )
@@ -115,6 +137,8 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         davidGoliathGraph(navController)
         goodSamaritanGraph(navController)
         danielGraph(navController)
+        estherGraph(navController)
+        jerichoGraph(navController)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
                 backStackEntry.arguments?.getString(Destination.ComingSoon.ARG_FEATURE_TITLE).orEmpty()
@@ -517,5 +541,190 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
 @Composable
 private fun NavHostController.danielViewModel(entry: NavBackStackEntry): DanielViewModel {
     val parentEntry = remember(entry) { getBackStackEntry(Destination.Daniel.GRAPH_ROUTE) }
+    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
+}
+
+private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
+    navigation(
+        startDestination = Destination.Esther.Intro.route,
+        route = Destination.Esther.GRAPH_ROUTE,
+    ) {
+        composable(Destination.Esther.Intro.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
+            EstherIntroScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.Esther.KingsTroubleContext.route)
+                },
+            )
+        }
+        composable(Destination.Esther.KingsTroubleContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.esther_kings_trouble_context_title,
+                lineRes = EstherContent.kingsTroubleContextLines,
+                onContinue = { navController.navigate(Destination.Esther.HamansAngerContext.route) },
+            )
+        }
+        composable(Destination.Esther.HamansAngerContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.esther_hamans_anger_context_title,
+                lineRes = EstherContent.hamansAngerContextLines,
+                onContinue = { navController.navigate(Destination.Esther.Choice.route) },
+            )
+        }
+        composable(Destination.Esther.Choice.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
+            EstherChoiceScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("choice")
+                    navController.navigate(Destination.Esther.ScepterContext.route)
+                },
+            )
+        }
+        composable(Destination.Esther.ScepterContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.esther_scepter_context_title,
+                lineRes = EstherContent.scepterContextLines,
+                onContinue = { navController.navigate(Destination.Esther.Banquet.route) },
+            )
+        }
+        composable(Destination.Esther.Banquet.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
+            EstherBanquetScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("banquet")
+                    navController.navigate(Destination.Esther.TruthRevealedContext.route)
+                },
+            )
+        }
+        composable(Destination.Esther.TruthRevealedContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.esther_truth_revealed_context_title,
+                lineRes = EstherContent.truthRevealedContextLines,
+                onContinue = { navController.navigate(Destination.Esther.Lesson.route) },
+            )
+        }
+        composable(Destination.Esther.Lesson.route) { entry ->
+            val viewModel = navController.estherViewModel(entry)
+            EstherLessonScreen(
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson")
+                    navController.navigate(Destination.Esther.Reward.route)
+                },
+            )
+        }
+        composable(Destination.Esther.Reward.route) { entry ->
+            EstherRewardScreen(
+                viewModel = navController.estherViewModel(entry),
+                onReturnToMap = {
+                    // Clears the whole Esther back stack so Back from the map can't
+                    // re-enter a finished run or re-trigger onChapterFinished().
+                    navController.navigate(Destination.WorldMap.route) {
+                        popUpTo(Destination.WorldMap.route)
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavHostController.estherViewModel(entry: NavBackStackEntry): EstherViewModel {
+    val parentEntry = remember(entry) { getBackStackEntry(Destination.Esther.GRAPH_ROUTE) }
+    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
+}
+
+private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
+    navigation(
+        startDestination = Destination.Jericho.Intro.route,
+        route = Destination.Jericho.GRAPH_ROUTE,
+    ) {
+        composable(Destination.Jericho.Intro.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            JerichoIntroScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.Jericho.RahabHouseContext.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.RahabHouseContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jericho_rahab_house_context_title,
+                lineRes = JerichoContent.rahabHouseContextLines,
+                onContinue = { navController.navigate(Destination.Jericho.RahabHelping.route) },
+            )
+        }
+        composable(Destination.Jericho.RahabHelping.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            StoryBeatScreen(
+                titleRes = R.string.jericho_rahab_helping_title,
+                lineRes = JerichoContent.rahabHelpingLines,
+                onContinue = {
+                    viewModel.onSceneCompleted("rahab_helping")
+                    navController.navigate(Destination.Jericho.Choice.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.Choice.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            JerichoChoiceScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("choice")
+                    navController.navigate(Destination.Jericho.WallMarch.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.WallMarch.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            JerichoWallMarchScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("wall_march")
+                    navController.navigate(Destination.Jericho.RahabSavedContext.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.RahabSavedContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jericho_rahab_saved_context_title,
+                lineRes = JerichoContent.rahabSavedContextLines,
+                onContinue = { navController.navigate(Destination.Jericho.Lesson.route) },
+            )
+        }
+        composable(Destination.Jericho.Lesson.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            JerichoLessonScreen(
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson")
+                    navController.navigate(Destination.Jericho.Reward.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.Reward.route) { entry ->
+            JerichoRewardScreen(
+                viewModel = navController.jerichoViewModel(entry),
+                onReturnToMap = {
+                    // Clears the whole Jericho back stack so Back from the map can't
+                    // re-enter a finished run or re-trigger onChapterFinished().
+                    navController.navigate(Destination.WorldMap.route) {
+                        popUpTo(Destination.WorldMap.route)
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavHostController.jerichoViewModel(entry: NavBackStackEntry): JerichoViewModel {
+    val parentEntry = remember(entry) { getBackStackEntry(Destination.Jericho.GRAPH_ROUTE) }
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }

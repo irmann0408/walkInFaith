@@ -13,6 +13,11 @@
     <string name="coming_soon_body">This part of the adventure is still being built. Check back soon!</string>
     <string name="action_back">Back</string>
 
+    <string name="settings_screen_title">Settings</string>
+    <string name="settings_music_label">Music</string>
+    <string name="settings_sound_effects_label">Sound Effects</string>
+    <string name="settings_narration_label">Narration</string>
+
     <string name="character_screen_title">Choose Your Character</string>
     <string name="character_preview_content_description">Your character</string>
     <string name="character_section_appearance">Appearance</string>
@@ -73,6 +78,14 @@
     <string name="chapter_daniel_description">Stay faithful with Daniel, even when it feels scary to pray.</string>
     <string name="chapter_daniel_lesson">Faithfulness and prayer.</string>
 
+    <string name="chapter_esther_title">Esther\'s Rescue of Her People</string>
+    <string name="chapter_esther_description">Help Queen Esther find the courage to speak up for her people.</string>
+    <string name="chapter_esther_lesson">Courage and speaking up at the right time.</string>
+
+    <string name="chapter_jericho_title">The Battle of Jericho</string>
+    <string name="chapter_jericho_description">March around the walls of Jericho and trust an unusual plan.</string>
+    <string name="chapter_jericho_lesson">Obedience over force.</string>
+
     <string name="chapter_jesus_calms_storm_title">Jesus Calms the Storm</string>
     <string name="chapter_jesus_calms_storm_description">Ride out a stormy sea and discover peace in the middle of fear.</string>
     <string name="chapter_jesus_calms_storm_lesson">Faith during difficult times.</string>
@@ -97,7 +110,18 @@
     <string name="scripture_daniel_6_22_title">Daniel\'s Deliverance</string>
     <string name="scripture_daniel_6_22_text">"My God has sent his angel, and has shut the lions\' mouths, and they have not hurt me, because innocence was found in me before him; and also before you, O king, I have done no harm."</string>
 
+    <string name="badge_courageous_heart_title">Courageous Heart</string>
+    <string name="badge_courageous_heart_description">Found the courage to speak up for her people, just like Esther.</string>
+    <string name="scripture_esther_4_14_title">Esther\'s Courage</string>
+    <string name="scripture_esther_4_14_text">"For if you remain silent now, then relief and deliverance will come to the Jews from another place, but you and your father\'s house will perish. Who knows if you haven\'t come to the kingdom for such a time as this?"</string>
+
+    <string name="badge_faithful_steps_title">Faithful Steps</string>
+    <string name="badge_faithful_steps_description">Marched in obedience and trusted God\'s plan instead of using force, just like the people of Israel.</string>
+    <string name="scripture_joshua_6_20_title">The Walls of Jericho</string>
+    <string name="scripture_joshua_6_20_text">"So the people shouted and the priests blew the trumpets. When the people heard the sound of the trumpet, the people shouted with a great shout, and the wall fell down flat, so that the people went up into the city, every man straight in front of him, and they took the city."</string>
+
     <string name="action_continue">Continue</string>
+    <string name="action_replay_narration">Read this aloud again</string>
     <string name="action_return_to_map">Return to Map</string>
     <string name="feedback_great_job">Great job!</string>
     <string name="feedback_try_another_one">Try another one!</string>
@@ -292,6 +316,85 @@
 
     <string name="daniel_lesson_title">Faithfulness and Prayer</string>
     <string name="daniel_lesson_text">Daniel kept praying to God even when it was risky, and God kept him safe. When we stay faithful, God is with us no matter what happens.</string>
+
+    <string name="esther_intro_line_1">Esther was a Jewish orphan raised by her cousin Mordecai. She became queen of Persia, but kept her people a secret, just as Mordecai had told her.</string>
+    <string name="esther_intro_line_2">Soon a terrible danger would test her courage.</string>
+
+    <string name="esther_kings_trouble_context_title">The King\'s Trouble</string>
+    <string name="esther_kings_trouble_context_line_1">One day, Mordecai overheard two of the king\'s guards plotting to harm him.</string>
+    <string name="esther_kings_trouble_context_line_2">He warned Esther, who told the king and saved his life — and it was written down in the king\'s own records.</string>
+
+    <string name="esther_hamans_anger_context_title">Haman\'s Anger</string>
+    <string name="esther_hamans_anger_context_line_1">A proud official named Haman was promoted, and everyone bowed to him — except Mordecai.</string>
+    <string name="esther_hamans_anger_context_line_2">Furious, Haman tricked the king into signing a law to destroy Mordecai\'s people, the Jews.</string>
+
+    <string name="esther_choice_title">Esther\'s Decision</string>
+    <string name="esther_choice_instructions">Mordecai sent word: "Who knows if you have come to the kingdom for such a time as this?" Choose what Esther will do.</string>
+    <string name="esther_choice_option_1">"I will go to the king, even if it is against the law."</string>
+    <string name="esther_choice_option_2">"I will trust God with my life."</string>
+    <string name="esther_choice_option_3">"If I perish, I perish."</string>
+    <string name="esther_choice_reaction_1">Esther asked everyone to fast and pray for her for three days first.</string>
+    <string name="esther_choice_reaction_2">Esther\'s courage grew as she prepared to approach the king.</string>
+    <string name="esther_choice_reaction_3">Esther chose to risk everything for her people.</string>
+
+    <string name="esther_scepter_context_title">The Golden Scepter</string>
+    <string name="esther_scepter_context_line_1">Esther approached the king\'s throne, even though it was against the law to come uninvited.</string>
+    <string name="esther_scepter_context_line_2">The king held out his golden scepter — Esther was safe, and he asked what she wished.</string>
+
+    <string name="esther_banquet_title">The Two Banquets</string>
+    <string name="esther_banquet_instructions">Help Esther choose the right moment to speak.</string>
+    <string name="esther_banquet_option_wait">Wait</string>
+    <string name="esther_banquet_option_speak_now">Speak Now</string>
+
+    <string name="esther_truth_revealed_context_title">The Truth Revealed</string>
+    <string name="esther_truth_revealed_context_line_1">At the second banquet, Esther bravely told the king about Haman\'s evil plan against her people.</string>
+    <string name="esther_truth_revealed_context_line_2">The king was furious, and Haman\'s own trap caught him instead. Mordecai was honored for saving the king\'s life.</string>
+    <string name="esther_truth_revealed_context_line_3">A new decree let the Jews defend themselves, and they were saved. To this day, Jewish people celebrate Purim to remember it.</string>
+
+    <string name="esther_lesson_title">Courage and Speaking Up</string>
+    <string name="esther_lesson_text">Esther risked everything to speak up for her people at just the right time. When we trust God and stay brave, He can use us for good, even when it\'s scary.</string>
+
+    <string name="jericho_intro_line_1">Joshua led God\'s people to a mighty, walled city called Jericho. Two brave spies went ahead to see the land.</string>
+    <string name="jericho_intro_line_2">God had a plan to bring the walls down — but it wasn\'t like any battle plan anyone had heard before.</string>
+
+    <string name="jericho_rahab_house_context_title">Rahab\'s House</string>
+    <string name="jericho_rahab_house_context_line_1">The spies stayed at the house of a woman named Rahab, who lived inside Jericho\'s walls.</string>
+    <string name="jericho_rahab_house_context_line_2">Soon, soldiers came looking for them.</string>
+
+    <string name="jericho_rahab_helping_title">Rahab Helps the Spies</string>
+    <string name="jericho_rahab_helping_line_1">Rahab hid the spies and kept them safe, even though it put her in danger.</string>
+    <string name="jericho_rahab_helping_line_2">She lowered them down by a rope through her window and told them to hide in the hills.</string>
+    <string name="jericho_rahab_helping_line_3">In return, they promised to keep her and her family safe — if she tied a scarlet cord in that same window.</string>
+
+    <string name="jericho_choice_title">Trusting an Unusual Plan</string>
+    <string name="jericho_choice_instructions">God\'s plan didn\'t look like a battle at all. Choose what Joshua and the people will do.</string>
+    <string name="jericho_choice_option_1">"We will follow God\'s plan, even though it seems strange."</string>
+    <string name="jericho_choice_option_2">"We will trust God, not our own strength."</string>
+    <string name="jericho_choice_option_3">"We will obey, one step at a time."</string>
+    <string name="jericho_choice_reaction_1">The people marched in silence, trusting God\'s unusual plan.</string>
+    <string name="jericho_choice_reaction_2">Joshua led the people forward, trusting God more than swords or shields.</string>
+    <string name="jericho_choice_reaction_3">Step by step, the people obeyed exactly as they were told.</string>
+
+    <string name="jericho_wall_march_title">The March and the Shout</string>
+    <string name="jericho_wall_march_instructions">March around the city and wait for God\'s moment to shout.</string>
+    <string name="jericho_step_day1">The First Day</string>
+    <string name="jericho_step_more_days">More Days of Marching</string>
+    <string name="jericho_step_day7">The Seventh Day</string>
+    <string name="jericho_step_shout">Now, Shout!</string>
+    <string name="jericho_option_march_quietly">March Quietly</string>
+    <string name="jericho_option_attack_gate">Attack the Gate</string>
+    <string name="jericho_option_stay_silent">Stay Silent</string>
+    <string name="jericho_option_shout_now">Shout Now!</string>
+    <string name="jericho_option_march_seven_times">March Around Seven Times</string>
+    <string name="jericho_option_break_wall_by_force">Break the Wall by Force</string>
+    <string name="jericho_option_blow_horns_and_shout">Blow the Horns and Shout!</string>
+
+    <string name="jericho_rahab_saved_context_title">Rahab is Saved</string>
+    <string name="jericho_rahab_saved_context_line_1">When the walls fell, Rahab tied the scarlet cord in her window, just as she was told.</string>
+    <string name="jericho_rahab_saved_context_line_2">She and her family were kept safe, exactly as the spies had promised.</string>
+
+    <string name="jericho_lesson_title">Obedience Over Force</string>
+    <string name="jericho_lesson_text">The people didn\'t fight to bring down the walls — they marched and trusted God\'s plan, even when it seemed strange. When we obey God, He can do things no strength of ours ever could.</string>
 
     <string name="reward_title">Adventure Complete!</string>
     <string name="reward_stars_content_description">%1$d out of %2$d stars earned</string>

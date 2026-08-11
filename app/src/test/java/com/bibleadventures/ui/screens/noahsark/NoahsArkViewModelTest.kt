@@ -1,10 +1,9 @@
 package com.bibleadventures.ui.screens.noahsark
 
+import com.bibleadventures.FakeAudioController
 import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
-import com.bibleadventures.audio.AudioController
 import com.bibleadventures.audio.SoundEffect
-import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.stories.NoahsArkContent
@@ -19,15 +18,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-private class RecordingAudioController : AudioController {
-    val playedEffects = mutableListOf<SoundEffect>()
-    override fun playMusic(track: MusicTrack) = Unit
-    override fun stopMusic() = Unit
-    override fun playSfx(effect: SoundEffect) {
-        playedEffects += effect
-    }
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class NoahsArkViewModelTest {
 
@@ -36,7 +26,7 @@ class NoahsArkViewModelTest {
 
     private fun createViewModel(
         repository: FakePlayerProfileRepository = FakePlayerProfileRepository(),
-        audioController: RecordingAudioController = RecordingAudioController(),
+        audioController: FakeAudioController = FakeAudioController(),
     ) = NoahsArkViewModel(ProgressionService(repository), repository, audioController)
 
     @Test
@@ -105,7 +95,7 @@ class NoahsArkViewModelTest {
 
     @Test
     fun `onMatchItemTapped plays a success sound only on a correct match`() {
-        val audioController = RecordingAudioController()
+        val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val items = viewModel.uiState.value.matchingState.items
         val firstPair = items.groupBy { it.pairKey }.values.first()

@@ -9,10 +9,13 @@ import com.bibleadventures.ui.screens.badges.BadgesViewModel
 import com.bibleadventures.ui.screens.character.CharacterViewModel
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
+import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
+import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.screens.mainmenu.MainMenuViewModel
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsViewModel
+import com.bibleadventures.ui.screens.settings.SettingsViewModel
 import com.bibleadventures.ui.screens.worldmap.WorldMapViewModel
 
 /**
@@ -56,10 +59,21 @@ object AppViewModelProvider {
             DanielViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
         }
         initializer {
+            val container = bibleAdventuresApplication().container
+            EstherViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
+        }
+        initializer {
+            val container = bibleAdventuresApplication().container
+            JerichoViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
+        }
+        initializer {
             BadgesViewModel(bibleAdventuresApplication().container.playerProfileRepository)
         }
         initializer {
             ScriptureCardsViewModel(bibleAdventuresApplication().container.playerProfileRepository)
+        }
+        initializer {
+            SettingsViewModel(bibleAdventuresApplication().container.playerProfileRepository)
         }
     }
 }

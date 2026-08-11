@@ -2,6 +2,7 @@ package com.bibleadventures.ui.screens.character
 
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.domain.model.Appearance
+import com.bibleadventures.domain.model.AudioSettings
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.Clothing
 import com.bibleadventures.domain.model.CharacterCustomization
@@ -27,6 +28,10 @@ private class FakePlayerProfileRepository(
 
     override suspend fun updateCharacter(customization: CharacterCustomization) {
         state.value = state.value.copy(character = customization)
+    }
+
+    override suspend fun updateAudioSettings(audioSettings: AudioSettings) {
+        state.value = state.value.copy(audioSettings = audioSettings)
     }
 
     override suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String) = Unit

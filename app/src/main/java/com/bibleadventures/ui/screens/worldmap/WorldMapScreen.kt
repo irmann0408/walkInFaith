@@ -21,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,10 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bibleadventures.R
+import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.ChapterStatus
 import com.bibleadventures.game.stories.ChapterCatalog
 import com.bibleadventures.ui.AppViewModelProvider
+import com.bibleadventures.ui.LocalAudioController
 import com.bibleadventures.ui.components.LockedNodeOverlay
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -64,6 +67,9 @@ private fun WorldMapContent(
     onChapterSelected: (ChapterId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val audioController = LocalAudioController.current
+    LaunchedEffect(Unit) { audioController.playMusic(MusicTrack.WORLD_MAP) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {

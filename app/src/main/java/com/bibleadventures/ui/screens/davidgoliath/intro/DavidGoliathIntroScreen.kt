@@ -2,13 +2,19 @@ package com.bibleadventures.ui.screens.davidgoliath.intro
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,8 +23,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.stories.DavidGoliathContent
+import com.bibleadventures.ui.LocalAudioController
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.components.CharacterPreview
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
@@ -45,6 +53,15 @@ private fun DavidGoliathIntroContent(
     onContinue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val audioController = LocalAudioController.current
+    val lines = DavidGoliathContent.introDialogueLines.map { stringResource(it) }
+    val narration = lines.joinToString(separator = " ")
+
+    LaunchedEffect(Unit) {
+        audioController.speak(narration)
+        audioController.playMusic(MusicTrack.ADVENTURE)
+    }
+
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
@@ -56,14 +73,25 @@ private fun DavidGoliathIntroContent(
         ) {
             CharacterPreview(customization = character)
 
-            Column(
+            Row(
                 modifier = Modifier
                     .widthIn(max = 480.dp)
                     .padding(top = 24.dp, bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                DavidGoliathContent.introDialogueLines.forEach { lineRes ->
-                    Text(text = stringResource(lineRes), style = MaterialTheme.typography.bodyLarge)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    lines.forEach { line ->
+                        Text(text = line, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+                IconButton(onClick = { audioController.speak(narration) }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = stringResource(R.string.action_replay_narration),
+                    )
                 }
             }
 

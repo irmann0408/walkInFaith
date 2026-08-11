@@ -1,6 +1,7 @@
 package com.bibleadventures
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -27,13 +28,28 @@ class CharacterNavigationTest {
         composeTestRule.onNodeWithText(characterLabel).performClick()
         composeTestRule.onNodeWithText(screenTitle).assertExists()
 
+        // onHairstyleSelected doesn't update local state optimistically — uiState only
+        // reflects the new selection once the write round-trips back through the
+        // repository's Flow, which Compose's idle-wait doesn't cover (it only waits on
+        // pending recomposition, not arbitrary async I/O), so wait for it explicitly
+        // rather than asserting immediately after the click.
         composeTestRule.onNodeWithContentDescription(braidedLabel).performClick()
-        composeTestRule.onNodeWithContentDescription(braidedSelectedDescription).assertExists()
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onAllNodesWithContentDescription(braidedSelectedDescription).fetchSemanticsNodes().isNotEmpty()
+        }
 
+        // The selection is persisted asynchronously through DataStore, and leaving this
+        // screen destroys this CharacterViewModel — returning creates a fresh one that
+        // reads the repository from scratch. Compose's own idle-wait only covers pending
+        // recomposition, not that underlying disk write, so wait for it to actually land
+        // before asserting a freshly-created screen reflects it, rather than assuming a
+        // single immediate check catches up in time.
         composeTestRule.onNodeWithContentDescription(backDescription).performClick()
         composeTestRule.onNodeWithText(appName).assertExists()
 
         composeTestRule.onNodeWithText(characterLabel).performClick()
-        composeTestRule.onNodeWithContentDescription(braidedSelectedDescription).assertExists()
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onAllNodesWithContentDescription(braidedSelectedDescription).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

@@ -1,0 +1,8 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- A quiet, still night — marching in silence. -->
+    <path android:fillColor="#FF7A6E9C" android:pathData="M40,10 C28,10 18,20 18,32 C18,44 28,54 40,54 C32,50 26,42 26,32 C26,22 32,14 40,10 Z" />
+</vector>

@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- The same wall, collapsed into rubble — shape-changed from ic_jericho_wall_intact, never color-only. -->
+    <path android:fillColor="#FFB0A48C" android:pathData="M4,54 L4,44 L20,38 L20,54 Z" />
+    <path android:fillColor="#FFB0A48C" android:pathData="M24,54 L24,46 L40,50 L40,54 Z" />
+    <path android:fillColor="#FFB0A48C" android:pathData="M44,54 L44,42 L60,48 L60,54 Z" />
+    <path android:fillColor="#FF8C7F66" android:pathData="M10,44 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+    <path android:fillColor="#FF8C7F66" android:pathData="M50,40 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+</vector>

@@ -2,6 +2,7 @@ package com.bibleadventures.ui.screens.worldmap
 
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.domain.model.AdventureProgress
+import com.bibleadventures.domain.model.AudioSettings
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.model.ChapterStatus
@@ -26,6 +27,10 @@ private class FakePlayerProfileRepository(
 
     override suspend fun updateCharacter(customization: CharacterCustomization) {
         state.value = state.value.copy(character = customization)
+    }
+
+    override suspend fun updateAudioSettings(audioSettings: AudioSettings) {
+        state.value = state.value.copy(audioSettings = audioSettings)
     }
 
     override suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String) = Unit

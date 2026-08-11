@@ -1,9 +1,8 @@
 package com.bibleadventures.ui.screens.goodsamaritan
 
+import com.bibleadventures.FakeAudioController
 import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
-import com.bibleadventures.audio.AudioController
-import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.gridmaze.Direction
@@ -22,15 +21,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-private class RecordingAudioController : AudioController {
-    val playedEffects = mutableListOf<SoundEffect>()
-    override fun playMusic(track: MusicTrack) = Unit
-    override fun stopMusic() = Unit
-    override fun playSfx(effect: SoundEffect) {
-        playedEffects += effect
-    }
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class GoodSamaritanViewModelTest {
 
@@ -39,7 +29,7 @@ class GoodSamaritanViewModelTest {
 
     private fun createViewModel(
         repository: FakePlayerProfileRepository = FakePlayerProfileRepository(),
-        audioController: RecordingAudioController = RecordingAudioController(),
+        audioController: FakeAudioController = FakeAudioController(),
     ) = GoodSamaritanViewModel(ProgressionService(repository), repository, audioController)
 
     @Test
@@ -57,7 +47,7 @@ class GoodSamaritanViewModelTest {
 
     @Test
     fun `onDirectionPressed plays a sound on collecting medicine and treating the traveler, not on blocked moves`() {
-        val audioController = RecordingAudioController()
+        val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
         viewModel.onDirectionPressed(Direction.UP) // blocked: (0,0) is the top row, out of bounds

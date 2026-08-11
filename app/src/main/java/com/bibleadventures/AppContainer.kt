@@ -2,7 +2,7 @@ package com.bibleadventures
 
 import android.content.Context
 import com.bibleadventures.audio.AudioController
-import com.bibleadventures.audio.NoOpAudioController
+import com.bibleadventures.audio.RealAudioController
 import com.bibleadventures.data.local.DataStorePlayerProfileLocalDataSource
 import com.bibleadventures.data.repository.PlayerProfileRepositoryImpl
 import com.bibleadventures.domain.repository.PlayerProfileRepository
@@ -23,5 +23,5 @@ class AppContainer(private val appContext: Context) {
         ProgressionService(playerProfileRepository)
     }
 
-    val audioController: AudioController by lazy { NoOpAudioController() }
+    val audioController: AudioController by lazy { RealAudioController(appContext, playerProfileRepository) }
 }

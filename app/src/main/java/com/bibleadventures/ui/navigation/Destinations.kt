@@ -11,6 +11,7 @@ sealed class Destination(val route: String) {
     data object WorldMap : Destination("world_map")
     data object Badges : Destination("badges")
     data object ScriptureCards : Destination("scripture_cards")
+    data object Settings : Destination("settings")
 
     /** Nested graph — every scene shares one graph-scoped `NoahsArkViewModel`. */
     sealed class NoahsArk(route: String) : Destination(route) {
@@ -77,6 +78,39 @@ sealed class Destination(val route: String) {
 
         companion object {
             const val GRAPH_ROUTE = "daniel"
+        }
+    }
+
+    /** Nested graph — every scene shares one graph-scoped `EstherViewModel`. */
+    sealed class Esther(route: String) : Destination(route) {
+        data object Intro : Esther("esther/intro")
+        data object KingsTroubleContext : Esther("esther/kings_trouble_context")
+        data object HamansAngerContext : Esther("esther/hamans_anger_context")
+        data object Choice : Esther("esther/choice")
+        data object ScepterContext : Esther("esther/scepter_context")
+        data object Banquet : Esther("esther/banquet")
+        data object TruthRevealedContext : Esther("esther/truth_revealed_context")
+        data object Lesson : Esther("esther/lesson")
+        data object Reward : Esther("esther/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "esther"
+        }
+    }
+
+    /** Nested graph — every scene shares one graph-scoped `JerichoViewModel`. */
+    sealed class Jericho(route: String) : Destination(route) {
+        data object Intro : Jericho("jericho/intro")
+        data object RahabHouseContext : Jericho("jericho/rahab_house_context")
+        data object RahabHelping : Jericho("jericho/rahab_helping")
+        data object Choice : Jericho("jericho/choice")
+        data object WallMarch : Jericho("jericho/wall_march")
+        data object RahabSavedContext : Jericho("jericho/rahab_saved_context")
+        data object Lesson : Jericho("jericho/lesson")
+        data object Reward : Jericho("jericho/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "jericho"
         }
     }
 

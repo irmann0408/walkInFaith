@@ -2,6 +2,7 @@ package com.bibleadventures.data.repository
 
 import com.bibleadventures.data.local.PlayerProfileLocalDataSource
 import com.bibleadventures.domain.model.AdventureProgress
+import com.bibleadventures.domain.model.AudioSettings
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.model.PlayerProfile
@@ -16,6 +17,10 @@ class PlayerProfileRepositoryImpl(
 
     override suspend fun updateCharacter(customization: CharacterCustomization) {
         localDataSource.update { it.copy(character = customization) }
+    }
+
+    override suspend fun updateAudioSettings(audioSettings: AudioSettings) {
+        localDataSource.update { it.copy(audioSettings = audioSettings) }
     }
 
     override suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String) {

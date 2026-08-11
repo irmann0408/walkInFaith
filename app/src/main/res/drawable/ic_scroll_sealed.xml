@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- A rolled, sealed scroll — the secret request not yet spoken. -->
+    <path android:fillColor="#FFE0C89A" android:pathData="M14,14 L50,14 L50,50 L14,50 Z" />
+    <path android:fillColor="#FFC9A16A" android:pathData="M10,10 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+    <path android:fillColor="#FFC9A16A" android:pathData="M54,54 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+    <path android:fillColor="#FFE05A4A" android:pathData="M32,32 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+</vector>
