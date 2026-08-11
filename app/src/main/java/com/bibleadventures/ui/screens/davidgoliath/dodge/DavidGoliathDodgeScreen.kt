@@ -64,6 +64,7 @@ import kotlinx.coroutines.delay
 fun DavidGoliathDodgeScreen(
     viewModel: DavidGoliathViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -74,6 +75,7 @@ fun DavidGoliathDodgeScreen(
         character = character,
         onLaneTapped = viewModel::onLaneTapped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -84,6 +86,7 @@ private fun DavidGoliathDodgeContent(
     character: CharacterCustomization,
     onLaneTapped: (DodgeLane) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     // Where David is currently standing, purely a presentation concern — the
@@ -189,6 +192,18 @@ private fun DavidGoliathDodgeContent(
                         text = stringResource(R.string.david_goliath_dodge_lane_right),
                         onClick = { lastTappedLane = DodgeLane.RIGHT; onLaneTapped(DodgeLane.RIGHT) },
                         modifier = Modifier.weight(1f),
+                    )
+                }
+                if (previouslyCompleted) {
+                    Text(
+                        text = stringResource(R.string.puzzle_already_completed_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    AdventureMenuButton(
+                        text = stringResource(R.string.action_continue),
+                        onClick = onContinue,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
             } else {

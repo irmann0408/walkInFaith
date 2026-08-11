@@ -1,8 +1,10 @@
 package com.bibleadventures.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -174,8 +176,10 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
         }
         composable(Destination.NoahsArk.FindAnimals.route) { entry ->
             val viewModel = navController.noahsArkViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             NoahsArkFindAnimalsScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "find_animals" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("find_animals")
                     navController.navigate(Destination.NoahsArk.AnimalMatching.route)
@@ -184,8 +188,10 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
         }
         composable(Destination.NoahsArk.AnimalMatching.route) { entry ->
             val viewModel = navController.noahsArkViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             NoahsArkMatchingScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "animal_matching" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("animal_matching")
                     navController.navigate(Destination.NoahsArk.OrganizeArkContext.route)
@@ -201,8 +207,10 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
         }
         composable(Destination.NoahsArk.OrganizeArk.route) { entry ->
             val viewModel = navController.noahsArkViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             NoahsArkOrganizeArkScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "organize_ark" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("organize_ark")
                     navController.navigate(Destination.NoahsArk.FindMissingItems.route)
@@ -211,8 +219,10 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
         }
         composable(Destination.NoahsArk.FindMissingItems.route) { entry ->
             val viewModel = navController.noahsArkViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             NoahsArkMissingItemsScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "find_missing_items" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("find_missing_items")
                     navController.navigate(Destination.NoahsArk.Lesson.route)
@@ -274,8 +284,10 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
         }
         composable(Destination.DavidGoliath.SheepCounting.route) { entry ->
             val viewModel = navController.davidGoliathViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             DavidGoliathSheepCountingScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "sheep_counting" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("sheep_counting")
                     navController.navigate(Destination.DavidGoliath.ChooseStonesContext.route)
@@ -291,8 +303,10 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
         }
         composable(Destination.DavidGoliath.ChooseStones.route) { entry ->
             val viewModel = navController.davidGoliathViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             DavidGoliathChooseStonesScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "choose_stones" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("choose_stones")
                     navController.navigate(Destination.DavidGoliath.SlingPracticeContext.route)
@@ -325,8 +339,10 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
         }
         composable(Destination.DavidGoliath.Dodge.route) { entry ->
             val viewModel = navController.davidGoliathViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             DavidGoliathDodgeScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "dodge" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("dodge")
                     navController.navigate(Destination.DavidGoliath.SlingPractice.route)
@@ -335,8 +351,10 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
         }
         composable(Destination.DavidGoliath.SlingPractice.route) { entry ->
             val viewModel = navController.davidGoliathViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             DavidGoliathSlingPracticeScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "sling_practice" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("sling_practice")
                     navController.navigate(Destination.DavidGoliath.Lesson.route)
@@ -398,8 +416,10 @@ private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController)
         }
         composable(Destination.GoodSamaritan.Explore.route) { entry ->
             val viewModel = navController.goodSamaritanViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             GoodSamaritanExploreScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "explore" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("explore")
                     navController.navigate(Destination.GoodSamaritan.Lesson.route)
@@ -461,8 +481,10 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
         }
         composable(Destination.Daniel.Stealth.route) { entry ->
             val viewModel = navController.danielViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             DanielStealthScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "stealth" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("stealth")
                     navController.navigate(Destination.Daniel.Choice.route)
@@ -488,8 +510,10 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
         }
         composable(Destination.Daniel.LionsDen.route) { entry ->
             val viewModel = navController.danielViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             DanielLionsDenScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "lions_den" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("lions_den")
                     navController.navigate(Destination.Daniel.DariusContext.route)
@@ -505,8 +529,10 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
         }
         composable(Destination.Daniel.DariusMaze.route) { entry ->
             val viewModel = navController.danielViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             DanielDariusMazeScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "darius_maze" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("darius_maze")
                     navController.navigate(Destination.Daniel.Lesson.route)
@@ -592,8 +618,10 @@ private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
         }
         composable(Destination.Esther.Banquet.route) { entry ->
             val viewModel = navController.estherViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             EstherBanquetScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "banquet" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("banquet")
                     navController.navigate(Destination.Esther.TruthRevealedContext.route)
@@ -683,8 +711,10 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
         }
         composable(Destination.Jericho.WallMarch.route) { entry ->
             val viewModel = navController.jerichoViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
             JerichoWallMarchScreen(
                 viewModel = viewModel,
+                previouslyCompleted = "wall_march" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("wall_march")
                     navController.navigate(Destination.Jericho.RahabSavedContext.route)

@@ -64,6 +64,15 @@ class NoahsArkViewModel(
             initialValue = CharacterCustomization(),
         )
 
+    /** Scene ids already completed on a prior playthrough — lets a puzzle's Continue button skip past re-solving it. */
+    val previouslyCompletedSceneIds: StateFlow<Set<String>> = profileRepository.profile
+        .map { it.progressByChapter[ChapterId.NOAHS_ARK]?.completedActivities ?: emptySet() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = emptySet(),
+        )
+
     fun onAnimalFound(animalId: String) {
         _uiState.update { it.copy(foundAnimalIds = it.foundAnimalIds + animalId) }
     }

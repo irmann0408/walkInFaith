@@ -1088,6 +1088,50 @@ mechanic) → Rahab is Saved context → Lesson → Reward.
   on-device screenshot check confirmed the wall-intact/wall-fallen shape
   change and the "no force" icon read clearly at real phone size.
 
+### Skip an already-completed puzzle on replay
+Replaying a chapter no longer forces re-solving a puzzle already beaten on
+an earlier playthrough. Builds on `AdventureProgress.completedActivities`
+(`PlayerProfileRepositoryImpl.markSceneCompleted`), which every chapter's
+`onSceneCompleted(sceneId)` was already writing but nothing had ever read
+back — one call site even carried the comment *"Records mid-adventure
+progress so 'Continue Adventure' and a future resume can see it"* before
+this landed.
+- Each of the 6 chapter ViewModels gained one new `previouslyCompletedSceneIds:
+  StateFlow<Set<String>>`, mirroring the existing `characterCustomization`
+  pattern (`profile.map { }.stateIn(...)`) already used in every one of
+  them.
+- Each of the 14 puzzle screens (every screen whose Continue button was
+  gated behind the puzzle engine's own `isComplete`) gained a
+  `previouslyCompleted: Boolean` parameter; when true and the puzzle isn't
+  actually complete this session, a shared hint string appears next to an
+  early Continue button — the puzzle itself stays fully playable either
+  way, never hidden or disabled. `BibleAdventuresNavHost.kt` collects each
+  ViewModel's new StateFlow at the relevant `composable { }` call sites and
+  checks membership against the same scene-id string literal already used
+  in that block's `onSceneCompleted(...)` call.
+- **A real bug found during verification**: `GoodSamaritanExploreScreen`'s
+  new early-Continue button could appear at the same time as the existing
+  helping-beat overlay's own Continue (dismiss) button, producing two
+  identically-labeled nodes — fixed by suppressing the early-Continue
+  (and its hint) while that overlay is showing.
+- **A real regression found and fixed before it shipped**:
+  `NoahsArkDecoyInteractionTest` asserted `Continue` doesn't exist right
+  after a decoy tap, which broke once `find_animals`/`organize_ark` were
+  genuinely solved by an earlier test run on the same device (this app's
+  save state persists across instrumented test runs, and every other
+  `*FlowTest`'s prerequisite-completion helper solves those exact two
+  scenes for real). Fixed by clearing the profile in a new `@Before` on
+  that test, reusing the exact `context.playerProfileDataStore.edit {
+  it.clear() }` idiom already established in
+  `PlayerProfileLocalDataSourceInstrumentedTest`. Verified by running the
+  full instrumented suite twice back-to-back on the same device — no
+  `*FlowTest` regressed and this test specifically stayed green on the
+  second run, which was the whole point.
+- No new routes, screens, or ViewModel logic beyond the one new
+  `StateFlow` per chapter — this was scoped down from an earlier
+  "jump to any puzzle from a picker screen" idea that turned out not to
+  be what was wanted; the actual ask was narrower and this is it.
+
 ## Next tasks
 
 Nothing currently planned. If work resumes later, the natural next step per

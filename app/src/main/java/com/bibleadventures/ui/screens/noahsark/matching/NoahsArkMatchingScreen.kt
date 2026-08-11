@@ -44,6 +44,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun NoahsArkMatchingScreen(
     viewModel: NoahsArkViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -52,6 +53,7 @@ fun NoahsArkMatchingScreen(
         matchingState = uiState.matchingState,
         onItemTapped = viewModel::onMatchItemTapped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -61,6 +63,7 @@ private fun NoahsArkMatchingContent(
     matchingState: MatchingGameState,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -115,7 +118,15 @@ private fun NoahsArkMatchingContent(
                 }
             }
 
-            if (matchingState.isComplete) {
+            if (previouslyCompleted && !matchingState.isComplete) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
+            if (matchingState.isComplete || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,

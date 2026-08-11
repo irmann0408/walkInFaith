@@ -54,6 +54,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun DanielDariusMazeScreen(
     viewModel: DanielViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -62,6 +63,7 @@ fun DanielDariusMazeScreen(
         gridMazeState = uiState.gridMazeState,
         onDirectionPressed = viewModel::onDirectionPressed,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -71,6 +73,7 @@ private fun DanielDariusMazeContent(
     gridMazeState: GridMazeState,
     onDirectionPressed: (Direction) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -117,7 +120,15 @@ private fun DanielDariusMazeContent(
                     modifier = Modifier.padding(top = 16.dp),
                 )
 
-                if (gridMazeState.isComplete) {
+                if (previouslyCompleted && !gridMazeState.isComplete) {
+                    Text(
+                        text = stringResource(R.string.puzzle_already_completed_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+
+                if (gridMazeState.isComplete || previouslyCompleted) {
                     AdventureMenuButton(
                         text = stringResource(R.string.action_continue),
                         onClick = onContinue,

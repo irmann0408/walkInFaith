@@ -49,6 +49,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun EstherBanquetScreen(
     viewModel: EstherViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -57,6 +58,7 @@ fun EstherBanquetScreen(
         decisionPathState = uiState.decisionPathState,
         onOptionTapped = viewModel::onBanquetOptionTapped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -66,6 +68,7 @@ private fun EstherBanquetContent(
     decisionPathState: DecisionPathGameState,
     onOptionTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -120,6 +123,18 @@ private fun EstherBanquetContent(
                         labelRes = R.string.esther_banquet_option_speak_now,
                         onClick = onOptionTapped,
                         modifier = Modifier.weight(1f),
+                    )
+                }
+                if (previouslyCompleted) {
+                    Text(
+                        text = stringResource(R.string.puzzle_already_completed_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    AdventureMenuButton(
+                        text = stringResource(R.string.action_continue),
+                        onClick = onContinue,
+                        modifier = Modifier.widthIn(max = 320.dp).padding(top = 8.dp),
                     )
                 }
             } else {

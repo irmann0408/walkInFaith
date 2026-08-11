@@ -54,6 +54,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun GoodSamaritanExploreScreen(
     viewModel: GoodSamaritanViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -64,6 +65,7 @@ fun GoodSamaritanExploreScreen(
         onDirectionPressed = viewModel::onDirectionPressed,
         onHelpingBeatAcknowledged = viewModel::onHelpingBeatAcknowledged,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -75,8 +77,14 @@ private fun GoodSamaritanExploreContent(
     onDirectionPressed: (Direction) -> Unit,
     onHelpingBeatAcknowledged: () -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    // The helping-beat overlay below has its own Continue button while it's up —
+    // never show the early-skip Continue at the same time, or two "Continue"
+    // nodes would exist at once.
+    val helpingBeatOverlayShowing = gridMazeState.checkpointActivated && !helpingBeatAcknowledged
+
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             Column(
@@ -124,7 +132,15 @@ private fun GoodSamaritanExploreContent(
                     modifier = Modifier.padding(top = 16.dp),
                 )
 
-                if (gridMazeState.isComplete) {
+                if (previouslyCompleted && !gridMazeState.isComplete && !helpingBeatOverlayShowing) {
+                    Text(
+                        text = stringResource(R.string.puzzle_already_completed_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+
+                if ((gridMazeState.isComplete || previouslyCompleted) && !helpingBeatOverlayShowing) {
                     AdventureMenuButton(
                         text = stringResource(R.string.action_continue),
                         onClick = onContinue,
@@ -133,7 +149,7 @@ private fun GoodSamaritanExploreContent(
                 }
             }
 
-            if (gridMazeState.checkpointActivated && !helpingBeatAcknowledged) {
+            if (helpingBeatOverlayShowing) {
                 HelpingBeatOverlay(onDismiss = onHelpingBeatAcknowledged)
             }
         }

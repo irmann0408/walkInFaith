@@ -1,5 +1,6 @@
 package com.bibleadventures.noahsark
 
+import android.content.Context
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -10,9 +11,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
+import androidx.datastore.preferences.core.edit
+import androidx.test.core.app.ApplicationProvider
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
+import com.bibleadventures.data.local.playerProfileDataStore
 import com.bibleadventures.game.stories.NoahsArkContent
+import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -27,6 +33,18 @@ class NoahsArkDecoyInteractionTest {
 
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    // A prior test run (or this suite's own other tests) may have already
+    // solved find_animals/organize_ark for real, which would otherwise make
+    // Continue appear early via the "skip an already-completed puzzle"
+    // shortcut — clearing the profile first keeps this test deterministic
+    // regardless of what ran before it, same idiom as
+    // PlayerProfileLocalDataSourceInstrumentedTest.
+    @Before
+    fun setUp() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        runBlocking { context.playerProfileDataStore.edit { it.clear() } }
+    }
 
     @Test
     fun decoysShowFeedback_neverCompleteTheScene_andStayInteractiveAfterRepeatedTaps() {

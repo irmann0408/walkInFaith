@@ -90,6 +90,7 @@ private val SHIELD_MAX_FRACTION = SHIELD_IMAGE_MIN_FRACTION + SHIELD_TOP_EDGE_RI
 fun DavidGoliathSlingPracticeScreen(
     viewModel: DavidGoliathViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -98,6 +99,7 @@ fun DavidGoliathSlingPracticeScreen(
         slingshotState = uiState.slingshotState,
         onStoneReleased = viewModel::onStoneReleased,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -107,6 +109,7 @@ private fun DavidGoliathSlingPracticeContent(
     slingshotState: SlingshotGameState,
     onStoneReleased: (aimedPosition: Float, markPosition: Float, shieldMinFraction: Float, shieldMaxFraction: Float) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -244,7 +247,15 @@ private fun DavidGoliathSlingPracticeContent(
                 }
             }
 
-            if (slingshotState.isComplete) {
+            if (previouslyCompleted && !slingshotState.isComplete) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
+            if (slingshotState.isComplete || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,

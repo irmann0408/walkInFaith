@@ -123,6 +123,7 @@
     <string name="action_continue">Continue</string>
     <string name="action_replay_narration">Read this aloud again</string>
     <string name="action_return_to_map">Return to Map</string>
+    <string name="puzzle_already_completed_hint">You\'ve already solved this puzzle! Tap Continue to move on, or play it again.</string>
     <string name="feedback_great_job">Great job!</string>
     <string name="feedback_try_another_one">Try another one!</string>
     <string name="feedback_not_an_animal">That\'s not an animal!</string>

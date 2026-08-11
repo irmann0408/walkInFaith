@@ -11,7 +11,9 @@ import com.bibleadventures.domain.repository.PlayerProfileRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import java.util.Locale
 
@@ -63,6 +65,7 @@ class RealAudioController(
         MusicTrack.ADVENTURE to R.raw.adventure_music,
     )
     private var musicPlayer: MediaPlayer? = null
+    private var currentMusicTrack: MusicTrack? = null
 
     private var tts: TextToSpeech? = null
     private var ttsReady = false
@@ -72,7 +75,9 @@ class RealAudioController(
             if (status == 0) loadedSoundIds += sampleId
         }
         playerProfileRepository.profile
-            .onEach { settings = it.audioSettings }
+            .map { it.audioSettings }
+            .distinctUntilChanged()
+            .onEach { newSettings -> applySettingsChange(newSettings) }
             .launchIn(scope)
         tts = TextToSpeech(appContext) { status ->
             ttsReady = status == TextToSpeech.SUCCESS
@@ -80,12 +85,27 @@ class RealAudioController(
         }
     }
 
+    // Reacts to a toggle flip immediately instead of waiting for the next
+    // playMusic()/speak() call — without this, muting music or narration
+    // mid-playback had no effect until the current screen was re-entered.
+    private fun applySettingsChange(newSettings: AudioSettings) {
+        val previous = settings
+        settings = newSettings
+        if (previous.musicEnabled && !newSettings.musicEnabled) {
+            runCatching { musicPlayer?.pause() }
+        } else if (!previous.musicEnabled && newSettings.musicEnabled) {
+            currentMusicTrack?.let { startMusicPlayback(it) }
+        }
+        if (!newSettings.narrationEnabled) {
+            tts?.stop()
+        }
+    }
+
     // Deliberately not MediaPlayer.create(...), which calls the blocking prepare()
     // internally — this would stall the calling thread (typically the Compose
     // main thread, from a screen-entry LaunchedEffect). setDataSource + prepareAsync()
     // keeps playMusic non-blocking; playback starts once onPreparedListener fires.
-    override fun playMusic(track: MusicTrack) {
-        if (!settings.musicEnabled) return
+    private fun startMusicPlayback(track: MusicTrack) {
         val resId = musicResIds[track] ?: return
         musicPlayer?.release()
         musicPlayer = MediaPlayer().apply {
@@ -93,13 +113,22 @@ class RealAudioController(
                 setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
             }
             isLooping = true
-            setOnPreparedListener { it.start() }
+            // Guards against the setting having been toggled off while
+            // prepareAsync() was still in flight.
+            setOnPreparedListener { player -> if (settings.musicEnabled) player.start() }
             prepareAsync()
         }
     }
 
+    override fun playMusic(track: MusicTrack) {
+        currentMusicTrack = track
+        if (!settings.musicEnabled) return
+        startMusicPlayback(track)
+    }
+
     override fun stopMusic() {
-        musicPlayer?.pause()
+        currentMusicTrack = null
+        runCatching { musicPlayer?.pause() }
     }
 
     override fun playSfx(effect: SoundEffect) {

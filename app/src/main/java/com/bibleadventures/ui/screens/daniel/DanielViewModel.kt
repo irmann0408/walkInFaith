@@ -59,6 +59,15 @@ class DanielViewModel(
             initialValue = CharacterCustomization(),
         )
 
+    /** Scene ids already completed on a prior playthrough — lets a puzzle's Continue button skip past re-solving it. */
+    val previouslyCompletedSceneIds: StateFlow<Set<String>> = profileRepository.profile
+        .map { it.progressByChapter[ChapterId.DANIEL]?.completedActivities ?: emptySet() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = emptySet(),
+        )
+
     fun onLaneTapped(lane: DodgeLane) {
         _uiState.update { current ->
             val next = DodgeGame.onLaneTapped(current.dodgeState, lane)

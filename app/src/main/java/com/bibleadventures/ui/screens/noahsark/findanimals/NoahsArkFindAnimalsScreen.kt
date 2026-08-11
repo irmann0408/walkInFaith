@@ -47,6 +47,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun NoahsArkFindAnimalsScreen(
     viewModel: NoahsArkViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -58,6 +59,7 @@ fun NoahsArkFindAnimalsScreen(
         onAnimalTapped = viewModel::onAnimalFound,
         onDecoyTapped = viewModel::onFindAnimalsDecoyTapped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -70,6 +72,7 @@ private fun NoahsArkFindAnimalsContent(
     onAnimalTapped: (String) -> Unit,
     onDecoyTapped: () -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val allFound = foundAnimalIds.size == NoahsArkContent.animals.size
@@ -137,7 +140,15 @@ private fun NoahsArkFindAnimalsContent(
                 }
             }
 
-            if (allFound) {
+            if (previouslyCompleted && !allFound) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
+            if (allFound || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,

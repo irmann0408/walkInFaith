@@ -51,6 +51,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun DavidGoliathSheepCountingScreen(
     viewModel: DavidGoliathViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -59,6 +60,7 @@ fun DavidGoliathSheepCountingScreen(
         sheepCountingState = uiState.sheepCountingState,
         onItemTapped = viewModel::onSheepCountingItemTapped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -68,6 +70,7 @@ private fun DavidGoliathSheepCountingContent(
     sheepCountingState: MatchingGameState,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -120,7 +123,15 @@ private fun DavidGoliathSheepCountingContent(
                 }
             }
 
-            if (sheepCountingState.isComplete) {
+            if (previouslyCompleted && !sheepCountingState.isComplete) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
+            if (sheepCountingState.isComplete || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,

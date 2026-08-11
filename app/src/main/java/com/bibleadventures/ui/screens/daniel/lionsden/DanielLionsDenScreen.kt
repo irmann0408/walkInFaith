@@ -52,6 +52,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun DanielLionsDenScreen(
     viewModel: DanielViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -60,6 +61,7 @@ fun DanielLionsDenScreen(
         sequenceState = uiState.sequenceState,
         onPointTapped = viewModel::onLightPointTapped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -69,6 +71,7 @@ private fun DanielLionsDenContent(
     sequenceState: SequenceGameState,
     onPointTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -146,7 +149,15 @@ private fun DanielLionsDenContent(
                 }
             }
 
-            if (sequenceState.isComplete) {
+            if (previouslyCompleted && !sequenceState.isComplete) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
+            if (sequenceState.isComplete || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,

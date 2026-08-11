@@ -59,6 +59,7 @@ import kotlin.math.roundToInt
 fun NoahsArkOrganizeArkScreen(
     viewModel: NoahsArkViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -67,6 +68,7 @@ fun NoahsArkOrganizeArkScreen(
         dragSortState = uiState.dragSortState,
         onItemDropped = viewModel::onSortItemDropped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -76,6 +78,7 @@ private fun NoahsArkOrganizeArkContent(
     dragSortState: DragSortGameState,
     onItemDropped: (itemId: String, categoryKey: String) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val categoryBounds = remember { mutableStateMapOf<String, Rect>() }
@@ -146,7 +149,15 @@ private fun NoahsArkOrganizeArkContent(
                 }
             }
 
-            if (dragSortState.isComplete) {
+            if (previouslyCompleted && !dragSortState.isComplete) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
+            if (dragSortState.isComplete || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,

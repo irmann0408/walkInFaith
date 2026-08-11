@@ -58,6 +58,7 @@ import kotlinx.coroutines.delay
 fun DanielStealthScreen(
     viewModel: DanielViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -68,6 +69,7 @@ fun DanielStealthScreen(
         character = character,
         onLaneTapped = viewModel::onLaneTapped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -78,6 +80,7 @@ private fun DanielStealthContent(
     character: CharacterCustomization,
     onLaneTapped: (DodgeLane) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     // -1 = left, 0 = center, 1 = right. Purely presentational, mirrors
@@ -172,6 +175,18 @@ private fun DanielStealthContent(
                         text = stringResource(R.string.daniel_stealth_lane_right),
                         onClick = { lastTappedLane = DodgeLane.RIGHT; onLaneTapped(DodgeLane.RIGHT) },
                         modifier = Modifier.weight(1f),
+                    )
+                }
+                if (previouslyCompleted) {
+                    Text(
+                        text = stringResource(R.string.puzzle_already_completed_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    AdventureMenuButton(
+                        text = stringResource(R.string.action_continue),
+                        onClick = onContinue,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
             } else {

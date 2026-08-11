@@ -43,6 +43,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun NoahsArkMissingItemsScreen(
     viewModel: NoahsArkViewModel,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -51,6 +52,7 @@ fun NoahsArkMissingItemsScreen(
         hiddenObjectState = uiState.hiddenObjectState,
         onItemTapped = viewModel::onHiddenItemTapped,
         onContinue = onContinue,
+        previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
 }
@@ -60,6 +62,7 @@ private fun NoahsArkMissingItemsContent(
     hiddenObjectState: HiddenObjectGameState,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -101,7 +104,15 @@ private fun NoahsArkMissingItemsContent(
                 }
             }
 
-            if (hiddenObjectState.isComplete) {
+            if (previouslyCompleted && !hiddenObjectState.isComplete) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
+            if (hiddenObjectState.isComplete || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,
