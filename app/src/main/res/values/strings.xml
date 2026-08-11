@@ -498,8 +498,17 @@
 
     <string name="jericho_rahab_helping_title">Rahab Helps the Spies</string>
     <string name="jericho_rahab_helping_line_1">Rahab hid the spies and kept them safe, even though it put her in danger.</string>
-    <string name="jericho_rahab_helping_line_2">She lowered them down by a rope through her window and told them to hide in the hills.</string>
-    <string name="jericho_rahab_helping_line_3">In return, they promised to keep her and her family safe — if she tied a scarlet cord in that same window.</string>
+    <string name="jericho_rahab_helping_line_2">She hid them on her roof under stalks of flax, then sent the soldiers searching the wrong way, toward the river.</string>
+
+    <string name="jericho_spies_escape_title">Down the Wall</string>
+    <string name="jericho_spies_escape_instructions">Rahab\'s house was built right into the city wall. Slide the pieces to untangle the rope before the soldiers finish searching.</string>
+    <string name="jericho_spies_escape_tile_content_description">Rope tile %1$d</string>
+    <string name="jericho_spies_escape_empty_content_description">Empty space</string>
+
+    <string name="jericho_spies_escaped_context_title">Over the Wall</string>
+    <string name="jericho_spies_escaped_context_line_1">Rahab lowered the spies by the rope, right through her window in the wall.</string>
+    <string name="jericho_spies_escaped_context_line_2">She told them to hide in the hills for three days, until the search was over.</string>
+    <string name="jericho_spies_escaped_context_line_3">In return, they promised to keep her and her family safe — if she tied a scarlet cord in that same window.</string>
 
     <string name="jericho_choice_title">Trusting an Unusual Plan</string>
     <string name="jericho_choice_instructions">God\'s plan didn\'t look like a battle at all. Choose what Joshua and the people will do.</string>
@@ -510,19 +519,59 @@
     <string name="jericho_choice_reaction_2">Joshua led the people forward, trusting God more than swords or shields.</string>
     <string name="jericho_choice_reaction_3">Step by step, the people obeyed exactly as they were told.</string>
 
-    <string name="jericho_wall_march_title">The March and the Shout</string>
-    <string name="jericho_wall_march_instructions">March around the city and wait for God\'s moment to shout.</string>
-    <string name="jericho_step_day1">The First Day</string>
-    <string name="jericho_step_more_days">More Days of Marching</string>
-    <string name="jericho_step_day7">The Seventh Day</string>
-    <string name="jericho_step_shout">Now, Shout!</string>
-    <string name="jericho_option_march_quietly">March Quietly</string>
-    <string name="jericho_option_attack_gate">Attack the Gate</string>
-    <string name="jericho_option_stay_silent">Stay Silent</string>
-    <string name="jericho_option_shout_now">Shout Now!</string>
-    <string name="jericho_option_march_seven_times">March Around Seven Times</string>
-    <string name="jericho_option_break_wall_by_force">Break the Wall by Force</string>
-    <string name="jericho_option_blow_horns_and_shout">Blow the Horns and Shout!</string>
+    <string name="jericho_camp_context_title">Crossing the Jordan</string>
+    <string name="jericho_camp_context_line_1">God held back the Jordan River so all the people could cross on dry ground.</string>
+    <string name="jericho_camp_context_line_2">Joshua chose twelve men, one from each tribe, to carry twelve stones from the riverbed and build a memorial.</string>
+
+    <string name="jericho_camp_title">Setting Up Camp</string>
+    <string name="jericho_camp_instructions">Tap each stone to add it to the memorial, so the people will always remember what God did here.</string>
+    <string name="jericho_camp_stone_1">Stone 1</string>
+    <string name="jericho_camp_stone_2">Stone 2</string>
+    <string name="jericho_camp_stone_3">Stone 3</string>
+    <string name="jericho_camp_stone_4">Stone 4</string>
+    <string name="jericho_camp_stone_5">Stone 5</string>
+    <string name="jericho_camp_stone_6">Stone 6</string>
+    <string name="jericho_camp_stone_7">Stone 7</string>
+    <string name="jericho_camp_stone_8">Stone 8</string>
+    <string name="jericho_camp_stone_9">Stone 9</string>
+    <string name="jericho_camp_stone_10">Stone 10</string>
+    <string name="jericho_camp_stone_11">Stone 11</string>
+    <string name="jericho_camp_stone_12">Stone 12</string>
+
+    <string name="jericho_tents_context_title">Camp by the River</string>
+    <string name="jericho_tents_context_line_1">As the tents went up around the new memorial, the people talked about everything Joshua had led them through.</string>
+    <string name="jericho_tents_context_line_2">He had led them safely across the Jordan, just as God promised — and the people trusted him to lead them the rest of the way, toward Jericho.</string>
+
+    <string name="jericho_walls_context_title">The Walls of Jericho</string>
+    <string name="jericho_walls_context_line_1">Jericho\'s gates were shut tight — no one went in or out.</string>
+    <string name="jericho_walls_context_line_2">God told Joshua exactly what to do: march around the city once a day, for six days, without a sound.</string>
+
+    <string name="jericho_six_day_march_title">The Silent March</string>
+    <string name="jericho_six_day_march_instructions">Tap in rhythm to march one lap around the wall — once for each of the six days. No shouting, no talking, just steady steps.</string>
+    <string name="jericho_march_day_label">Day %1$d of %2$d</string>
+    <string name="jericho_march_tap_content_description">Tap to march</string>
+    <string name="jericho_march_on_beat">Marching strong!</string>
+    <string name="jericho_march_off_beat">Keep in step…</string>
+
+    <string name="jericho_seventh_day_context_title">The Seventh Day</string>
+    <string name="jericho_seventh_day_context_line_1">On the seventh day, God gave one more instruction: march around the city seven times, not just once.</string>
+    <string name="jericho_seventh_day_context_line_2">Seven priests would carry seven trumpets — and this time, when the trumpets sounded, the people would shout.</string>
+
+    <string name="jericho_fast_march_title">Seven Times Around</string>
+    <string name="jericho_fast_march_instructions">Faster now! Tap in rhythm to complete all seven laps around the wall.</string>
+    <string name="jericho_march_lap_label">Lap %1$d of %2$d</string>
+
+    <string name="jericho_blow_shofar_title">Blow the Shofar</string>
+    <string name="jericho_blow_shofar_instructions">Tap the trumpet notes to sound the shofar.</string>
+    <string name="jericho_shofar_note_red">Red note</string>
+    <string name="jericho_shofar_note_orange">Orange note</string>
+    <string name="jericho_shofar_note_yellow">Yellow note</string>
+    <string name="jericho_shofar_note_green">Green note</string>
+    <string name="jericho_shofar_note_blue">Blue note</string>
+
+    <string name="jericho_shout_title">Shout!</string>
+    <string name="jericho_shout_instructions">The trumpets are sounding — now SHOUT! Tap again and again to bring the walls down.</string>
+    <string name="jericho_shout_button_content_description">Shout</string>
 
     <string name="jericho_rahab_saved_context_title">Rahab is Saved</string>
     <string name="jericho_rahab_saved_context_line_1">When the walls fell, Rahab tied the scarlet cord in her window, just as she was told.</string>

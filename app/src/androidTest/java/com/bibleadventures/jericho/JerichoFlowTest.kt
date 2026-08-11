@@ -19,25 +19,32 @@ import com.bibleadventures.MainActivity
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.dodge.DodgeLane
 import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
+import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
+import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.GoodSamaritanContent
+import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import org.junit.Rule
 import org.junit.Test
 
 /**
- * Walks the full Battle of Jericho adventure end to end. It's locked until
- * Noah's Ark, David and Goliath, Good Samaritan, Daniel, and Esther are
- * completed — and this device's save data persists real state across test
- * runs — so this test completes all five prerequisites itself rather than
- * assuming they're already done, to stay deterministic regardless of what
- * ran before it (same pattern as EstherFlowTest). This is also the test
- * that finally re-confirms the original chain's tail: completing Jericho
- * unlocks Feeding the 5,000.
+ * Walks the full Battle of Jericho adventure end to end — rebuilt with 4
+ * real mini-puzzles (the spies' rope escape, setting up camp, the six-day
+ * silent march, and the seventh-day fast march/shofar/shout finale),
+ * replacing the old 4-flashcard "March and the Shout" that had no real
+ * challenge. It's locked until Noah's Ark, David and Goliath, Good
+ * Samaritan, Daniel, and Esther are completed — and this device's save
+ * data persists real state across test runs — so this test completes all
+ * five prerequisites itself rather than assuming they're already done, to
+ * stay deterministic regardless of what ran before it (same pattern as
+ * EstherFlowTest). This is also the test that finally re-confirms the
+ * original chain's tail: completing Jericho unlocks Feeding the 5,000.
  *
- * Esther is one chapter (5 sequential mini-puzzles) — see EstherFlowTest
+ * Esther is one chapter (4 sequential mini-puzzles) — see EstherFlowTest
  * for the thorough walkthrough asserting its own reward details; this test
  * only needs to clear it as a prerequisite.
  */
@@ -82,26 +89,63 @@ class JerichoFlowTest {
         // Scene 1c: Rahab Helps the Spies (narrative-only).
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 2: Choice — trusting an unusual plan, flavor-only.
+        // Scene 2: Spies Escape — a 3x3 sliding puzzle, genuinely randomly shuffled
+        // each run (SlidingPuzzleGame.newShuffled uses Random.Default), so it's
+        // solved live by reading the board and running a real BFS, not a hardcoded
+        // tap sequence.
+        solveSpiesEscapePuzzle()
+        composeTestRule.onNodeWithText(continueLabel).performClick() // leaves the puzzle screen itself
+
+        // Scene 2b: Over the Wall context (rope, scarlet cord, 3 days).
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 3: Choice — trusting an unusual plan, flavor-only.
         composeTestRule.onNodeWithText(activity.getString(R.string.jericho_choice_option_1)).performClick()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 3: The March and the Shout — 4 steps, always the correct/obedient option.
-        val marchQuietly = activity.getString(R.string.jericho_option_march_quietly)
-        val staySilent = activity.getString(R.string.jericho_option_stay_silent)
-        val marchSevenTimes = activity.getString(R.string.jericho_option_march_seven_times)
-        val blowHornsAndShout = activity.getString(R.string.jericho_option_blow_horns_and_shout)
-
-        composeTestRule.onNodeWithContentDescription(marchQuietly).performClick()
-        composeTestRule.onNodeWithContentDescription(staySilent).performClick()
-        composeTestRule.onNodeWithContentDescription(marchSevenTimes).performClick()
-        composeTestRule.onNodeWithContentDescription(blowHornsAndShout).performClick()
+        // Scene 3b: Crossing the Jordan context.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 3b: Rahab is Saved context.
+        // Scene 4: Setting Up Camp — 12 memorial stones, order-independent.
+        JerichoContent.campStones.forEach { stone ->
+            composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)).performClick()
+        }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 4: Lesson.
+        // Scene 4b: Camp by the River context -> The Walls of Jericho context.
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 5: The Silent March — six taps, one per day, on the beat.
+        completeMarch(JerichoContent.sixDayMarchChart, JerichoContent.SIX_DAY_MARCH_REQUIRED_HITS)
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 5b: The Seventh Day context.
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 6: Seven Times Around — the same march mechanic again, faster.
+        completeMarch(JerichoContent.fastMarchChart, JerichoContent.FAST_MARCH_REQUIRED_HITS)
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 7: Blow the Shofar — tap the 5 notes in the order defined by
+        // JerichoContent.shofarNotes (list order *is* the correct order, same
+        // shape as Daniel's Lions' Den).
+        JerichoContent.shofarNotes.forEach { note ->
+            composeTestRule.onNodeWithContentDescription(activity.getString(note.nameRes)).performClick()
+        }
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 8: Shout! — a plain tap counter, every tap makes progress.
+        val shoutDescription = activity.getString(R.string.jericho_shout_button_content_description)
+        repeat(JerichoContent.SHOUT_REQUIRED_TAPS) {
+            composeTestRule.onNodeWithContentDescription(shoutDescription).performClick()
+        }
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 8b: Rahab is Saved context.
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        // Scene 9: Lesson.
         composeTestRule.onNodeWithText(activity.getString(R.string.jericho_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -435,6 +479,113 @@ class JerichoFlowTest {
                 }
             }
             loopIndex++
+        }
+        composeTestRule.mainClock.autoAdvance = true
+    }
+
+    /**
+     * The Spies Escape sliding puzzle is genuinely randomly shuffled each
+     * run ([SlidingPuzzleGame.newShuffled] uses `Random.Default`, unlike
+     * every hand-verified deterministic map/chart elsewhere in this app),
+     * so there's no fixed tap sequence to hardcode. Instead: read the live
+     * board off its tiles' screen positions, solve it with a real
+     * breadth-first search over [SlidingPuzzleGame]'s own transition
+     * function (a 3x3 board's state space is small — this finishes in well
+     * under a second), then tap each moved tile's number in order.
+     */
+    private fun solveSpiesEscapePuzzle() {
+        val activity = composeTestRule.activity
+        val size = JerichoContent.SPIES_ESCAPE_GRID_SIZE
+        val board = readSlidingPuzzleBoard(size)
+        val solutionTileValues = solveSlidingPuzzle(SlidingPuzzleGameState(tiles = board, size = size))
+
+        solutionTileValues.forEach { value ->
+            val description = activity.getString(R.string.jericho_spies_escape_tile_content_description, value)
+            composeTestRule.onNodeWithContentDescription(description).performClick()
+        }
+    }
+
+    /** Reconstructs the board (row-major, empty slot as 0) from each tile's on-screen position. */
+    private fun readSlidingPuzzleBoard(size: Int): List<Int> {
+        val activity = composeTestRule.activity
+        val emptyDescription = activity.getString(R.string.jericho_spies_escape_empty_content_description)
+
+        val positioned = mutableListOf<Pair<Offset, Int>>()
+        val emptyBounds = composeTestRule.onNodeWithContentDescription(emptyDescription).fetchSemanticsNode().boundsInRoot
+        positioned += Offset(emptyBounds.left, emptyBounds.top) to 0
+        for (value in 1 until size * size) {
+            val description = activity.getString(R.string.jericho_spies_escape_tile_content_description, value)
+            val bounds = composeTestRule.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot
+            positioned += Offset(bounds.left, bounds.top) to value
+        }
+
+        return positioned.sortedWith(compareBy({ it.first.y }, { it.first.x })).map { it.second }
+    }
+
+    /** Plain BFS over [SlidingPuzzleGame]'s real transition function — returns the tile *value* tapped at each step. */
+    private fun solveSlidingPuzzle(start: SlidingPuzzleGameState): List<Int> {
+        if (start.isComplete) return emptyList()
+
+        val visited = mutableSetOf(start.tiles)
+        val queue = ArrayDeque<SlidingPuzzleGameState>()
+        val cameFrom = mutableMapOf<List<Int>, Pair<List<Int>, Int>>() // state -> (previous state, tapped value)
+        queue.add(start)
+
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+            if (current.isComplete) {
+                val path = mutableListOf<Int>()
+                var stateKey = current.tiles
+                while (stateKey in cameFrom) {
+                    val (previous, value) = cameFrom.getValue(stateKey)
+                    path.add(0, value)
+                    stateKey = previous
+                }
+                return path
+            }
+
+            val emptyIndex = current.emptyIndex
+            val row = emptyIndex / current.size
+            val col = emptyIndex % current.size
+            val neighborIndices = buildList {
+                if (row > 0) add(emptyIndex - current.size)
+                if (row < current.size - 1) add(emptyIndex + current.size)
+                if (col > 0) add(emptyIndex - 1)
+                if (col < current.size - 1) add(emptyIndex + 1)
+            }
+
+            neighborIndices.forEach { index ->
+                val next = SlidingPuzzleGame.onTileTapped(current, index)
+                if (next.tiles !in visited) {
+                    visited += next.tiles
+                    cameFrom[next.tiles] = current.tiles to current.tiles[index]
+                    queue.add(next)
+                }
+            }
+        }
+        error("No solution found — should never happen, SlidingPuzzleGame.newShuffled is always solvable")
+    }
+
+    /**
+     * Freezes the Compose test clock and advances it to [chart]'s single
+     * beat's exact `hitTimeMs` in turn, looping through as many chart
+     * iterations as needed to reach [requiredHits] — same deterministic
+     * frozen-clock technique as Esther's corridor, reused here for
+     * Jericho's single-lane march (both `SixDayMarch` and `FastMarch`
+     * share the one "Tap to march" content description).
+     */
+    private fun completeMarch(chart: RhythmLaneChart, requiredHits: Int) {
+        val activity = composeTestRule.activity
+        val tapDescription = activity.getString(R.string.jericho_march_tap_content_description)
+        val hitTimeMs = chart.notes.first().hitTimeMs
+
+        composeTestRule.mainClock.autoAdvance = false
+        var currentMs = 0L
+        repeat(requiredHits) { loopIndex ->
+            val targetMs = loopIndex * chart.loopDurationMs + hitTimeMs
+            composeTestRule.mainClock.advanceTimeBy(targetMs - currentMs)
+            currentMs = targetMs
+            composeTestRule.onNodeWithContentDescription(tapDescription).performClick()
         }
         composeTestRule.mainClock.autoAdvance = true
     }

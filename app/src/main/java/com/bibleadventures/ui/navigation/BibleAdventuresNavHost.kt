@@ -59,11 +59,16 @@ import com.bibleadventures.ui.screens.goodsamaritan.intro.GoodSamaritanIntroScre
 import com.bibleadventures.ui.screens.goodsamaritan.lesson.GoodSamaritanLessonScreen
 import com.bibleadventures.ui.screens.goodsamaritan.reward.GoodSamaritanRewardScreen
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
+import com.bibleadventures.ui.screens.jericho.blowshofar.JerichoBlowShofarScreen
 import com.bibleadventures.ui.screens.jericho.choice.JerichoChoiceScreen
+import com.bibleadventures.ui.screens.jericho.fastmarch.JerichoFastMarchScreen
 import com.bibleadventures.ui.screens.jericho.intro.JerichoIntroScreen
 import com.bibleadventures.ui.screens.jericho.lesson.JerichoLessonScreen
 import com.bibleadventures.ui.screens.jericho.reward.JerichoRewardScreen
-import com.bibleadventures.ui.screens.jericho.wallmarch.JerichoWallMarchScreen
+import com.bibleadventures.ui.screens.jericho.settingupcamp.JerichoSettingUpCampScreen
+import com.bibleadventures.ui.screens.jericho.shout.JerichoShoutScreen
+import com.bibleadventures.ui.screens.jericho.sixdaymarch.JerichoSixDayMarchScreen
+import com.bibleadventures.ui.screens.jericho.spiesescape.JerichoSpiesEscapeScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.noahsark.findanimals.NoahsArkFindAnimalsScreen
@@ -766,8 +771,27 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
                 lineRes = JerichoContent.rahabHelpingLines,
                 onContinue = {
                     viewModel.onSceneCompleted("rahab_helping")
-                    navController.navigate(Destination.Jericho.Choice.route)
+                    navController.navigate(Destination.Jericho.SpiesEscape.route)
                 },
+            )
+        }
+        composable(Destination.Jericho.SpiesEscape.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JerichoSpiesEscapeScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "spies_escape" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("spies_escape")
+                    navController.navigate(Destination.Jericho.SpiesEscapedContext.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.SpiesEscapedContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jericho_spies_escaped_context_title,
+                lineRes = JerichoContent.spiesEscapedContextLines,
+                onContinue = { navController.navigate(Destination.Jericho.Choice.route) },
             )
         }
         composable(Destination.Jericho.Choice.route) { entry ->
@@ -776,18 +800,94 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
                 viewModel = viewModel,
                 onContinue = {
                     viewModel.onSceneCompleted("choice")
-                    navController.navigate(Destination.Jericho.WallMarch.route)
+                    navController.navigate(Destination.Jericho.CampContext.route)
                 },
             )
         }
-        composable(Destination.Jericho.WallMarch.route) { entry ->
+        composable(Destination.Jericho.CampContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jericho_camp_context_title,
+                lineRes = JerichoContent.campContextLines,
+                onContinue = { navController.navigate(Destination.Jericho.SettingUpCamp.route) },
+            )
+        }
+        composable(Destination.Jericho.SettingUpCamp.route) { entry ->
             val viewModel = navController.jerichoViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            JerichoWallMarchScreen(
+            JerichoSettingUpCampScreen(
                 viewModel = viewModel,
-                previouslyCompleted = "wall_march" in previouslyCompletedSceneIds,
+                previouslyCompleted = "setting_up_camp" in previouslyCompletedSceneIds,
                 onContinue = {
-                    viewModel.onSceneCompleted("wall_march")
+                    viewModel.onSceneCompleted("setting_up_camp")
+                    navController.navigate(Destination.Jericho.TentsContext.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.TentsContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jericho_tents_context_title,
+                lineRes = JerichoContent.tentsContextLines,
+                onContinue = { navController.navigate(Destination.Jericho.WallsContext.route) },
+            )
+        }
+        composable(Destination.Jericho.WallsContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jericho_walls_context_title,
+                lineRes = JerichoContent.wallsContextLines,
+                onContinue = { navController.navigate(Destination.Jericho.SixDayMarch.route) },
+            )
+        }
+        composable(Destination.Jericho.SixDayMarch.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JerichoSixDayMarchScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "six_day_march" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("six_day_march")
+                    navController.navigate(Destination.Jericho.SeventhDayContext.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.SeventhDayContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jericho_seventh_day_context_title,
+                lineRes = JerichoContent.seventhDayContextLines,
+                onContinue = { navController.navigate(Destination.Jericho.FastMarch.route) },
+            )
+        }
+        composable(Destination.Jericho.FastMarch.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JerichoFastMarchScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "fast_march" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("fast_march")
+                    navController.navigate(Destination.Jericho.BlowShofar.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.BlowShofar.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JerichoBlowShofarScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "blow_shofar" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("blow_shofar")
+                    navController.navigate(Destination.Jericho.Shout.route)
+                },
+            )
+        }
+        composable(Destination.Jericho.Shout.route) { entry ->
+            val viewModel = navController.jerichoViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JerichoShoutScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "shout" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("shout")
                     navController.navigate(Destination.Jericho.RahabSavedContext.route)
                 },
             )

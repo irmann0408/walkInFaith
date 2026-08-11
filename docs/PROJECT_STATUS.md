@@ -1,21 +1,25 @@
 # Project Status
 
-Last updated: 2026-08-11 (Esther's tail end trimmed — Reveal Haman's Plot
-and 5 surrounding screens collapsed into just the Lesson; Corridor Courage
-Meter replaced with a 3-lane rhythm mini-game; the 5-chapter Esther arc
+Last updated: 2026-08-11 (The Battle of Jericho rebuilt with 4 real
+mini-puzzles, replacing its old 4-flashcard "March and the Shout," which
+was too easy; Esther's tail end trimmed — Reveal Haman's Plot and 5
+surrounding screens collapsed into just the Lesson; Corridor Courage Meter
+replaced with a 3-lane rhythm mini-game; the 5-chapter Esther arc
 consolidated back into one chapter, "Esther's Rescue of Her People," per
 playtesting feedback that the split felt disjointed; real Audio/Narration/
-Settings and Chapter 6 — The Battle of Jericho also complete)
+Settings also complete)
 
 ## Current milestone
 
-**Esther tail-end trim: COMPLETE.** After the Corridor rhythm-lane mini-game
-(the chapter's last tap-based puzzle), the 6 screens that used to follow it
-— 3 context cards, the Reveal Haman's Plot puzzle, 1 more context card, and
-the Lesson — are now just 1 screen: the Lesson ("Courage and Speaking Up").
-See "Esther's tail end trimmed to Corridor → Lesson" further down. Chain is
-unchanged: Noah's Ark → David & Goliath → Good Samaritan → Daniel → Esther's
-Rescue of Her People → Jericho → Feeding the 5,000 → Jesus Calms the Storm.
+**Battle of Jericho rebuild: COMPLETE.** The chapter's one puzzle — 4
+flashcard rounds of picking the obviously-right option — was too easy.
+Rebuilt with 4 real mini-puzzles mapped onto Joshua 2, 4, and 6: the spies'
+rope escape (a sliding-tile puzzle), setting up camp (12 memorial stones),
+the six-day silent march, and the seventh-day fast march/shofar/shout
+finale. See "The Battle of Jericho rebuilt with 4 real mini-puzzles"
+further down. Chain is unchanged: Noah's Ark → David & Goliath → Good
+Samaritan → Daniel → Esther's Rescue of Her People → Jericho → Feeding the
+5,000 → Jesus Calms the Storm.
 
 ## Completed features
 
@@ -1503,13 +1507,119 @@ list independent of which puzzles exist.
   Goliath locked when it's actually already completed from prior test
   runs — neither is a regression from this change).
 
+### The Battle of Jericho rebuilt with 4 real mini-puzzles
+The chapter's one puzzle — 4 rounds of picking the obviously-right option
+from 2 flashcards — had no real challenge. The user wanted 4 mini-puzzles
+mapped onto the real narrative: the spies' escape, setting up camp, the
+6-day silent march, and the 7th-day march/shofar/shout finale. Every
+narrative detail (Rahab hiding the spies under flax stalks, the rope
+through her window, the 3-day hiding instruction and scarlet-cord promise,
+the 12 stones "from the middle of the Jordan," the 6-days-once-a-day/
+7th-day-seven-times/trumpets-then-shout structure) was checked against the
+actual WEB text via WebFetch before being written into content — not
+assumed from the blueprint or from memory, same discipline as every other
+chapter. One mandatory adaptation, not up for debate (this app's
+non-negotiable "no failure states" rule): the original blueprint's
+"off-beat taps raise a guards' awareness meter" is dropped — a rising
+danger meter that could plausibly end badly is exactly the shape the spec
+prohibits. Off-beat taps get the same treatment Esther's corridor already
+established — no progress that beat, a marcher stumbles as pure cosmetic
+feedback, nothing accumulates toward anything bad. Confirmed with the user
+before building: the sliding-number puzzle uses a **3x3 grid (8 tiles)**,
+not the 4x4/15-puzzle in the reference code — the full 15-puzzle is
+genuinely hard even for adults and wrong for this app's 7+ audience.
+
+- **One new engine, `game/puzzles/slidingpuzzle/`** (zero Compose/Android
+  imports, same convention as every other engine). `onTileTapped` swaps a
+  tile into the empty slot if adjacent, otherwise a pure no-op — a sliding
+  puzzle has no "wrong move" to begin with, so unlike every other engine
+  in this app, no failure-state adaptation was needed here at all.
+  `newShuffled(size, moveCount)` is **solvable-by-construction**: starts
+  from the solved grid and applies `moveCount` random *legal* slides,
+  rather than a random permutation checked against 15-puzzle parity math —
+  every intermediate state stays reachable from (and back to) solved by
+  definition. **A real bug found by its own unit tests, not shipped**: the
+  first version had `onTileTapped` guard `if (state.isComplete) return
+  state` — correct for player input, but `newShuffled` starts from the
+  *solved* state and calls the same function to shuffle away from it, so
+  every shuffle silently no-opped and stayed solved. Fixed by extracting a
+  private `slide()` used by both — `onTileTapped` keeps its
+  already-complete guard, `newShuffled` bypasses it. Also verified with an
+  actual inversion-count solvability check (the standard sliding-puzzle
+  algorithm) independent of how the shuffle was built, not just "trust the
+  construction."
+- **Spies & Rahab**: the 3x3 puzzle slots into the existing `RahabHelping`
+  beat's payoff — `jericho_rahab_helping_line_2` was trimmed to stop
+  before the escape (a cliffhanger now), and the rope/scarlet-cord/3-days
+  content moved to a new post-puzzle context card, since the puzzle now
+  owns that story beat. The completed puzzle screen itself stays plain
+  (numbered tiles + the standard Continue button, same as every other
+  puzzle scene) — the rope payoff is told through the following context
+  card's text, not a swapped-in image, so no new drawable was needed.
+- **Setting Up Camp**: reuses `hiddenobject` exactly as Royal Attire does
+  (tap an item → `foundIds` → complete when all found) for the 12
+  memorial stones, rendered as a plain static tray (Noah's-Ark-style
+  wrapped grid) rather than a hidden-object search, since the stones start
+  in plain view. Reuses the existing `ic_stone_smooth.xml` (David &
+  Goliath's sling stones) — thematically apt too, since Joshua 4's
+  memorial stones were also taken from a riverbed. **Scope decision**:
+  "arrange tents + trust Joshua's leadership dialogue" from the blueprint
+  became a `StoryBeatScreen` context card right after the puzzle, not a
+  second required interaction — keeps this one mini-puzzle instead of a
+  combined two-mechanic scene.
+- **The Silent March / Seven Times Around**: reuses `rhythmlane` (built
+  for Esther's corridor) at its simplest parameterization — a single lane,
+  always `0` — rendered completely differently (one central pulsing beat
+  target with a marching-footprint icon, not 3 lanes) than Esther's scene.
+  Each chart has exactly **one note per loop**, so `hits` maps directly
+  onto "day X of 6" / "lap X of 7" with no separate counting state needed.
+  The seventh day deliberately reuses the identical mechanic again, just
+  faster (`loopDurationMs` halved, one more required hit) — the text
+  itself says "march again, seven times" (Joshua 6:15), so the repeat
+  serves the narrative rather than reading as an accidental duplicate
+  (unlike Banquet Jigsaw, cut earlier for unintentionally repeating
+  Organize the Ark).
+- **Blow the Shofar**: reuses `game/puzzles/sequence` exactly as-is
+  (already Daniel's Lions' Den mechanic) — 5 colored notes, tap in order.
+  `ShofarNoteDef` gained the same `position: Offset` shape as Daniel's
+  `LightPointDef`, arranged in the same kind of arc. Rendered as plain
+  Compose-drawn colored circles, not new drawables — five near-identical
+  colored-dot assets weren't worth adding.
+- **Shout!**: **not** a new engine — a plain `shoutTaps: Int` field
+  directly on `JerichoUiState`, matching this app's precedent that a
+  genuinely trivial tap counter doesn't need a third micro-engine. Reuses
+  the existing wall-intact/wall-fallen art and `SoundEffect.TRUMPET_FANFARE`
+  as-is (already this exact "wall falls" moment's sound before this
+  rebuild) — no new assets for the climax at all.
+- **Tests**: new `SlidingPuzzleGameTest.kt` (9 cases, including an
+  independent inversion-parity solvability check across 30 seeded
+  shuffles). `JerichoViewModelTest.kt` rewritten for all 6 new puzzle
+  methods. `JerichoFlowTest.kt` rewritten for the new 18-scene flow —
+  **the sliding puzzle is genuinely randomly shuffled each run**
+  (`Random.Default`, unlike every hand-verified deterministic map/chart
+  elsewhere in this app), so the test reads the live board off its tiles'
+  screen positions and solves it with a real breadth-first search over
+  `SlidingPuzzleGame`'s own transition function (a 3x3 board's state space
+  is small — finishes in well under a second), rather than a hardcoded tap
+  sequence. Both march scenes reuse the exact frozen-clock
+  `mainClock.advanceTimeBy(...)` technique proven for Esther's corridor.
+  **A real bug found and fixed during on-device verification**: the test
+  was missing one `Continue` tap after solving the sliding puzzle — the
+  puzzle screen shows its own completion button before the payoff context
+  card appears, and the first draft skipped straight to asserting the
+  next scene. Full `./gradlew build` green; full instrumented suite run
+  twice back-to-back on-device, 19/19 clean both times.
+- Chapter drops the old `decisionpath`-based march content
+  (`marchSteps`/`marchOptions`/`marchStepDayLabels`/`MarchOptionDef`) and
+  `ui/screens/jericho/wallmarch/` entirely — `game/puzzles/decisionpath`
+  itself is untouched, since Esther no longer uses it but nothing else
+  needed removing there.
+
 ## Next tasks
 
-One more request the user flagged but hasn't described yet (from the same
-original message as the Esther consolidation, the corridor rebuild, and
-this tail-end trim) — pick it up when stated. Otherwise, the natural next
-step per the current order is either **Chapter 7 — Feeding the 5,000** (now
-unlocked once The Battle of Jericho is completed) or the rest of
+The natural next step per the current order is either **Chapter 7 —
+Feeding the 5,000** (now unlocked once The Battle of Jericho is completed)
+or the rest of
 **Milestone 6 — Parent Area**: a parental gate, progress summary, and
 reset-progress functionality (spec section 17) — the audio/narration
 toggles portion of Settings is already built (see "Audio, Narration &
@@ -1631,5 +1741,30 @@ Settings" above).
   `LaunchedEffect { while (isActive) { withFrameNanos { ... } } }`
   accumulator from the start specifically to avoid repeating that
   workaround, and `mainClock.advanceTimeBy(...)` drove it correctly,
-  confirmed on-device, first try. Treat this as settled for this Compose
-  version, not something to re-litigate per mechanic.
+  confirmed on-device, first try. Confirmed again by the Jericho rebuild's
+  two march scenes, reusing the identical technique with equal success —
+  treat this as settled for this Compose version, not something to
+  re-litigate per mechanic.
+- **A puzzle engine can be reused across totally unrelated chapters at a
+  different *visual* parameterization, not just a different content
+  parameterization.** Esther's corridor built `rhythmlane` as a 3-lane
+  scrolling display; Jericho's march scenes reuse the exact same engine
+  (`lane` always `0`) rendered as a single central pulsing beat target with
+  a marching-footprint icon — no engine changes, only the screen's
+  presentation differs. Extends the existing "reuse at a degenerate
+  parameterization" precedent (Esther's banquet jigsaw) from content-level
+  reuse to rendering-level reuse.
+- **A shuffle generator for a puzzle with a solvability constraint (sliding
+  tiles, and anything with similar parity rules) should be
+  solvable-by-construction — start from the solved state and apply random
+  *legal* moves — rather than generating a random permutation and
+  rejecting/fixing unsolvable ones.** Sidesteps needing to hand-implement
+  the constraint's math (15-puzzle parity, in this case) entirely. Still
+  verify the claim independently in tests (an inversion-count check, for
+  this puzzle) rather than trusting the construction alone — this is what
+  caught `SlidingPuzzleGame`'s real bug: the player-facing "no moves once
+  complete" guard on `onTileTapped` was silently also blocking the
+  shuffle's very first step, since the shuffle starts from the complete
+  state. Any future engine with both an "already complete" input guard and
+  a from-solved shuffle generator should route the shuffle through a
+  guard-free internal function, not the public player-facing one.

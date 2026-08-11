@@ -112,13 +112,29 @@ sealed class Destination(val route: String) {
         }
     }
 
-    /** Nested graph — every scene shares one graph-scoped `JerichoViewModel`. */
+    /**
+     * Nested graph — every scene shares one graph-scoped `JerichoViewModel`.
+     * Rebuilt with 4 real mini-puzzles (the old 4-flashcard "March and the
+     * Shout" was too easy): the spies' rope escape, setting up camp, the
+     * six-day silent march, and the seventh-day fast march/shofar/shout
+     * finale.
+     */
     sealed class Jericho(route: String) : Destination(route) {
         data object Intro : Jericho("jericho/intro")
         data object RahabHouseContext : Jericho("jericho/rahab_house_context")
         data object RahabHelping : Jericho("jericho/rahab_helping")
+        data object SpiesEscape : Jericho("jericho/spies_escape")
+        data object SpiesEscapedContext : Jericho("jericho/spies_escaped_context")
         data object Choice : Jericho("jericho/choice")
-        data object WallMarch : Jericho("jericho/wall_march")
+        data object CampContext : Jericho("jericho/camp_context")
+        data object SettingUpCamp : Jericho("jericho/setting_up_camp")
+        data object TentsContext : Jericho("jericho/tents_context")
+        data object WallsContext : Jericho("jericho/walls_context")
+        data object SixDayMarch : Jericho("jericho/six_day_march")
+        data object SeventhDayContext : Jericho("jericho/seventh_day_context")
+        data object FastMarch : Jericho("jericho/fast_march")
+        data object BlowShofar : Jericho("jericho/blow_shofar")
+        data object Shout : Jericho("jericho/shout")
         data object RahabSavedContext : Jericho("jericho/rahab_saved_context")
         data object Lesson : Jericho("jericho/lesson")
         data object Reward : Jericho("jericho/reward")

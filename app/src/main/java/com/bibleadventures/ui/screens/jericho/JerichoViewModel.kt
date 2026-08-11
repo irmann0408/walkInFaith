@@ -1,15 +1,24 @@
 package com.bibleadventures.ui.screens.jericho
 
+import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bibleadventures.R
 import com.bibleadventures.audio.AudioController
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.decisionpath.DecisionOutcome
-import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGame
-import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
+import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
+import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGame
+import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGame
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
+import com.bibleadventures.game.puzzles.sequence.SequenceGame
+import com.bibleadventures.game.puzzles.sequence.SequenceGameState
+import com.bibleadventures.game.puzzles.sequence.SequenceOutcome
+import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
+import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
 import com.bibleadventures.game.rewards.JerichoReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.JerichoContent
@@ -27,17 +36,37 @@ data class JerichoRewardResult(val stars: Int)
 
 data class JerichoUiState(
     val selectedChoiceId: String? = null,
-    val decisionPathState: DecisionPathGameState = DecisionPathGameState(steps = JerichoContent.marchSteps),
+    val spiesEscapeState: SlidingPuzzleGameState,
+    val campState: HiddenObjectGameState,
+    val sixDayMarchState: RhythmLaneGameState = RhythmLaneGameState(
+        chart = JerichoContent.sixDayMarchChart,
+        requiredHits = JerichoContent.SIX_DAY_MARCH_REQUIRED_HITS,
+    ),
+    val fastMarchState: RhythmLaneGameState = RhythmLaneGameState(
+        chart = JerichoContent.fastMarchChart,
+        requiredHits = JerichoContent.FAST_MARCH_REQUIRED_HITS,
+    ),
+    val shofarState: SequenceGameState = SequenceGameState(pointIds = JerichoContent.shofarNotes.map { it.id }),
+    val shoutTaps: Int = 0,
     val reward: JerichoRewardResult? = null,
-)
+) {
+    val isShoutComplete: Boolean get() = shoutTaps >= JerichoContent.SHOUT_REQUIRED_TAPS
+}
 
+/**
+ * The Battle of Jericho, rebuilt with 4 real mini-puzzles: the spies'
+ * rope escape (a sliding-tile puzzle), setting up camp (12 memorial
+ * stones), the six-day silent march, and the seventh-day fast
+ * march/shofar/shout finale — replacing the old 4-flashcard "March and
+ * the Shout," which had no real challenge.
+ */
 class JerichoViewModel(
     private val progressionService: ProgressionService,
     private val profileRepository: PlayerProfileRepository,
     private val audioController: AudioController,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(JerichoUiState())
+    private val _uiState = MutableStateFlow(createInitialState())
     val uiState: StateFlow<JerichoUiState> = _uiState.asStateFlow()
 
     val characterCustomization: StateFlow<CharacterCustomization> = profileRepository.profile
@@ -61,16 +90,82 @@ class JerichoViewModel(
         _uiState.update { it.copy(selectedChoiceId = choiceId) }
     }
 
-    /** The trumpet fanfare plays exactly once, on the final correct tap that brings down the wall. */
-    fun onMarchOptionTapped(optionId: String) {
+    fun onSpiesEscapeTileTapped(index: Int) {
         _uiState.update { current ->
-            val next = DecisionPathGame.onOptionTapped(current.decisionPathState, optionId)
+            val next = SlidingPuzzleGame.onTileTapped(current.spiesEscapeState, index)
+            if (next.isComplete && !current.spiesEscapeState.isComplete) {
+                audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+            }
+            current.copy(spiesEscapeState = next)
+        }
+    }
+
+    fun onCampStoneTapped(itemId: String) {
+        _uiState.update { current ->
+            val next = HiddenObjectGame.onItemTapped(current.campState, itemId)
+            if (next.foundIds.size > current.campState.foundIds.size) {
+                audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+            }
+            current.copy(campState = next)
+        }
+    }
+
+    fun onSixDayMarchTapped(nowMs: Long) {
+        _uiState.update { current ->
+            val next = RhythmLaneGame.onLaneTapped(current.sixDayMarchState, lane = 0, nowMs = nowMs)
+            if (next.hits > current.sixDayMarchState.hits) {
+                audioController.playSfx(SoundEffect.TARGET_HIT)
+            }
+            if (next.isComplete && !current.sixDayMarchState.isComplete) {
+                audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+            }
+            current.copy(sixDayMarchState = next)
+        }
+    }
+
+    /** Called as the six-day march's real-time clock advances, so a beat nobody tapped in time gets marked missed (feedback only, never a setback). */
+    fun onSixDayMarchTimeAdvanced(nowMs: Long) {
+        _uiState.update { current -> current.copy(sixDayMarchState = RhythmLaneGame.onTimeAdvanced(current.sixDayMarchState, nowMs)) }
+    }
+
+    fun onFastMarchTapped(nowMs: Long) {
+        _uiState.update { current ->
+            val next = RhythmLaneGame.onLaneTapped(current.fastMarchState, lane = 0, nowMs = nowMs)
+            if (next.hits > current.fastMarchState.hits) {
+                audioController.playSfx(SoundEffect.TARGET_HIT)
+            }
+            if (next.isComplete && !current.fastMarchState.isComplete) {
+                audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+            }
+            current.copy(fastMarchState = next)
+        }
+    }
+
+    /** Same role as [onSixDayMarchTimeAdvanced], for the faster seventh-day reprise. */
+    fun onFastMarchTimeAdvanced(nowMs: Long) {
+        _uiState.update { current -> current.copy(fastMarchState = RhythmLaneGame.onTimeAdvanced(current.fastMarchState, nowMs)) }
+    }
+
+    fun onShofarNoteTapped(noteId: String) {
+        _uiState.update { current ->
+            val next = SequenceGame.onPointTapped(current.shofarState, noteId)
             when (next.lastOutcome) {
-                DecisionOutcome.COMPLETE -> audioController.playSfx(SoundEffect.TRUMPET_FANFARE)
-                DecisionOutcome.CORRECT -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+                SequenceOutcome.POINT_CONNECTED, SequenceOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
                 else -> Unit
             }
-            current.copy(decisionPathState = next)
+            current.copy(shofarState = next)
+        }
+    }
+
+    /** The trumpet fanfare plays exactly once, the moment enough shouts bring the wall down. */
+    fun onShoutTapped() {
+        _uiState.update { current ->
+            if (current.isShoutComplete) return@update current
+            val nextTaps = (current.shoutTaps + 1).coerceAtMost(JerichoContent.SHOUT_REQUIRED_TAPS)
+            if (nextTaps == JerichoContent.SHOUT_REQUIRED_TAPS) {
+                audioController.playSfx(SoundEffect.TRUMPET_FANFARE)
+            }
+            current.copy(shoutTaps = nextTaps)
         }
     }
 
@@ -95,5 +190,15 @@ class JerichoViewModel(
             audioController.playSfx(SoundEffect.REWARD_CELEBRATION)
             _uiState.update { it.copy(reward = JerichoRewardResult(stars = stars)) }
         }
+    }
+
+    private fun createInitialState(): JerichoUiState {
+        val stoneItems = JerichoContent.campStones.map { def ->
+            HiddenItem(id = def.id, position = Offset.Zero, iconRes = R.drawable.ic_stone_smooth, contentDescriptionRes = def.nameRes)
+        }
+        return JerichoUiState(
+            spiesEscapeState = SlidingPuzzleGame.newShuffled(size = JerichoContent.SPIES_ESCAPE_GRID_SIZE),
+            campState = HiddenObjectGameState(items = stoneItems),
+        )
     }
 }
