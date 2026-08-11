@@ -438,8 +438,8 @@
     <string name="esther_brave_approach_fasting_context_line_2">On the third day, she put on her royal robes and walked toward the king\'s throne room.</string>
 
     <string name="esther_brave_approach_corridor_title">The Long Corridor</string>
-    <string name="esther_brave_approach_corridor_instructions">Tap the glowing marker in rhythm to help Esther find her courage as she walks.</string>
-    <string name="esther_brave_approach_corridor_tap_content_description">Tap for Courage</string>
+    <string name="esther_brave_approach_corridor_instructions">Tap each lane in rhythm as the markers arrive, to help Esther find her courage as she walks.</string>
+    <string name="esther_brave_approach_corridor_lane_content_description">Beat lane %1$d</string>
     <string name="esther_brave_approach_corridor_great_rhythm">Great rhythm!</string>
     <string name="esther_brave_approach_corridor_keep_going">Keep going!</string>
 

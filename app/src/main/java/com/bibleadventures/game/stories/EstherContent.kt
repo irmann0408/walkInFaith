@@ -7,6 +7,8 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmNote
 import com.bibleadventures.game.puzzles.stealth.GuardDef
 import com.bibleadventures.game.puzzles.stealth.GuardPatrolStep
 
@@ -159,8 +161,26 @@ object EstherContent {
         R.string.esther_brave_approach_scepter_context_line_2,
     )
 
-    /** How many total tap-progress "ticks" fill the courage meter (see MeterGameState). */
-    const val CORRIDOR_REQUIRED_PROGRESS = 10
+    /**
+     * A short, evenly-paced, hand-authored 3-lane pattern (800ms between
+     * notes — moderate tempo, appropriate for a 7+ audience) that loops
+     * forever. "Down and back" across the lanes (left, center, right,
+     * right, center, left) so the pattern is easy to learn and predict.
+     */
+    val corridorChart = RhythmLaneChart(
+        notes = listOf(
+            RhythmNote("beat_1", lane = 0, hitTimeMs = 400),
+            RhythmNote("beat_2", lane = 1, hitTimeMs = 1200),
+            RhythmNote("beat_3", lane = 2, hitTimeMs = 2000),
+            RhythmNote("beat_4", lane = 2, hitTimeMs = 2800),
+            RhythmNote("beat_5", lane = 1, hitTimeMs = 3600),
+            RhythmNote("beat_6", lane = 0, hitTimeMs = 4400),
+        ),
+        loopDurationMs = 4800,
+    )
+
+    /** How many successful lane hits complete the corridor (see RhythmLaneGameState) — spans more than one chart loop. */
+    const val CORRIDOR_REQUIRED_HITS = 10
 
     /** Narrative-only now that the banquet jigsaw is dropped — no puzzle follows. */
     val planningContextLines: List<Int> = listOf(

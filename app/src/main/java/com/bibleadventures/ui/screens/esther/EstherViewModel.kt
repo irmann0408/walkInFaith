@@ -15,9 +15,8 @@ import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGame
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
-import com.bibleadventures.game.puzzles.meter.MeterGame
-import com.bibleadventures.game.puzzles.meter.MeterGameState
-import com.bibleadventures.game.puzzles.meter.TapPrecision
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGame
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.puzzles.stealth.StealthGame
 import com.bibleadventures.game.puzzles.stealth.StealthGameState
 import com.bibleadventures.game.puzzles.stealth.StealthOutcome
@@ -48,7 +47,10 @@ data class EstherUiState(
     /** Which empty sudoku cell is currently selected, awaiting an icon tap — pure UI state, not engine state. */
     val selectedSudokuCell: Pair<Int, Int>? = null,
     val selectedDecisionChoiceId: String? = null,
-    val meterState: MeterGameState = MeterGameState(requiredProgress = EstherContent.CORRIDOR_REQUIRED_PROGRESS),
+    val rhythmLaneState: RhythmLaneGameState = RhythmLaneGameState(
+        chart = EstherContent.corridorChart,
+        requiredHits = EstherContent.CORRIDOR_REQUIRED_HITS,
+    ),
     val decisionPathState: DecisionPathGameState = DecisionPathGameState(steps = EstherContent.revealSteps),
     val reward: EstherRewardResult? = null,
 )
@@ -133,14 +135,22 @@ class EstherViewModel(
         _uiState.update { it.copy(selectedDecisionChoiceId = choiceId) }
     }
 
-    fun onCorridorTapped(precision: TapPrecision) {
+    fun onCorridorLaneTapped(lane: Int, nowMs: Long) {
         _uiState.update { current ->
-            val next = MeterGame.onTapped(current.meterState, precision)
-            if (next.isComplete && !current.meterState.isComplete) {
+            val next = RhythmLaneGame.onLaneTapped(current.rhythmLaneState, lane, nowMs)
+            if (next.hits > current.rhythmLaneState.hits) {
+                audioController.playSfx(SoundEffect.TARGET_HIT)
+            }
+            if (next.isComplete && !current.rhythmLaneState.isComplete) {
                 audioController.playSfx(SoundEffect.ITEM_COLLECTED)
             }
-            current.copy(meterState = next)
+            current.copy(rhythmLaneState = next)
         }
+    }
+
+    /** Called as the corridor's real-time clock advances, so notes nobody tapped in time get marked missed (feedback only, never a setback). */
+    fun onCorridorTimeAdvanced(nowMs: Long) {
+        _uiState.update { current -> current.copy(rhythmLaneState = RhythmLaneGame.onTimeAdvanced(current.rhythmLaneState, nowMs)) }
     }
 
     fun onRevealOptionTapped(optionId: String) {

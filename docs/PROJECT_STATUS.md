@@ -1,18 +1,20 @@
 # Project Status
 
-Last updated: 2026-08-11 (the 5-chapter Esther arc consolidated back into one
+Last updated: 2026-08-11 (Corridor Courage Meter replaced with a 3-lane
+rhythm mini-game; the 5-chapter Esther arc consolidated back into one
 chapter, "Esther's Rescue of Her People," per playtesting feedback that the
 split felt disjointed; real Audio/Narration/Settings and Chapter 6 — The
 Battle of Jericho also complete)
 
 ## Current milestone
 
-**Esther consolidation: COMPLETE** (chain now runs Noah's Ark → David &
-Goliath → Good Samaritan → Daniel → Esther's Rescue of Her People → Jericho →
-Feeding the 5,000 → Jesus Calms the Storm). This reverses the immediately
-preceding 5-chapter Esther-arc split (still documented below for history) —
-see "Chapters 5a–5e consolidated back into one chapter" further down for
-what changed and why.
+**Corridor rhythm-lane rebuild: COMPLETE.** The 4th of Esther's 5
+mini-puzzles — playtested as "just tapping the screen" — is now a
+Beatstar-inspired 3-lane, downward-scrolling tap-note mini-game. See
+"Corridor Courage Meter rebuilt as a 3-lane rhythm mini-game" further down.
+Chain is unchanged: Noah's Ark → David & Goliath → Good Samaritan → Daniel →
+Esther's Rescue of Her People → Jericho → Feeding the 5,000 → Jesus Calms
+the Storm.
 
 ## Completed features
 
@@ -1352,19 +1354,118 @@ are now narrative-only context cards, no puzzle attached.
   `chapter_esther_title`. Full `./gradlew build` green (unit tests + lint +
   both build variants); full instrumented suite run twice back-to-back
   on-device, 19/19 clean both times after the scroll-to-button fix above.
-- This was request #1 of 3 the user flagged in the same message; #2 and #3
-  weren't described yet and aren't started.
+- This was request #1 of 3 the user flagged in an earlier message; #2 was
+  the corridor rhythm-lane rebuild below, #3 is still unstated.
+
+### Corridor Courage Meter rebuilt as a 3-lane rhythm mini-game
+The 4th of Esther's 5 mini-puzzles was "just tapping the screen" — a single
+pulsing icon, tap it repeatedly to fill a meter. The user's direct feedback:
+too easy, wanted something like Beatstar (a 3-lane, downward-scrolling note
+rhythm game). Asked directly and confirmed with the user: **tap notes
+only** — no hold or swipe notes — keeping input identical in shape to every
+other mini-game in this app (all tap-based) while still delivering the real
+"3 lanes, scrolling notes, hit-zone timing" feel. A full Beatstar clone
+(sample-accurate audio sync via Oboe/AAudio, MIDI beatmaps, licensed songs,
+latency calibration) was explicitly out of scope — confirmed by reading
+`RealAudioController.kt`: every sound in this app is a short placeholder
+`.wav` (via `SoundPool`) or one looping placeholder `MediaPlayer` bed,
+generated deterministically by `scripts/generate_placeholder_audio.py`
+(pure Python tone synthesis, no real recordings, no licensing, no
+low-latency audio API anywhere in this codebase). Same chapter, same scene
+slot (`Destination.Esther.Corridor`, scene id `"corridor"`), same "Corridor
+Courage Meter" framing — the racing-heartbeat rhythm metaphor for Esther
+working up courage to approach the king fits *better* than a single pulsing
+icon. `game/puzzles/meter/` had no other consumer (confirmed via grep), so
+it's a full replacement — deleted, not left alongside the new engine.
+
+- **New pure-Kotlin engine `game/puzzles/rhythmlane/`** (zero Compose/
+  Android imports, same convention as every other engine). Mirrors
+  `meter`'s/`slingshot`'s established split: the screen owns the live,
+  real-time note-scroll animation and reports each lane tap with a
+  timestamp; the engine only judges a tap against a hand-authored
+  `RhythmLaneChart` (a fixed list of `RhythmNote(id, lane, hitTimeMs)`) and
+  turns it into progress. `PERFECT`/`GREAT`/`MISSED` are feedback-text
+  classifications only — `MISSED` never subtracts anything, it's a pure
+  no-op, same "wrong answer = try again, never punished" shape as
+  `dragsort`'s `NOT_SORTABLE`, `sudoku`'s `CONFLICT`, and `dodge`'s
+  wrong-lane retry. **The chart loops forever** rather than being a
+  one-shot "song" — this is what keeps the mechanic failure-state-free: a
+  child who misses several notes just keeps playing a little longer, never
+  gets stuck unable to finish, the same guarantee `meter`'s never-ending
+  pulsing target used to give. `judgedNoteKeys` are keyed `"loopIndex:noteId"`
+  so every loop iteration re-arms every note.
+- **`EstherContent.corridorChart`**: a short, hand-authored, evenly-paced
+  pattern — 6 notes per 4800ms loop, 800ms apart, "down and back" across
+  the 3 lanes (left, center, right, right, center, left) — moderate tempo,
+  appropriate for a 7+ audience, same "hand-authored, deterministic"
+  discipline as every map/grid/givens set already in this app.
+  `CORRIDOR_REQUIRED_HITS = 10` (unchanged from the old meter's required
+  progress), spanning more than one chart loop.
+- **Critical technical decision, grounded in this project's own prior
+  discovery**: `EstherCorridorScreen.kt`'s scroll clock is a manual
+  `LaunchedEffect(Unit) { while (isActive) { withFrameNanos { ... } } }`
+  accumulator, **not** `rememberInfiniteTransition`/`infiniteRepeatable`.
+  Chapter 2 addendum 5 (above) already found — confirmed three separate
+  ways — that `rememberInfiniteTransition` animations don't progress at
+  all under Compose's frozen test clock (`mainClock.autoAdvance = false` +
+  `advanceTimeBy`), which is exactly the technique an instrumented test
+  needs to drive a real-time mini-game deterministically. A manual
+  `withFrameNanos` accumulator **is** driven by Compose's actual frame
+  clock, which `advanceTimeBy(...)` does control — confirmed working
+  on-device, first try, no device-only bugs this time (unlike Sling
+  Practice's and Dodge's real-time-animation work, which each needed a
+  fix-and-reverify pass).
+- **Tap target is the whole lane, not the note itself**: each lane has one
+  large (64dp-tall, full-width) always-tappable hit zone at the bottom,
+  same accessibility posture as every other mini-game in this app (spec
+  section 9's ≥48dp rule) — a child taps the lane, not a small moving
+  target, matching how Beatstar itself works (tap the lane's hit-zone bar,
+  not the note). A tap with no note nearby in that lane is a pure no-op.
+- **Audio**: reuses the existing `SoundEffect.TARGET_HIT` for individual
+  note hits (already reads as "a mark being struck," fits a note hit) and
+  the existing `SoundEffect.ITEM_COLLECTED` once on completion, same as
+  the old meter — no new audio asset, no `generate_placeholder_audio.py`
+  change needed. Flagged as a judgment call in the plan; a distinct "beat"
+  sound would be a small follow-up if wanted.
+- **Strings**: `esther_brave_approach_corridor_instructions` reworded for
+  lane-based play; the old single `..._tap_content_description` replaced
+  with one parameterized `..._lane_content_description` (`"Beat lane
+  %1$d"`), mirroring Messenger Sudoku's `row+1, col+1` content-description
+  pattern. `..._great_rhythm`/`..._keep_going` kept as-is — they already
+  map cleanly onto PERFECT/GREAT vs. MISSED feedback.
+- **Tests**: new `RhythmLaneGameTest.kt` (11 cases — PERFECT/GREAT timing
+  windows, wrong-lane and no-nearby-note no-ops, `onTimeAdvanced` marking
+  a MISSED note without reducing hits, a missed note re-armed and hittable
+  on the next loop iteration, `hits`/`isComplete` capping, already-complete
+  no-op). `EstherViewModelTest.kt`'s 2 corridor cases rewritten for the
+  lane-tap API. `EstherFlowTest.kt`/`JerichoFlowTest.kt`'s `completeEsther`
+  helper gained a shared `completeCorridorRhythmLane()`: freezes
+  `mainClock`, advances to each authored note's exact `hitTimeMs` in turn,
+  taps that lane — fully deterministic, no timing luck, looping through
+  the chart as many times as needed to reach `CORRIDOR_REQUIRED_HITS`.
+  Full `./gradlew build` green; full instrumented suite run twice
+  back-to-back on-device, 19/19 clean both times.
+- **Not done here, worth a manual on-device look**: no interactive visual
+  check of the actual note-scroll feel/pacing was possible from this
+  session (instrumented tests confirm correctness, not feel) — same caveat
+  as every other real-time mechanic in this app before its first on-device
+  playtest. If the tempo/travel-distance reads too fast or slow for a
+  child in practice, `TRAVEL_DURATION_MS`/the chart's note spacing in
+  `EstherCorridorScreen.kt`/`EstherContent.kt` are the two knobs to tune.
 
 ## Next tasks
 
-Two more requests the user flagged but hasn't described yet (from the same
-message as the Esther consolidation above) — pick those up when stated.
-Otherwise, the natural next step per the current order is either **Chapter
-7 — Feeding the 5,000** (now unlocked once The Battle of Jericho is
-completed) or the rest of **Milestone 6 — Parent Area**: a parental gate,
-progress summary, and reset-progress functionality (spec section 17) — the
-audio/narration toggles portion of Settings is already built (see "Audio,
-Narration & Settings" above).
+One more request the user flagged but hasn't described yet (from the same
+original message as the Esther consolidation and this corridor rebuild) —
+pick it up when stated. A manual on-device playtest of the new corridor
+rhythm-lane mini-game (see the note directly above) is also worth doing
+before considering it fully settled. Otherwise, the natural next step per
+the current order is either **Chapter 7 — Feeding the 5,000** (now
+unlocked once The Battle of Jericho is completed) or the rest of
+**Milestone 6 — Parent Area**: a parental gate, progress summary, and
+reset-progress functionality (spec section 17) — the audio/narration
+toggles portion of Settings is already built (see "Audio, Narration &
+Settings" above).
 
 ## Architectural decisions log
 
@@ -1471,3 +1572,16 @@ Narration & Settings" above).
   built from several sequential mini-puzzles can hand out a verse per
   puzzle while still landing on one collectible badge for finishing the
   whole thing, without inventing a new "multi-part chapter" reward concept.
+- **Real-time mini-games that need to be driven deterministically by an
+  instrumented test must use a manual `withFrameNanos` accumulator, never
+  `rememberInfiniteTransition`/`infiniteRepeatable`.** Confirmed twice now
+  in this codebase, independently: Sling Practice's moving mark (Chapter 2
+  addendum 5) found `rememberInfiniteTransition` simply doesn't progress
+  under Compose's frozen test clock, three different ways, and had to work
+  around it by repositioning the *content* to match the frozen initial
+  value instead. The Corridor rhythm-lane rebuild used a manual
+  `LaunchedEffect { while (isActive) { withFrameNanos { ... } } }`
+  accumulator from the start specifically to avoid repeating that
+  workaround, and `mainClock.advanceTimeBy(...)` drove it correctly,
+  confirmed on-device, first try. Treat this as settled for this Compose
+  version, not something to re-litigate per mechanic.

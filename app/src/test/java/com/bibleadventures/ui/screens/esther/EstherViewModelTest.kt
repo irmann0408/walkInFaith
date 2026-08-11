@@ -6,7 +6,6 @@ import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.gridmaze.Direction
-import com.bibleadventures.game.puzzles.meter.TapPrecision
 import com.bibleadventures.game.puzzles.sudoku.SudokuOutcome
 import com.bibleadventures.game.rewards.EstherReward
 import com.bibleadventures.game.stories.EstherContent
@@ -173,26 +172,44 @@ class EstherViewModelTest {
     }
 
     @Test
-    fun `an EARLY_OR_LATE corridor tap still makes progress, never a failure`() {
+    fun `tapping the right lane at the right time increases hits, never a failure`() {
         val viewModel = createViewModel()
+        val firstNote = EstherContent.corridorChart.notes.first()
 
-        viewModel.onCorridorTapped(TapPrecision.EARLY_OR_LATE)
+        viewModel.onCorridorLaneTapped(firstNote.lane, firstNote.hitTimeMs)
 
-        assertTrue(viewModel.uiState.value.meterState.progress > 0)
-        assertFalse(viewModel.uiState.value.meterState.isComplete)
+        assertEquals(1, viewModel.uiState.value.rhythmLaneState.hits)
+        assertFalse(viewModel.uiState.value.rhythmLaneState.isComplete)
     }
 
     @Test
-    fun `tapping the corridor enough times completes it and plays a sound exactly once`() {
+    fun `tapping a lane with no nearby note never regresses state`() {
+        val viewModel = createViewModel()
+        val before = viewModel.uiState.value.rhythmLaneState
+
+        viewModel.onCorridorLaneTapped(lane = 0, nowMs = before.chart.loopDurationMs / 2)
+
+        assertEquals(before.hits, viewModel.uiState.value.rhythmLaneState.hits)
+    }
+
+    @Test
+    fun `enough correctly-timed lane taps completes the corridor and plays a sound exactly once`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
+        val chart = EstherContent.corridorChart
 
-        repeat(EstherContent.CORRIDOR_REQUIRED_PROGRESS) {
-            viewModel.onCorridorTapped(TapPrecision.EARLY_OR_LATE)
+        var loopIndex = 0L
+        while (!viewModel.uiState.value.rhythmLaneState.isComplete) {
+            chart.notes.forEach { note ->
+                if (!viewModel.uiState.value.rhythmLaneState.isComplete) {
+                    viewModel.onCorridorLaneTapped(note.lane, loopIndex * chart.loopDurationMs + note.hitTimeMs)
+                }
+            }
+            loopIndex++
         }
 
-        assertTrue(viewModel.uiState.value.meterState.isComplete)
-        assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
+        assertTrue(viewModel.uiState.value.rhythmLaneState.isComplete)
+        assertEquals(1, audioController.playedEffects.count { it == SoundEffect.ITEM_COLLECTED })
     }
 
     @Test

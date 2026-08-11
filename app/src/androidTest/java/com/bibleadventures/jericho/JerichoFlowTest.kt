@@ -384,12 +384,10 @@ class JerichoFlowTest {
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Three Days of Fasting context
 
-        // Every tap adds positive progress regardless of timing — 10 taps
-        // always completes the meter (see MeterGame's no-failure-state design).
-        val corridorTapDescription = activity.getString(R.string.esther_brave_approach_corridor_tap_content_description)
-        repeat(EstherContent.CORRIDOR_REQUIRED_PROGRESS) {
-            composeTestRule.onNodeWithContentDescription(corridorTapDescription).performClick()
-        }
+        // Corridor Courage Meter — a 3-lane rhythm mini-game. Freeze the clock and
+        // advance to each authored note's exact time so every tap lands; a
+        // mistimed tap would just be a no-op (see RhythmLaneGame's no-failure design).
+        completeCorridorRhythmLane()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // The Golden Scepter context
@@ -412,6 +410,42 @@ class JerichoFlowTest {
         val returnToMapNode = composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map))
         returnToMapNode.performScrollTo()
         returnToMapNode.performClick()
+    }
+
+    /**
+     * Freezes the Compose test clock and advances it to each of the
+     * corridor's authored notes' exact `hitTimeMs` in turn, tapping that
+     * note's lane — fully deterministic, no timing luck. Loops through the
+     * chart as many times as needed to reach `CORRIDOR_REQUIRED_HITS`. The
+     * screen drives its scroll clock with a manual `withFrameNanos`
+     * accumulator specifically so `mainClock.advanceTimeBy(...)` can
+     * control it this way (unlike `rememberInfiniteTransition`, which
+     * Sling Practice's tests found doesn't progress under a frozen clock).
+     */
+    private fun completeCorridorRhythmLane() {
+        val activity = composeTestRule.activity
+        val laneDescriptions = (1..3).map {
+            activity.getString(R.string.esther_brave_approach_corridor_lane_content_description, it)
+        }
+        val chart = EstherContent.corridorChart
+
+        composeTestRule.mainClock.autoAdvance = false
+        var currentMs = 0L
+        var hits = 0
+        var loopIndex = 0L
+        while (hits < EstherContent.CORRIDOR_REQUIRED_HITS) {
+            chart.notes.forEach { note ->
+                if (hits < EstherContent.CORRIDOR_REQUIRED_HITS) {
+                    val targetMs = loopIndex * chart.loopDurationMs + note.hitTimeMs
+                    composeTestRule.mainClock.advanceTimeBy(targetMs - currentMs)
+                    currentMs = targetMs
+                    composeTestRule.onNodeWithContentDescription(laneDescriptions[note.lane]).performClick()
+                    hits++
+                }
+            }
+            loopIndex++
+        }
+        composeTestRule.mainClock.autoAdvance = true
     }
 
     private fun dragOntoText(itemNode: SemanticsNodeInteraction, targetText: String) {
