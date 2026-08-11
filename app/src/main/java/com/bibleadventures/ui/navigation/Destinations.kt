@@ -81,20 +81,77 @@ sealed class Destination(val route: String) {
         }
     }
 
-    /** Nested graph — every scene shares one graph-scoped `EstherViewModel`. */
-    sealed class Esther(route: String) : Destination(route) {
-        data object Intro : Esther("esther/intro")
-        data object KingsTroubleContext : Esther("esther/kings_trouble_context")
-        data object HamansAngerContext : Esther("esther/hamans_anger_context")
-        data object Choice : Esther("esther/choice")
-        data object ScepterContext : Esther("esther/scepter_context")
-        data object Banquet : Esther("esther/banquet")
-        data object TruthRevealedContext : Esther("esther/truth_revealed_context")
-        data object Lesson : Esther("esther/lesson")
-        data object Reward : Esther("esther/reward")
+    /** Nested graph — every scene shares one graph-scoped `EstherNewQueenViewModel`. */
+    sealed class EstherNewQueen(route: String) : Destination(route) {
+        data object Intro : EstherNewQueen("esther_new_queen/intro")
+        data object SearchContext : EstherNewQueen("esther_new_queen/search_context")
+        data object RoyalAttire : EstherNewQueen("esther_new_queen/royal_attire")
+        data object CrownedContext : EstherNewQueen("esther_new_queen/crowned_context")
+        data object Choice : EstherNewQueen("esther_new_queen/choice")
+        data object Lesson : EstherNewQueen("esther_new_queen/lesson")
+        data object Reward : EstherNewQueen("esther_new_queen/reward")
 
         companion object {
-            const val GRAPH_ROUTE = "esther"
+            const val GRAPH_ROUTE = "esther_new_queen"
+        }
+    }
+
+    /** Nested graph — every scene shares one graph-scoped `EstherSecretPlotViewModel`. */
+    sealed class EstherSecretPlot(route: String) : Destination(route) {
+        data object Intro : EstherSecretPlot("esther_secret_plot/intro")
+        data object DangerContext : EstherSecretPlot("esther_secret_plot/danger_context")
+        data object CourtyardStealth : EstherSecretPlot("esther_secret_plot/courtyard_stealth")
+        data object WarnedContext : EstherSecretPlot("esther_secret_plot/warned_context")
+        data object Lesson : EstherSecretPlot("esther_secret_plot/lesson")
+        data object Reward : EstherSecretPlot("esther_secret_plot/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "esther_secret_plot"
+        }
+    }
+
+    /** Nested graph — every scene shares one graph-scoped `EstherThreatViewModel`. */
+    sealed class EstherThreat(route: String) : Destination(route) {
+        data object Intro : EstherThreat("esther_threat/intro")
+        data object DecreeContext : EstherThreat("esther_threat/decree_context")
+        data object MessengerSudoku : EstherThreat("esther_threat/messenger_sudoku")
+        data object MourningContext : EstherThreat("esther_threat/mourning_context")
+        data object Lesson : EstherThreat("esther_threat/lesson")
+        data object Reward : EstherThreat("esther_threat/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "esther_threat"
+        }
+    }
+
+    /** Nested graph — every scene shares one graph-scoped `EstherBraveApproachViewModel`. */
+    sealed class EstherBraveApproach(route: String) : Destination(route) {
+        data object Intro : EstherBraveApproach("esther_brave_approach/intro")
+        data object Choice : EstherBraveApproach("esther_brave_approach/choice")
+        data object FastingContext : EstherBraveApproach("esther_brave_approach/fasting_context")
+        data object Corridor : EstherBraveApproach("esther_brave_approach/corridor")
+        data object ScepterContext : EstherBraveApproach("esther_brave_approach/scepter_context")
+        data object Lesson : EstherBraveApproach("esther_brave_approach/lesson")
+        data object Reward : EstherBraveApproach("esther_brave_approach/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "esther_brave_approach"
+        }
+    }
+
+    /** Nested graph — every scene shares one graph-scoped `EstherBanquetsRescueViewModel`. */
+    sealed class EstherBanquetsRescue(route: String) : Destination(route) {
+        data object Intro : EstherBanquetsRescue("esther_banquets_rescue/intro")
+        data object PlanningContext : EstherBanquetsRescue("esther_banquets_rescue/planning_context")
+        data object BanquetJigsaw : EstherBanquetsRescue("esther_banquets_rescue/banquet_jigsaw")
+        data object SecondBanquetContext : EstherBanquetsRescue("esther_banquets_rescue/second_banquet_context")
+        data object RevealHaman : EstherBanquetsRescue("esther_banquets_rescue/reveal_haman")
+        data object SavedContext : EstherBanquetsRescue("esther_banquets_rescue/saved_context")
+        data object Lesson : EstherBanquetsRescue("esther_banquets_rescue/lesson")
+        data object Reward : EstherBanquetsRescue("esther_banquets_rescue/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "esther_banquets_rescue"
         }
     }
 

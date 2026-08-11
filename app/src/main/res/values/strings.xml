@@ -78,9 +78,25 @@
     <string name="chapter_daniel_description">Stay faithful with Daniel, even when it feels scary to pray.</string>
     <string name="chapter_daniel_lesson">Faithfulness and prayer.</string>
 
-    <string name="chapter_esther_title">Esther\'s Rescue of Her People</string>
-    <string name="chapter_esther_description">Help Queen Esther find the courage to speak up for her people.</string>
-    <string name="chapter_esther_lesson">Courage and speaking up at the right time.</string>
+    <string name="chapter_esther_new_queen_title">Esther: The New Queen</string>
+    <string name="chapter_esther_new_queen_description">Help Esther prepare for the palace while keeping Mordecai\'s wise advice.</string>
+    <string name="chapter_esther_new_queen_lesson">Humility and quiet obedience.</string>
+
+    <string name="chapter_esther_secret_plot_title">Esther: The Secret Plot</string>
+    <string name="chapter_esther_secret_plot_description">Help Mordecai slip past the guards to warn the king of danger.</string>
+    <string name="chapter_esther_secret_plot_lesson">Watchfulness and honesty.</string>
+
+    <string name="chapter_esther_threat_title">Esther: The Threat</string>
+    <string name="chapter_esther_threat_description">Gather messengers to warn the city of Haman\'s wicked law.</string>
+    <string name="chapter_esther_threat_lesson">Standing together in hard times.</string>
+
+    <string name="chapter_esther_brave_approach_title">Esther: The Brave Approach</string>
+    <string name="chapter_esther_brave_approach_description">Walk with Esther as she bravely approaches the king.</string>
+    <string name="chapter_esther_brave_approach_lesson">Courage and speaking up at the right time.</string>
+
+    <string name="chapter_esther_banquets_rescue_title">Esther: The Banquets &amp; Rescue</string>
+    <string name="chapter_esther_banquets_rescue_description">Prepare the banquet and help Esther bravely reveal Haman\'s plot.</string>
+    <string name="chapter_esther_banquets_rescue_lesson">Boldness saves lives.</string>
 
     <string name="chapter_jericho_title">The Battle of Jericho</string>
     <string name="chapter_jericho_description">March around the walls of Jericho and trust an unusual plan.</string>
@@ -115,6 +131,26 @@
     <string name="scripture_esther_4_14_title">Esther\'s Courage</string>
     <string name="scripture_esther_4_14_text">"For if you remain silent now, then relief and deliverance will come to the Jews from another place, but you and your father\'s house will perish. Who knows if you haven\'t come to the kingdom for such a time as this?"</string>
 
+    <string name="badge_humble_trust_title">Humble Trust</string>
+    <string name="badge_humble_trust_description">Trusted Mordecai\'s wise advice and kept a humble heart, just like Esther.</string>
+    <string name="scripture_esther_2_20_title">Esther\'s Obedience</string>
+    <string name="scripture_esther_2_20_text">"Esther had not yet made known her relatives nor her people, as Mordecai had commanded her; for Esther obeyed Mordecai, like she did when she was brought up by him."</string>
+
+    <string name="badge_watchful_ears_title">Watchful Ears</string>
+    <string name="badge_watchful_ears_description">Helped Mordecai warn the king of danger, just like a faithful friend.</string>
+    <string name="scripture_esther_2_22_title">Mordecai\'s Warning</string>
+    <string name="scripture_esther_2_22_text">"This thing became known to Mordecai, who informed Esther the queen; and Esther informed the king in Mordecai\'s name."</string>
+
+    <string name="badge_faithful_messenger_title">Faithful Messenger</string>
+    <string name="badge_faithful_messenger_description">Helped gather messengers to warn the city and call people to pray, just like in Esther\'s time.</string>
+    <string name="scripture_esther_4_3_title">A City Mourns</string>
+    <string name="scripture_esther_4_3_text">"In every province, wherever the king\'s commandment and his decree came, there was great mourning among the Jews, and fasting, and weeping, and wailing; and many lay in sackcloth and ashes."</string>
+
+    <string name="badge_bold_voice_title">Bold Voice</string>
+    <string name="badge_bold_voice_description">Bravely spoke the truth to save her people, just like Esther.</string>
+    <string name="scripture_esther_7_3_title">Esther\'s Plea</string>
+    <string name="scripture_esther_7_3_text">"Then Esther the queen answered, \'If I have found favor in your sight, O king, and if it pleases the king, let my life be given me at my petition, and my people at my request.\'"</string>
+
     <string name="badge_faithful_steps_title">Faithful Steps</string>
     <string name="badge_faithful_steps_description">Marched in obedience and trusted God\'s plan instead of using force, just like the people of Israel.</string>
     <string name="scripture_joshua_6_20_title">The Walls of Jericho</string>
@@ -145,6 +181,8 @@
     <string name="supply_grain">Grain</string>
     <string name="supply_honey">Honey</string>
     <string name="supply_rope">Rope</string>
+    <string name="supply_wine">Wine</string>
+    <string name="supply_meat">Roasted Meat</string>
 
     <string name="decoy_rock">Rock</string>
     <string name="decoy_hammer">Hammer</string>
@@ -318,42 +356,154 @@
     <string name="daniel_lesson_title">Faithfulness and Prayer</string>
     <string name="daniel_lesson_text">Daniel kept praying to God even when it was risky, and God kept him safe. When we stay faithful, God is with us no matter what happens.</string>
 
-    <string name="esther_intro_line_1">Esther was a Jewish orphan raised by her cousin Mordecai. She became queen of Persia, but kept her people a secret, just as Mordecai had told her.</string>
-    <string name="esther_intro_line_2">Soon a terrible danger would test her courage.</string>
+    <string name="esther_new_queen_intro_line_1">Esther was a Jewish orphan raised by her cousin Mordecai. When the king searched for a new queen, she was brought to the palace.</string>
+    <string name="esther_new_queen_intro_line_2">Mordecai gave her wise advice: don\'t tell anyone you\'re Jewish, not yet.</string>
 
-    <string name="esther_kings_trouble_context_title">The King\'s Trouble</string>
-    <string name="esther_kings_trouble_context_line_1">One day, Mordecai overheard two of the king\'s guards plotting to harm him.</string>
-    <string name="esther_kings_trouble_context_line_2">He warned Esther, who told the king and saved his life — and it was written down in the king\'s own records.</string>
+    <string name="esther_new_queen_search_context_title">Chosen for the Palace</string>
+    <string name="esther_new_queen_search_context_line_1">Esther spent months preparing before she would ever meet the king.</string>
+    <string name="esther_new_queen_search_context_line_2">Help her get ready by finding everything she needs.</string>
 
-    <string name="esther_hamans_anger_context_title">Haman\'s Anger</string>
-    <string name="esther_hamans_anger_context_line_1">A proud official named Haman was promoted, and everyone bowed to him — except Mordecai.</string>
-    <string name="esther_hamans_anger_context_line_2">Furious, Haman tricked the king into signing a law to destroy Mordecai\'s people, the Jews.</string>
+    <string name="esther_new_queen_royal_attire_title">Royal Attire</string>
+    <string name="esther_new_queen_royal_attire_instructions">Tap each item to gather it for Esther.</string>
+    <string name="esther_new_queen_item_crown">Jeweled Crown</string>
+    <string name="esther_new_queen_item_robe">Silk Robe</string>
+    <string name="esther_new_queen_item_sash">Golden Sash</string>
+    <string name="esther_new_queen_item_perfume">Perfume</string>
+    <string name="esther_new_queen_item_sandals">Golden Sandals</string>
 
-    <string name="esther_choice_title">Esther\'s Decision</string>
-    <string name="esther_choice_instructions">Mordecai sent word: "Who knows if you have come to the kingdom for such a time as this?" Choose what Esther will do.</string>
-    <string name="esther_choice_option_1">"I will go to the king, even if it is against the law."</string>
-    <string name="esther_choice_option_2">"I will trust God with my life."</string>
-    <string name="esther_choice_option_3">"If I perish, I perish."</string>
-    <string name="esther_choice_reaction_1">Esther asked everyone to fast and pray for her for three days first.</string>
-    <string name="esther_choice_reaction_2">Esther\'s courage grew as she prepared to approach the king.</string>
-    <string name="esther_choice_reaction_3">Esther chose to risk everything for her people.</string>
+    <string name="esther_new_queen_crowned_context_title">Esther Becomes Queen</string>
+    <string name="esther_new_queen_crowned_context_line_1">The king chose Esther, and she was crowned queen of Persia.</string>
+    <string name="esther_new_queen_crowned_context_line_2">She still kept Mordecai\'s secret, just as he had asked.</string>
 
-    <string name="esther_scepter_context_title">The Golden Scepter</string>
-    <string name="esther_scepter_context_line_1">Esther approached the king\'s throne, even though it was against the law to come uninvited.</string>
-    <string name="esther_scepter_context_line_2">The king held out his golden scepter — Esther was safe, and he asked what she wished.</string>
+    <string name="esther_new_queen_choice_title">Meeting the King</string>
+    <string name="esther_new_queen_choice_instructions">How should Esther speak to King Xerxes?</string>
+    <string name="esther_new_queen_choice_option_1">"Speak kindly and with respect."</string>
+    <string name="esther_new_queen_choice_option_2">"Listen carefully to what he needs."</string>
+    <string name="esther_new_queen_choice_option_3">"Be patient and gentle."</string>
+    <string name="esther_new_queen_choice_reaction_1">The king was pleased with her kindness.</string>
+    <string name="esther_new_queen_choice_reaction_2">Esther\'s thoughtfulness stood out among everyone in the palace.</string>
+    <string name="esther_new_queen_choice_reaction_3">Her gentle patience won the king\'s favor.</string>
 
-    <string name="esther_banquet_title">The Two Banquets</string>
-    <string name="esther_banquet_instructions">Help Esther choose the right moment to speak.</string>
-    <string name="esther_banquet_option_wait">Wait</string>
-    <string name="esther_banquet_option_speak_now">Speak Now</string>
+    <string name="esther_new_queen_lesson_title">Humility and Quiet Obedience</string>
+    <string name="esther_new_queen_lesson_text">Esther trusted Mordecai\'s wise advice, even when it meant keeping a secret. Sometimes the bravest thing we can do is quietly obey and wait for the right time.</string>
 
-    <string name="esther_truth_revealed_context_title">The Truth Revealed</string>
-    <string name="esther_truth_revealed_context_line_1">At the second banquet, Esther bravely told the king about Haman\'s evil plan against her people.</string>
-    <string name="esther_truth_revealed_context_line_2">The king was furious, and Haman\'s own trap caught him instead. Mordecai was honored for saving the king\'s life.</string>
-    <string name="esther_truth_revealed_context_line_3">A new decree let the Jews defend themselves, and they were saved. To this day, Jewish people celebrate Purim to remember it.</string>
+    <string name="esther_secret_plot_intro_line_1">One day, Mordecai overheard two of the king\'s officers whispering a dangerous plot.</string>
+    <string name="esther_secret_plot_intro_line_2">He needed to warn Queen Esther — quietly, without the guards noticing.</string>
 
-    <string name="esther_lesson_title">Courage and Speaking Up</string>
-    <string name="esther_lesson_text">Esther risked everything to speak up for her people at just the right time. When we trust God and stay brave, He can use us for good, even when it\'s scary.</string>
+    <string name="esther_secret_plot_danger_context_title">A Dangerous Secret</string>
+    <string name="esther_secret_plot_danger_context_line_1">The palace courtyard was watched closely, and Mordecai couldn\'t risk being seen carrying a warning note.</string>
+    <string name="esther_secret_plot_danger_context_line_2">Help him slip across the courtyard without a guard spotting him.</string>
+
+    <string name="esther_secret_plot_stealth_title">Cross the Courtyard</string>
+    <string name="esther_secret_plot_stealth_instructions">Move Mordecai toward Esther — watch where the guard is standing before you step!</string>
+    <string name="esther_secret_plot_guard_content_description">Palace Guard</string>
+    <string name="esther_secret_plot_spotted_feedback">A guard noticed! Try again quietly.</string>
+
+    <string name="esther_secret_plot_warned_context_title">The King is Warned</string>
+    <string name="esther_secret_plot_warned_context_line_1">Mordecai\'s note reached Esther, who told the king everything — in Mordecai\'s name.</string>
+    <string name="esther_secret_plot_warned_context_line_2">It was written down in the king\'s own royal records.</string>
+
+    <string name="esther_secret_plot_direction_up">Up</string>
+    <string name="esther_secret_plot_direction_down">Down</string>
+    <string name="esther_secret_plot_direction_left">Left</string>
+    <string name="esther_secret_plot_direction_right">Right</string>
+
+    <string name="esther_secret_plot_lesson_title">Watchfulness and Honesty</string>
+    <string name="esther_secret_plot_lesson_text">Mordecai stayed alert and told the truth right away, even when it was risky. Watching out for others and speaking up honestly can protect the people we love.</string>
+
+    <string name="esther_threat_intro_line_1">A proud official named Haman was promoted, and everyone bowed to him — except Mordecai.</string>
+    <string name="esther_threat_intro_line_2">Furious, Haman tricked the king into signing a wicked law against Mordecai\'s people, the Jews.</string>
+
+    <string name="esther_threat_decree_context_title">A Wicked Law</string>
+    <string name="esther_threat_decree_context_line_1">The decree spread to every province of the kingdom, and news of the danger needed to reach everyone.</string>
+    <string name="esther_threat_decree_context_line_2">Complete each row of the puzzle to send out a messenger with the warning.</string>
+
+    <string name="esther_threat_sudoku_title">Messenger Sudoku</string>
+    <string name="esther_threat_sudoku_instructions">Tap an empty square, then tap a symbol. Each row and column needs every symbol exactly once.</string>
+    <string name="esther_threat_icon_star">Star</string>
+    <string name="esther_threat_icon_moon">Moon</string>
+    <string name="esther_threat_icon_sun">Sun</string>
+    <string name="esther_threat_icon_drop">Raindrop</string>
+    <string name="esther_threat_icon_leaf">Leaf</string>
+    <string name="esther_threat_sudoku_cell_content_description">Row %1$d, Column %2$d</string>
+    <string name="esther_threat_conflict_feedback">That symbol is already used in this row or column!</string>
+    <string name="esther_threat_row_complete_feedback">A messenger is on the way!</string>
+    <string name="esther_threat_messenger_content_description">Messenger</string>
+
+    <string name="esther_threat_mourning_context_title">The City Mourns and Fasts</string>
+    <string name="esther_threat_mourning_context_line_1">Word reached every corner of the city — Mordecai tore his clothes and wept bitterly.</string>
+    <string name="esther_threat_mourning_context_line_2">Everywhere, the Jewish people fasted, wept, and mourned together.</string>
+
+    <string name="esther_threat_lesson_title">Standing Together in Hard Times</string>
+    <string name="esther_threat_lesson_text">When danger came, the people didn\'t face it alone — they stood together, prayed, and supported each other. We\'re stronger when we face hard things as a community.</string>
+
+    <string name="esther_brave_approach_intro_line_1">Mordecai sent word to Esther: "Who knows if you have come to the kingdom for such a time as this?"</string>
+    <string name="esther_brave_approach_intro_line_2">No one could approach the king uninvited — not even the queen — without risking their life.</string>
+
+    <string name="esther_brave_approach_choice_title">Esther\'s Decision</string>
+    <string name="esther_brave_approach_choice_instructions">Choose what Esther will do.</string>
+    <string name="esther_brave_approach_choice_option_1">"I will go to the king, even if it is against the law."</string>
+    <string name="esther_brave_approach_choice_option_2">"I will trust God with my life."</string>
+    <string name="esther_brave_approach_choice_option_3">"If I perish, I perish."</string>
+    <string name="esther_brave_approach_choice_reaction_1">Esther asked everyone to fast and pray for her for three days first.</string>
+    <string name="esther_brave_approach_choice_reaction_2">Esther\'s courage grew as she prepared to approach the king.</string>
+    <string name="esther_brave_approach_choice_reaction_3">Esther chose to risk everything for her people.</string>
+
+    <string name="esther_brave_approach_fasting_context_title">Three Days of Fasting</string>
+    <string name="esther_brave_approach_fasting_context_line_1">Esther asked Mordecai and all the Jews in the city to fast and pray for her for three days.</string>
+    <string name="esther_brave_approach_fasting_context_line_2">On the third day, she put on her royal robes and walked toward the king\'s throne room.</string>
+
+    <string name="esther_brave_approach_corridor_title">The Long Corridor</string>
+    <string name="esther_brave_approach_corridor_instructions">Tap the glowing marker in rhythm to help Esther find her courage as she walks.</string>
+    <string name="esther_brave_approach_corridor_tap_content_description">Tap for Courage</string>
+    <string name="esther_brave_approach_corridor_great_rhythm">Great rhythm!</string>
+    <string name="esther_brave_approach_corridor_keep_going">Keep going!</string>
+
+    <string name="esther_brave_approach_scepter_context_title">The Golden Scepter</string>
+    <string name="esther_brave_approach_scepter_context_line_1">Esther approached the king\'s throne, even though it was against the law to come uninvited.</string>
+    <string name="esther_brave_approach_scepter_context_line_2">The king held out his golden scepter — Esther was safe, and he asked what she wished.</string>
+
+    <string name="esther_brave_approach_lesson_title">Courage and Speaking Up</string>
+    <string name="esther_brave_approach_lesson_text">Esther risked everything to speak up for her people at just the right time. When we trust God and stay brave, He can use us for good, even when it\'s scary.</string>
+
+    <string name="esther_banquets_rescue_intro_line_1">The king welcomed Esther and asked what she wished. She invited him and Haman to a banquet.</string>
+    <string name="esther_banquets_rescue_intro_line_2">At the first banquet, Esther waited — she would ask her true request at a second banquet instead.</string>
+
+    <string name="esther_banquets_rescue_planning_context_title">Preparing the Banquet</string>
+    <string name="esther_banquets_rescue_planning_context_line_1">Esther prepared a beautiful banquet table to welcome the king and Haman.</string>
+    <string name="esther_banquets_rescue_planning_context_line_2">Help her arrange everything in its place before her guests arrive.</string>
+
+    <string name="esther_banquets_rescue_jigsaw_title">The Banquet Table</string>
+    <string name="esther_banquets_rescue_jigsaw_instructions">Drag each food to its place on the table.</string>
+    <string name="esther_banquets_rescue_zone_bread">Bread Platter</string>
+    <string name="esther_banquets_rescue_zone_fruit">Fruit Bowl</string>
+    <string name="esther_banquets_rescue_zone_honey">Honey Cakes</string>
+    <string name="esther_banquets_rescue_zone_wine">Wine Goblets</string>
+    <string name="esther_banquets_rescue_zone_meat">Roasted Meat</string>
+
+    <string name="esther_banquets_rescue_second_banquet_context_title">The Second Banquet</string>
+    <string name="esther_banquets_rescue_second_banquet_context_line_1">At the second banquet, the king again asked Esther what she wished — even up to half his kingdom.</string>
+    <string name="esther_banquets_rescue_second_banquet_context_line_2">This time, Esther was ready to speak the truth.</string>
+
+    <string name="esther_banquets_rescue_reveal_title">Revealing the Truth</string>
+    <string name="esther_banquets_rescue_reveal_instructions">Help Esther choose her words bravely.</string>
+    <string name="esther_banquets_rescue_reveal_step1_prompt">How should Esther begin?</string>
+    <string name="esther_banquets_rescue_reveal_option_speak_calmly">Speak calmly and honestly</string>
+    <string name="esther_banquets_rescue_reveal_option_shout_angrily">Shout in anger</string>
+    <string name="esther_banquets_rescue_reveal_step2_prompt">What should Esther reveal?</string>
+    <string name="esther_banquets_rescue_reveal_option_tell_truth">The truth about the plot against her people</string>
+    <string name="esther_banquets_rescue_reveal_option_stay_silent">Nothing — stay silent</string>
+    <string name="esther_banquets_rescue_reveal_step3_prompt">Who is really behind the plot?</string>
+    <string name="esther_banquets_rescue_reveal_option_name_haman">Haman, the wicked official</string>
+    <string name="esther_banquets_rescue_reveal_option_blame_another">Someone else entirely</string>
+
+    <string name="esther_banquets_rescue_saved_context_title">Haman\'s Plot is Turned Back</string>
+    <string name="esther_banquets_rescue_saved_context_line_1">The king was furious, and Haman\'s own wicked plan was turned back on him instead.</string>
+    <string name="esther_banquets_rescue_saved_context_line_2">A new decree let the Jewish people defend themselves, and they were saved.</string>
+    <string name="esther_banquets_rescue_saved_context_line_3">To this day, Jewish people celebrate the festival of Purim to remember how God saved them.</string>
+
+    <string name="esther_banquets_rescue_lesson_title">Boldness Saves Lives</string>
+    <string name="esther_banquets_rescue_lesson_text">When the moment finally came, Esther spoke the truth clearly and bravely. Speaking up honestly, even when it\'s hard, can protect the people we love.</string>
 
     <string name="jericho_intro_line_1">Joshua led God\'s people to a mighty, walled city called Jericho. Two brave spies went ahead to see the land.</string>
     <string name="jericho_intro_line_2">God had a plan to bring the walls down — but it wasn\'t like any battle plan anyone had heard before.</string>

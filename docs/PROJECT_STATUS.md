@@ -1,13 +1,17 @@
 # Project Status
 
-Last updated: 2026-08-11 (real Audio/Narration/Settings + Chapter 5 — Esther's
-Rescue of Her People + Chapter 6 — The Battle of Jericho complete)
+Last updated: 2026-08-11 (Esther rebuilt as a 5-chapter arc — The New Queen,
+The Secret Plot, The Threat, The Brave Approach, The Banquets & Rescue —
+replacing the original single Esther chapter; real Audio/Narration/Settings
+and Chapter 6 — The Battle of Jericho also complete)
 
 ## Current milestone
 
-**Chapter 6 — The Battle of Jericho: COMPLETE** (chain now runs Noah's Ark →
-David & Goliath → Good Samaritan → Daniel → Esther → Jericho → Feeding the
-5,000 → Jesus Calms the Storm)
+**The Esther arc (5 chapters) rebuild: COMPLETE** (chain now runs Noah's
+Ark → David & Goliath → Good Samaritan → Daniel → Esther: The New Queen →
+Esther: The Secret Plot → Esther: The Threat → Esther: The Brave Approach →
+Esther: The Banquets & Rescue → Jericho → Feeding the 5,000 → Jesus Calms
+the Storm)
 
 ## Completed features
 
@@ -979,44 +983,151 @@ reset) stays deferred.
   `SettingsNavigationTest.kt` (instrumented). Full instrumented suite
   re-run twice clean after the timing fix.
 
-### Chapter 5 — Esther's Rescue of Her People
-The fifth full chapter, unlocked automatically once Daniel and the Lions is
-completed. Scene flow: Intro → The King's Trouble context → Haman's Anger
-context → Choice (Esther's decision) → The Golden Scepter context → The
-Two Banquets (new mechanic) → The Truth Revealed context → Lesson →
-Reward.
-- **Content checked against the actual text**, not assumed from a title:
-  Esther becomes queen and hides her identity (ch. 2); Mordecai uncovers
-  an assassination plot against the king (2:21-23) — this detail matters
-  later; Haman is promoted, Mordecai won't bow, Haman plots to destroy the
-  Jews (ch. 3); "such a time as this" (4:14) and "if I perish, I perish"
-  (4:16); the golden scepter (5:1-2); she deliberately doesn't ask her
-  request at the first banquet, waiting for the second (5:3-8, 7:1-6);
-  Mordecai is honored (ch. 6); Haman's plot is exposed and turned back on
-  him (ch. 7); a new decree and Purim (chs. 8-9). **Deliberately not
-  depicted**: chapter 9's violent Jewish self-defense battle; Haman's fate
-  is described only abstractly ("his own plot was turned against him"),
-  matching this app's no-violence rule the same way Good Samaritan's
-  bandits and Daniel's den never show harm on-screen.
-- **The Two Banquets mechanic**: 3 steps using the new shared
-  `game/puzzles/decisionpath` engine (see below) — `wait`/`wait`/
-  `speak_now`, teaching discernment/timing rather than a fixed rule.
-  Visual payoff: a sealed scroll icon (`ic_scroll_sealed.xml`) swaps to an
-  unsealed, open one (`ic_scroll_open.xml`) on completion — shape-changed,
-  never color-only.
-- **Badge/scripture card**: "Courageous Heart" + Esther 4:14, added to
-  `RewardCatalog`. WEB text sourced via WebFetch (cross-checked against
-  two independent sources), same standard as every prior chapter's card.
-- Tests: `EstherViewModelTest.kt` (unit, shared `FakePlayerProfileRepository`/
-  `FakeAudioController`); new instrumented `EstherFlowTest.kt`, which
-  completes Noah's Ark, David & Goliath, Good Samaritan, **and** Daniel
-  first (all four are prerequisites), then replays the banquet sequence.
-  Manual on-device screenshot check confirmed the scroll shape-change and
-  the Wait/Speak Now option cards read clearly at real phone size.
+### Chapters 5a–5e — The Esther arc (5 short chapters, replacing the original single Esther chapter)
+Your daughter found the original single-chapter "Esther's Rescue of Her
+People" (one thin banquet-timing puzzle) too easy. Rebuilt from scratch as
+5 short chapters that alternate visual-novel storytelling, puzzle-solving,
+and stealth/navigation, each a normal top-level chapter with its own
+`ChapterId`, graph-scoped ViewModel, badge, and scripture card — not a
+novel "one badge for 5 sub-chapters" concept, since this app has no
+precedent for that and 5 separate badges gives more to actually collect.
+Chain: Daniel → **Esther: The New Queen** → **Esther: The Secret Plot** →
+**Esther: The Threat** → **Esther: The Brave Approach** → **Esther: The
+Banquets & Rescue** → Jericho. `ChapterId.ESTHER` and the old `Chapter`
+catalog entry that used it are retired — per this repo's own rule, the old
+enum constant is never deleted or renamed (renaming an enum constant
+already in saved data silently loses that data), it's just no longer
+referenced from `ChapterCatalog.all`. Old files deleted wholesale:
+`EstherContent.kt`, `EstherReward.kt`, `ui/screens/esther/` (ViewModel +
+5 screens), `Destination.Esther`, `estherGraph()`, `EstherViewModelTest.kt`,
+`EstherFlowTest.kt`; the 4 banquet-mechanic-only drawables
+(`ic_scroll_sealed/open.xml`, `ic_wait.xml`, `ic_speak_now.xml`) were
+removed too, but `ic_badge_courageous_heart.xml` and the `scripture_esther_4_14_*`
+strings were deliberately kept — Chapter 4 below reuses them directly.
+
+Two hard product-constraint adaptations applied to the new stealth and
+timing mechanics before building them (see the 3 new engines below):
+being spotted by a guard is never a game over, just a walk back to the
+start with the guard's patrol otherwise untouched; the corridor "rhythm"
+meter only ever gains progress on a tap, regardless of timing — mistimed
+taps just take a little longer, never fail or reset. Both mirror this
+app's existing "preserve progress, just retry" philosophy (gridmaze's
+wall-bump, dodge's wrong-lane) rather than introducing this app's first
+real failure state.
+
+**3 new pure-Kotlin engines**, `game/puzzles/{stealth,sudoku,meter}/`,
+zero Compose/Android imports in the logic objects, same convention as all
+8 prior engines:
+- **`stealth/`** — turn-based grid movement reusing gridmaze's
+  `GridPosition`/`Direction` (imported, not redefined). Guards patrol a
+  **hand-authored, deterministic** cycle of `GuardPatrolStep(position,
+  watchedCells)` — watched cells are content-defined, not computed from a
+  facing angle, keeping the pattern simple, testable, and a fair, learnable
+  rhythm for a young player. A wall bump is free (mirrors gridmaze's own
+  wall-bump, no guard advance); a successful move advances every guard's
+  patrol by one step, and landing on a now-watched cell is `SPOTTED` —
+  resets to `startPosition` only, guards keep their same cycle.
+- **`sudoku/`** — a small icon-based logic grid, real row **and** column
+  uniqueness (no box region — 5 doesn't subdivide cleanly). A conflicting
+  placement is rejected without ever committing, same non-committing
+  pattern as `dragsort`'s `NOT_SORTABLE`. `ROW_COMPLETE` fires once a row's
+  5 cells are all filled (drives "a messenger gathered"), `COMPLETE` once
+  the whole grid is filled. `onCellCleared` lets a child freely undo their
+  own placement.
+- **`meter/`** — mirrors `slingshot`'s exact split: the screen owns the
+  live, looping beat animation and classifies each tap's timing into
+  `TapPrecision`; the engine only turns that into meter progress, and
+  every precision value (`PERFECT`/`GOOD`/`EARLY_OR_LATE`) contributes a
+  positive amount — the meter can only fill faster or slower, never reset.
+
+**Esther: The New Queen** (`ChapterId.ESTHER_NEW_QUEEN`, `requiredChapter
+= DANIEL`) — Intro → context → **Royal Attire** (`hiddenobject` engine
+reuse, 5 items: crown, robe, sash, perfume, sandals) → context → Choice
+(how to kindly address the king) → Lesson → Reward. Content checked
+against Esther 2:20 (kept her people secret as Mordecai commanded, "for
+Esther obeyed Mordecai... as when she was brought up by him"). Badge
+"Humble Trust" + Esther 2:20, both newly sourced via WebFetch (cross-
+checked against two independent sources).
+
+**Esther: The Secret Plot** (`ESTHER_SECRET_PLOT`) — Intro → context →
+**Courtyard Stealth** (new `stealth` engine's first real consumer — a
+5x3 courtyard, one guard alternating between two watched cells, hand-
+traced solution `LEFT, UP, UP, UP, UP, RIGHT, RIGHT` verified to never
+land on a watched cell) → context ("reported in Mordecai's name... written
+in the book of the chronicles," Esther 2:22-23 — the detail that matters
+later in ch. 6) → Lesson → Reward. No Choice scene — kept lean like Good
+Samaritan's single-puzzle shape, since there's no real branching decision
+in this beat. Badge "Watchful Ears" + Esther 2:22.
+
+**Esther: The Threat** (`ESTHER_THREAT`) — Intro → context → **Messenger
+Sudoku** (new `sudoku` engine's first consumer — 5x5 grid, 5 icon symbols
+star/moon/sun/drop/leaf, 15 hand-authored givens from a cyclic Latin
+square `cell = (row+col) mod 5`, 10 player placements, "a messenger
+gathered" on each `ROW_COMPLETE`) → context (Esther 4:1-3's mourning and
+fasting) → Lesson → Reward. Badge "Faithful Messenger" + Esther 4:3.
+
+**Esther: The Brave Approach** (`ESTHER_BRAVE_APPROACH`) — Intro → Choice
+("if I perish, I perish," reusing the original single-chapter's exact
+flavor-choice content) → context → **Corridor Courage Meter** (new
+`meter` engine's first consumer — a pulsing tap target, `MeterGame`
+requires 10 total progress, `PERFECT` taps contribute more than `GOOD`/
+`EARLY_OR_LATE` but every precision still contributes something) →
+context (the golden scepter) → Lesson → Reward. **Reuses the existing
+"Courageous Heart" badge and Esther 4:14 scripture card as-is** — this is
+the chapter that now actually carries that original climax, so the
+already-sourced content was kept rather than re-fetched.
+
+**Esther: The Banquets & Rescue** (`ESTHER_BANQUETS_RESCUE`, and
+`JERICHO.requiredChapter` now points here — the final repoint of the
+chain) — Intro → context → **Banquet Jigsaw** (`dragsort` reuse: each of
+5 food items — bread, fruit, honey, wine, roasted meat — has its own
+unique table-zone `categoryKey`, a degenerate 1-item-per-1-category case
+of the exact same engine as Organize the Ark, just re-themed) → context →
+**Reveal Haman's Plot** (`decisionpath` reuse, 3 short steps: speak
+calmly → tell the truth → name Haman, same engine as Jericho's march and
+the old chapter's banquet-timing mechanic) → context (Purim, Esther 7:3's
+actual plea "let my life be given me... and my people") → Lesson →
+Reward. Deliberately drops the *original* chapter's "Two Banquets"
+waiting mechanic (now redundant with the jigsaw + reveal scenes) rather
+than cramming 3 puzzle beats into the last chapter. Badge "Bold Voice" +
+Esther 7:3.
+
+**Tests**: one `*ViewModelTest.kt` per chapter (5 total, unchanged
+per-chapter convention) plus `StealthGameTest.kt`/`SudokuGameTest.kt`/
+`MeterGameTest.kt` for the 3 new engines. One consolidated
+`EstherArcFlowTest.kt` (not 5 separate FlowTest files) walks all 5
+chapters end to end with an explicit unlock assertion between each —
+avoids the combinatorial blowup of 5 files each re-deriving the same
+4 pre-Esther prerequisites from scratch. `JerichoFlowTest.kt`'s own
+`completeEsther(...)` prerequisite helper was renamed `completeEstherArc(...)`
+and extended to walk all 5 chapters too, since it needs Jericho unlocked
+regardless. `DanielFlowTest.kt`'s final assertion updated from the old
+`chapter_esther_title` to `chapter_esther_new_queen_title`.
+
+**3 real bugs found and fixed during on-device verification, not just
+documented away**: (1) the Messenger Sudoku's filled-cell `Image` set its
+own `contentDescription` to the bare icon name in addition to the cell's
+own description, colliding with the icon-palette buttons that use the same
+bare name — fixed by clearing the inner image's description (same
+`contentDescription = null` convention every other tile/target composable
+in this app already follows). (2) The Courtyard Stealth screen's D-pad
+was fully replaced by an early Continue button when `previouslyCompleted`
+was true, unlike every other puzzle screen's established pattern of
+keeping the puzzle interactive and adding Continue *alongside* it — fixed
+to match Daniel's Stealth/David & Goliath's Dodge screens' existing 3-way
+branch. (3) Adding 4 net new chapters (5 new Esther chapters replacing 1)
+pushed the World Map's `LazyColumn` past what's composed without an actual
+scroll — `performScrollTo()` alone doesn't work for lazily-uncomposed
+items (it requires the node to already exist), so the list gained a
+`testTag("world_map_chapter_list")` and every test now uses
+`performScrollToNode(hasText(title))` on the tagged list first. Verified
+by running the full instrumented suite twice back-to-back on-device after
+each fix — 19/19 clean both times, including on a device with real
+accumulated progress from the first run.
 
 ### Chapter 6 — The Battle of Jericho
-The sixth full chapter, unlocked automatically once Esther's Rescue of Her
-People is completed — and the chapter that finally closes the loop back to
+The sixth full chapter, unlocked automatically once Esther: The Banquets &
+Rescue is completed — and the chapter that finally closes the loop back to
 the original chain's tail (completing it unlocks Feeding the 5,000). Scene
 flow: Intro → Rahab's House context → Rahab Helps the Spies (narrative-
 only) → Choice (trusting an unusual plan) → The March and the Shout (new
@@ -1208,3 +1319,27 @@ Settings is already built (see "Audio, Narration & Settings" above).
   that contradicts Daniel 6:8/6:15's actual point, and "hiding from guards" that
   undersells 6:10's deliberate openness) caught and corrected during planning, not
   after.
+- **A single thin chapter can be retired and rebuilt as several full chapters**,
+  not just extended in place, when a chapter is genuinely too easy/shallow —
+  the Esther arc rebuild treated each of the 5 new pieces as a normal
+  top-level chapter (own `ChapterId`, badge, scripture card) rather than
+  inventing a "multi-part chapter, one shared reward" concept with no
+  precedent elsewhere in the app. When retiring a chapter this way, the old
+  `ChapterId` enum constant is *never* deleted or renamed (would silently
+  lose any already-persisted save data referencing it) — just dropped from
+  `ChapterCatalog.all` and left permanently unused.
+- **New mechanics proposed with a real fail/game-over state get redesigned
+  around this app's "no failure states" rule before being built**, not
+  after — same treatment as the Good Samaritan bandit-hazard precedent
+  above. A vision-cone stealth mechanic became "spotted resets position
+  only, guard pattern untouched, no counter"; a beat/rhythm-tap mechanic
+  became "every tap adds positive progress regardless of timing, meter
+  never resets" — both keep the requested mechanic's real shape while
+  removing the only part that would have introduced this app's first true
+  failure state.
+- **A puzzle engine can be reused across totally unrelated chapters by
+  exercising it at its most degenerate parameterization** — Esther: The
+  Banquets & Rescue's "jigsaw" (each food item has its own unique
+  destination) is just `dragsort`'s existing many-items-to-few-categories
+  model with every category holding exactly one item; no engine changes
+  needed, only new content.

@@ -7,8 +7,11 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
@@ -17,6 +20,10 @@ import com.bibleadventures.game.puzzles.dodge.DodgeLane
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.DavidGoliathContent
+import com.bibleadventures.game.stories.EstherBanquetsRescueContent
+import com.bibleadventures.game.stories.EstherBraveApproachContent
+import com.bibleadventures.game.stories.EstherNewQueenContent
+import com.bibleadventures.game.stories.EstherSecretPlotContent
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import org.junit.Rule
@@ -37,6 +44,17 @@ class JerichoFlowTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
+    /**
+     * The World Map is a LazyColumn — items far outside the composition
+     * window don't exist in the semantics tree until scrolled into view, so
+     * plain performScrollTo() (which requires the node to already exist)
+     * isn't enough. Scrolling the tagged list itself via performScrollToNode
+     * incrementally scrolls until a matching item is composed.
+     */
+    private fun scrollToChapterOnWorldMap(title: String) {
+        composeTestRule.onNodeWithTag("world_map_chapter_list").performScrollToNode(hasText(title))
+    }
+
     @Test
     fun completingJericho_awardsStarsAndUnlocksFeeding5000OnTheWorldMap() {
         val activity = composeTestRule.activity
@@ -47,9 +65,10 @@ class JerichoFlowTest {
         completeDavidGoliath(continueLabel)
         completeGoodSamaritan(continueLabel)
         completeDaniel(continueLabel)
-        completeEsther(continueLabel)
+        completeEstherArc(continueLabel)
 
         // World Map -> The Battle of Jericho (now unlocked).
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_jericho_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_jericho_title)).performClick()
 
         // Scene 1: Intro.
@@ -92,6 +111,7 @@ class JerichoFlowTest {
         // Back on the World Map: Jericho completed, Feeding the 5,000 unlocked — closing
         // the loop back to the original chain's tail.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_feeding_5000_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_feeding_5000_title)).assertExists()
     }
 
@@ -99,6 +119,7 @@ class JerichoFlowTest {
     private fun completeNoahsArk(continueLabel: String) {
         val activity = composeTestRule.activity
 
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_noahs_ark_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
@@ -140,6 +161,7 @@ class JerichoFlowTest {
     private fun completeDavidGoliath(continueLabel: String) {
         val activity = composeTestRule.activity
 
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_david_goliath_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_david_goliath_title)).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
@@ -197,6 +219,7 @@ class JerichoFlowTest {
     private fun completeGoodSamaritan(continueLabel: String) {
         val activity = composeTestRule.activity
 
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_good_samaritan_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_good_samaritan_title)).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
@@ -236,6 +259,7 @@ class JerichoFlowTest {
     private fun completeDaniel(continueLabel: String) {
         val activity = composeTestRule.activity
 
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_daniel_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_daniel_title)).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
@@ -283,29 +307,152 @@ class JerichoFlowTest {
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
     }
 
-    /** Walks Esther's Rescue of Her People end to end (mirrors EstherFlowTest) so Jericho unlocks. */
-    private fun completeEsther(continueLabel: String) {
+    /**
+     * Walks the Esther arc end to end so Jericho unlocks. Currently
+     * Chapters 1-2 — grows by one chapter as each of the other new Esther
+     * chapters lands, per docs/PROJECT_STATUS.md's build order.
+     */
+    private fun completeEstherArc(continueLabel: String) {
         val activity = composeTestRule.activity
 
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_title)).performClick()
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_esther_new_queen_title))
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_new_queen_title)).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(continueLabel).performClick() // The King's Trouble context
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Haman's Anger context
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Chosen for the Palace context
 
-        composeTestRule.onNodeWithText(activity.getString(R.string.esther_choice_option_1)).performClick()
+        EstherNewQueenContent.royalAttireItems.forEach { item ->
+            composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
+        }
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Esther Becomes Queen context
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.esther_new_queen_choice_option_1)).performClick()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.esther_new_queen_lesson_title)).assertExists()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
+
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_esther_secret_plot_title))
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_secret_plot_title)).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
+        composeTestRule.onNodeWithText(continueLabel).performClick() // A Dangerous Secret context
+
+        val upLabel = activity.getString(R.string.esther_secret_plot_direction_up)
+        val downLabel = activity.getString(R.string.esther_secret_plot_direction_down)
+        val stealthLeftLabel = activity.getString(R.string.esther_secret_plot_direction_left)
+        val stealthRightLabel = activity.getString(R.string.esther_secret_plot_direction_right)
+        EstherSecretPlotContent.courtyardSolutionPath.forEach { direction ->
+            val label = when (direction) {
+                Direction.UP -> upLabel
+                Direction.DOWN -> downLabel
+                Direction.LEFT -> stealthLeftLabel
+                Direction.RIGHT -> stealthRightLabel
+            }
+            composeTestRule.onNodeWithContentDescription(label).performClick()
+        }
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // The King is Warned context
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.esther_secret_plot_lesson_title)).assertExists()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
+
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_esther_threat_title))
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_threat_title)).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
+        composeTestRule.onNodeWithText(continueLabel).performClick() // A Wicked Law context
+
+        // Hand-solved 5x5 Latin square (cell = (row + col) mod 5): fill every
+        // empty cell left by EstherThreatContent.sudokuGivens, row by row.
+        val iconKeyToLabel = mapOf(
+            "star" to R.string.esther_threat_icon_star,
+            "moon" to R.string.esther_threat_icon_moon,
+            "sun" to R.string.esther_threat_icon_sun,
+            "drop" to R.string.esther_threat_icon_drop,
+            "leaf" to R.string.esther_threat_icon_leaf,
+        )
+        val sudokuSolution = listOf(
+            Triple(0, 2, "sun"), Triple(0, 3, "drop"),
+            Triple(1, 1, "sun"), Triple(1, 3, "leaf"),
+            Triple(2, 2, "leaf"), Triple(2, 4, "moon"),
+            Triple(3, 0, "drop"), Triple(3, 3, "moon"),
+            Triple(4, 1, "star"), Triple(4, 4, "drop"),
+        )
+        sudokuSolution.forEach { (row, col, iconKey) ->
+            val cellLabel = activity.getString(R.string.esther_threat_sudoku_cell_content_description, row + 1, col + 1)
+            composeTestRule.onNodeWithContentDescription(cellLabel, substring = true).performClick()
+            composeTestRule.onNodeWithContentDescription(activity.getString(iconKeyToLabel.getValue(iconKey))).performClick()
+        }
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // The City Mourns and Fasts context
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.esther_threat_lesson_title)).assertExists()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
+
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_esther_brave_approach_title))
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_brave_approach_title)).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.esther_brave_approach_choice_option_1)).performClick()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Three Days of Fasting context
+
+        // Every tap adds positive progress regardless of timing — 10 taps
+        // always completes the meter (see MeterGame's no-failure-state design).
+        val corridorTapDescription = activity.getString(R.string.esther_brave_approach_corridor_tap_content_description)
+        repeat(EstherBraveApproachContent.CORRIDOR_REQUIRED_PROGRESS) {
+            composeTestRule.onNodeWithContentDescription(corridorTapDescription).performClick()
+        }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // The Golden Scepter context
 
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquet_option_wait)).performClick()
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquet_option_wait)).performClick()
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquet_option_speak_now)).performClick()
+        composeTestRule.onNodeWithText(activity.getString(R.string.esther_brave_approach_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // The Truth Revealed context
+        composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
 
-        composeTestRule.onNodeWithText(activity.getString(R.string.esther_lesson_title)).assertExists()
+        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_esther_banquets_rescue_title))
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_banquets_rescue_title)).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Preparing the Banquet context
+
+        EstherBanquetsRescueContent.foodItems.forEach { item ->
+            val itemName = activity.getString(item.nameRes)
+            val zoneLabelRes = EstherBanquetsRescueContent.zoneCategories.first { it.key == item.categoryKey }.labelRes
+            val zoneLabel = activity.getString(zoneLabelRes)
+            dragOntoText(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetText = zoneLabel)
+        }
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // The Second Banquet context
+
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquets_rescue_reveal_option_speak_calmly)).performClick()
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquets_rescue_reveal_option_tell_truth)).performClick()
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquets_rescue_reveal_option_name_haman)).performClick()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithText(continueLabel).performClick() // Haman's Plot is Turned Back context
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.esther_banquets_rescue_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()

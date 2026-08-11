@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- Plain palace-official silhouette, never armed — this app never depicts weapons or violence. -->
+    <path android:fillColor="#FF9E5A3C" android:pathData="M32,28 C18,28 12,44 12,56 L52,56 C52,44 46,28 32,28 Z" />
+    <path android:fillColor="#FFE0B48A" android:pathData="M32,12 m-11,0 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0" />
+    <path android:fillColor="#FF6E3A22" android:pathData="M18,8 C18,3 46,3 46,8 L46,14 L18,14 Z" />
+</vector>
