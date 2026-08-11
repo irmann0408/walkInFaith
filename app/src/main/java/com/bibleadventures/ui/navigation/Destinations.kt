@@ -83,9 +83,11 @@ sealed class Destination(val route: String) {
 
     /**
      * Nested graph — every scene shares one graph-scoped `EstherViewModel`.
-     * One chapter built from 5 sequential mini-puzzles; the banquet jigsaw
+     * One chapter built from 4 sequential mini-puzzles; the banquet jigsaw
      * mini-game was dropped per playtesting feedback (repeat mechanic, too
-     * easy), so the banquet-preparation beats below are narrative-only.
+     * easy). Reveal Haman's Plot and its surrounding context cards were
+     * dropped too, per the user's explicit request to tighten the tail end
+     * of the chapter — Corridor goes straight into the Lesson now.
      */
     sealed class Esther(route: String) : Destination(route) {
         data object Intro : Esther("esther/intro")
@@ -102,11 +104,6 @@ sealed class Destination(val route: String) {
         data object DecisionChoice : Esther("esther/decision_choice")
         data object FastingContext : Esther("esther/fasting_context")
         data object Corridor : Esther("esther/corridor")
-        data object ScepterContext : Esther("esther/scepter_context")
-        data object PlanningContext : Esther("esther/planning_context")
-        data object SecondBanquetContext : Esther("esther/second_banquet_context")
-        data object RevealHaman : Esther("esther/reveal_haman")
-        data object SavedContext : Esther("esther/saved_context")
         data object Lesson : Esther("esther/lesson")
         data object Reward : Esther("esther/reward")
 

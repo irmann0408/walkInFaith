@@ -138,22 +138,9 @@ class EstherFlowTest {
         // Corridor Courage Meter — a 3-lane rhythm mini-game. Freeze the clock and
         // advance to each authored note's exact time so every tap lands; a
         // mistimed tap would just be a no-op (see RhythmLaneGame's no-failure design).
+        // Leads straight into the Lesson now — Reveal Haman's Plot and its
+        // surrounding context cards were dropped to tighten the chapter's tail end.
         completeCorridorRhythmLane()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-
-        // The Golden Scepter context -> Preparing the Banquet context (narrative
-        // only now, no jigsaw puzzle) -> The Second Banquet context.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-
-        // Reveal Haman's Plot.
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquets_rescue_reveal_option_speak_calmly)).performClick()
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquets_rescue_reveal_option_tell_truth)).performClick()
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.esther_banquets_rescue_reveal_option_name_haman)).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-
-        // Haman's Plot is Turned Back context -> Lesson.
         composeTestRule.onNodeWithText(continueLabel).performClick()
         composeTestRule.onNodeWithText(activity.getString(R.string.esther_brave_approach_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()

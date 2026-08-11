@@ -213,22 +213,6 @@ class EstherViewModelTest {
     }
 
     @Test
-    fun `onRevealOptionTapped plays a sound only on the correct option, advancing through all 3 steps`() {
-        val audioController = FakeAudioController()
-        val viewModel = createViewModel(audioController = audioController)
-
-        viewModel.onRevealOptionTapped("shout_angrily") // wrong
-        assertTrue(audioController.playedEffects.isEmpty())
-
-        viewModel.onRevealOptionTapped("speak_calmly")
-        viewModel.onRevealOptionTapped("tell_truth")
-        viewModel.onRevealOptionTapped("name_haman")
-
-        assertTrue(viewModel.uiState.value.decisionPathState.isComplete)
-        assertEquals(3, audioController.playedEffects.size)
-    }
-
-    @Test
     fun `onSceneCompleted marks the scene as a completed activity for Esther`() = runTest {
         val repository = FakePlayerProfileRepository()
         val viewModel = createViewModel(repository = repository)

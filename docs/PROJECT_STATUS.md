@@ -1,20 +1,21 @@
 # Project Status
 
-Last updated: 2026-08-11 (Corridor Courage Meter replaced with a 3-lane
-rhythm mini-game; the 5-chapter Esther arc consolidated back into one
-chapter, "Esther's Rescue of Her People," per playtesting feedback that the
-split felt disjointed; real Audio/Narration/Settings and Chapter 6 — The
-Battle of Jericho also complete)
+Last updated: 2026-08-11 (Esther's tail end trimmed — Reveal Haman's Plot
+and 5 surrounding screens collapsed into just the Lesson; Corridor Courage
+Meter replaced with a 3-lane rhythm mini-game; the 5-chapter Esther arc
+consolidated back into one chapter, "Esther's Rescue of Her People," per
+playtesting feedback that the split felt disjointed; real Audio/Narration/
+Settings and Chapter 6 — The Battle of Jericho also complete)
 
 ## Current milestone
 
-**Corridor rhythm-lane rebuild: COMPLETE.** The 4th of Esther's 5
-mini-puzzles — playtested as "just tapping the screen" — is now a
-Beatstar-inspired 3-lane, downward-scrolling tap-note mini-game. See
-"Corridor Courage Meter rebuilt as a 3-lane rhythm mini-game" further down.
-Chain is unchanged: Noah's Ark → David & Goliath → Good Samaritan → Daniel →
-Esther's Rescue of Her People → Jericho → Feeding the 5,000 → Jesus Calms
-the Storm.
+**Esther tail-end trim: COMPLETE.** After the Corridor rhythm-lane mini-game
+(the chapter's last tap-based puzzle), the 6 screens that used to follow it
+— 3 context cards, the Reveal Haman's Plot puzzle, 1 more context card, and
+the Lesson — are now just 1 screen: the Lesson ("Courage and Speaking Up").
+See "Esther's tail end trimmed to Corridor → Lesson" further down. Chain is
+unchanged: Noah's Ark → David & Goliath → Good Samaritan → Daniel → Esther's
+Rescue of Her People → Jericho → Feeding the 5,000 → Jesus Calms the Storm.
 
 ## Completed features
 
@@ -1453,14 +1454,61 @@ it's a full replacement — deleted, not left alongside the new engine.
   child in practice, `TRAVEL_DURATION_MS`/the chart's note spacing in
   `EstherCorridorScreen.kt`/`EstherContent.kt` are the two knobs to tune.
 
+### Esther's tail end trimmed to Corridor → Lesson
+After playing the rhythm-lane rebuild above, the user's next direct
+feedback: everything after the Corridor (the chapter's last tap-based
+puzzle) was too padded — 6 screens (3 context cards, the Reveal Haman's
+Plot puzzle, 1 more context card, and the Lesson) before finally reaching
+the Reward. Asked what I thought before touching anything (per this
+project's working style): recommended collapsing straight to the Lesson —
+"Courage and Speaking Up" already pairs naturally with the Corridor scene
+right before it (courage to approach the king → the lesson about that
+courage), and it's the *original* single-chapter Esther's closing lesson
+from before any of this content ever got split up, so landing there is a
+tightening, not a loss of the chapter's real emotional climax. Confirmed
+with the user before implementing, given the real tradeoff: this cuts the
+Reveal Haman's Plot puzzle entirely, not just narrative filler — the
+chapter drops from 5 mini-puzzles to 4, and the in-game depiction of
+Esther's actual "rescue" (exposing Haman, his downfall) no longer happens.
+The Esther 7:3 scripture card tied to that beat is still awarded on the
+Reward screen regardless, since `EstherReward.scriptureCards` is a fixed
+list independent of which puzzles exist.
+- `Destination.Esther`: `ScepterContext`, `PlanningContext`,
+  `SecondBanquetContext`, `RevealHaman`, `SavedContext` routes removed —
+  `Corridor`'s `onContinue` now navigates straight to `Lesson`.
+  `ui/screens/esther/revealhaman/` deleted outright.
+- `EstherContent.kt`: `scepterContextLines`, `planningContextLines`,
+  `secondBanquetContextLines`, `savedContextLines`, `revealSteps`,
+  `revealStepPromptLabels`, `revealOptions`/`RevealOptionDef` all removed
+  (the `decisionpath` engine package itself is untouched — Jericho's march
+  still uses it). `EstherViewModel.kt`'s `decisionPathState`/
+  `onRevealOptionTapped` removed to match.
+- Per this repo's existing precedent (documented in the Esther-arc-split
+  section above: "renaming/removing ~150 entries isn't worth the risk"),
+  the now-orphaned string resources
+  (`esther_brave_approach_scepter_context_*`,
+  `esther_banquets_rescue_{planning,second_banquet,saved}_context_*`,
+  `esther_banquets_rescue_reveal_*`) were deliberately **left in
+  `strings.xml`** rather than deleted — inert, no lint/build impact
+  (confirmed — this project's lint config doesn't flag unused resources),
+  lower risk than a large find-and-delete pass across the file.
+- Tests: `EstherViewModelTest.kt`'s Reveal-Haman-specific case removed.
+  `EstherFlowTest.kt`/`JerichoFlowTest.kt`'s `completeEsther` walkthroughs
+  shortened to go straight from `completeCorridorRhythmLane()` to
+  asserting the Lesson title. Full `./gradlew build` green; full
+  instrumented suite run twice back-to-back on-device, 19/19 clean both
+  times (one run hit an unrelated USB disconnect mid-suite, and a separate
+  run hit this project's known pre-existing flakiness on a device with
+  real accumulated save data — `WorldMapNavigationTest` expecting David &
+  Goliath locked when it's actually already completed from prior test
+  runs — neither is a regression from this change).
+
 ## Next tasks
 
 One more request the user flagged but hasn't described yet (from the same
-original message as the Esther consolidation and this corridor rebuild) —
-pick it up when stated. A manual on-device playtest of the new corridor
-rhythm-lane mini-game (see the note directly above) is also worth doing
-before considering it fully settled. Otherwise, the natural next step per
-the current order is either **Chapter 7 — Feeding the 5,000** (now
+original message as the Esther consolidation, the corridor rebuild, and
+this tail-end trim) — pick it up when stated. Otherwise, the natural next
+step per the current order is either **Chapter 7 — Feeding the 5,000** (now
 unlocked once The Battle of Jericho is completed) or the rest of
 **Milestone 6 — Parent Area**: a parental gate, progress summary, and
 reset-progress functionality (spec section 17) — the audio/narration

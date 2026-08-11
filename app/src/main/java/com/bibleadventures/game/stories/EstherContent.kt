@@ -4,7 +4,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import com.bibleadventures.R
-import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
@@ -16,18 +15,21 @@ data class SudokuIconDef(val key: String, @DrawableRes val iconRes: Int, @String
 
 /**
  * Static content for Esther's Rescue of Her People — one chapter built from
- * 5 sequential mini-puzzles (Royal Attire, Courtyard Stealth, Messenger
- * Sudoku, Corridor Courage Meter, Reveal Haman's Plot). Kept separate from
- * the game engine packages under `game/puzzles` so those stay reusable by
- * future chapters.
+ * 4 sequential mini-puzzles (Royal Attire, Courtyard Stealth, Messenger
+ * Sudoku, Corridor Courage Meter). Kept separate from the game engine
+ * packages under `game/puzzles` so those stay reusable by future chapters.
  *
  * This merges what were briefly 5 separate chapters (New Queen, Secret
  * Plot, Threat, Brave Approach, Banquets & Rescue) back into one, per
  * playtesting feedback that splitting them felt disjointed. The banquet
  * jigsaw mini-game (`dragsort`, the same engine Organize the Ark already
- * uses) is dropped entirely — a playtester found it a repeat and too easy
- * — so the banquet-preparation beats below are narrative-only context, not
- * a puzzle.
+ * uses) is dropped entirely — a playtester found it a repeat and too easy.
+ * Reveal Haman's Plot and its surrounding context cards (banquet prep, the
+ * second banquet, Haman's downfall) were dropped too, per the user's
+ * explicit request to tighten the chapter's tail end — Corridor now leads
+ * straight into the Lesson. The Esther 7:3 scripture card tied to that
+ * story beat is still awarded on the Reward screen even though the beat
+ * itself is no longer played through.
  */
 object EstherContent {
 
@@ -156,11 +158,6 @@ object EstherContent {
         R.string.esther_brave_approach_fasting_context_line_2,
     )
 
-    val scepterContextLines: List<Int> = listOf(
-        R.string.esther_brave_approach_scepter_context_line_1,
-        R.string.esther_brave_approach_scepter_context_line_2,
-    )
-
     /**
      * A short, evenly-paced, hand-authored 3-lane pattern (800ms between
      * notes — moderate tempo, appropriate for a 7+ audience) that loops
@@ -181,45 +178,4 @@ object EstherContent {
 
     /** How many successful lane hits complete the corridor (see RhythmLaneGameState) — spans more than one chart loop. */
     const val CORRIDOR_REQUIRED_HITS = 10
-
-    /** Narrative-only now that the banquet jigsaw is dropped — no puzzle follows. */
-    val planningContextLines: List<Int> = listOf(
-        R.string.esther_banquets_rescue_planning_context_line_1,
-        R.string.esther_banquets_rescue_planning_context_line_2,
-    )
-
-    val secondBanquetContextLines: List<Int> = listOf(
-        R.string.esther_banquets_rescue_second_banquet_context_line_1,
-        R.string.esther_banquets_rescue_second_banquet_context_line_2,
-    )
-
-    val savedContextLines: List<Int> = listOf(
-        R.string.esther_banquets_rescue_saved_context_line_1,
-        R.string.esther_banquets_rescue_saved_context_line_2,
-        R.string.esther_banquets_rescue_saved_context_line_3,
-    )
-
-    /** A short, 3-step guided sequence reusing `decisionpath` — same engine as Jericho's march. */
-    val revealSteps: List<DecisionStep> = listOf(
-        DecisionStep("begin", "speak_calmly", listOf("speak_calmly", "shout_angrily")),
-        DecisionStep("reveal", "tell_truth", listOf("tell_truth", "stay_silent")),
-        DecisionStep("name", "name_haman", listOf("name_haman", "blame_another")),
-    )
-
-    val revealStepPromptLabels: Map<String, Int> = mapOf(
-        "begin" to R.string.esther_banquets_rescue_reveal_step1_prompt,
-        "reveal" to R.string.esther_banquets_rescue_reveal_step2_prompt,
-        "name" to R.string.esther_banquets_rescue_reveal_step3_prompt,
-    )
-
-    data class RevealOptionDef(val id: String, val labelRes: Int)
-
-    val revealOptions: List<RevealOptionDef> = listOf(
-        RevealOptionDef("speak_calmly", R.string.esther_banquets_rescue_reveal_option_speak_calmly),
-        RevealOptionDef("shout_angrily", R.string.esther_banquets_rescue_reveal_option_shout_angrily),
-        RevealOptionDef("tell_truth", R.string.esther_banquets_rescue_reveal_option_tell_truth),
-        RevealOptionDef("stay_silent", R.string.esther_banquets_rescue_reveal_option_stay_silent),
-        RevealOptionDef("name_haman", R.string.esther_banquets_rescue_reveal_option_name_haman),
-        RevealOptionDef("blame_another", R.string.esther_banquets_rescue_reveal_option_blame_another),
-    )
 }

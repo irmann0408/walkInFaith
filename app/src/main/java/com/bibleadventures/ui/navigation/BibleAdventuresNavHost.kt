@@ -51,7 +51,6 @@ import com.bibleadventures.ui.screens.esther.greetingchoice.EstherGreetingChoice
 import com.bibleadventures.ui.screens.esther.intro.EstherIntroScreen
 import com.bibleadventures.ui.screens.esther.lesson.EstherLessonScreen
 import com.bibleadventures.ui.screens.esther.messengersudoku.EstherMessengerSudokuScreen
-import com.bibleadventures.ui.screens.esther.revealhaman.EstherRevealHamanScreen
 import com.bibleadventures.ui.screens.esther.reward.EstherRewardScreen
 import com.bibleadventures.ui.screens.esther.royalattire.EstherRoyalAttireScreen
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
@@ -703,48 +702,8 @@ private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
                 previouslyCompleted = "corridor" in previouslyCompletedSceneIds,
                 onContinue = {
                     viewModel.onSceneCompleted("corridor")
-                    navController.navigate(Destination.Esther.ScepterContext.route)
+                    navController.navigate(Destination.Esther.Lesson.route)
                 },
-            )
-        }
-        composable(Destination.Esther.ScepterContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.esther_brave_approach_scepter_context_title,
-                lineRes = EstherContent.scepterContextLines,
-                onContinue = { navController.navigate(Destination.Esther.PlanningContext.route) },
-            )
-        }
-        composable(Destination.Esther.PlanningContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.esther_banquets_rescue_planning_context_title,
-                lineRes = EstherContent.planningContextLines,
-                onContinue = { navController.navigate(Destination.Esther.SecondBanquetContext.route) },
-            )
-        }
-        composable(Destination.Esther.SecondBanquetContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.esther_banquets_rescue_second_banquet_context_title,
-                lineRes = EstherContent.secondBanquetContextLines,
-                onContinue = { navController.navigate(Destination.Esther.RevealHaman.route) },
-            )
-        }
-        composable(Destination.Esther.RevealHaman.route) { entry ->
-            val viewModel = navController.estherViewModel(entry)
-            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            EstherRevealHamanScreen(
-                viewModel = viewModel,
-                previouslyCompleted = "reveal_haman" in previouslyCompletedSceneIds,
-                onContinue = {
-                    viewModel.onSceneCompleted("reveal_haman")
-                    navController.navigate(Destination.Esther.SavedContext.route)
-                },
-            )
-        }
-        composable(Destination.Esther.SavedContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.esther_banquets_rescue_saved_context_title,
-                lineRes = EstherContent.savedContextLines,
-                onContinue = { navController.navigate(Destination.Esther.Lesson.route) },
             )
         }
         composable(Destination.Esther.Lesson.route) { entry ->

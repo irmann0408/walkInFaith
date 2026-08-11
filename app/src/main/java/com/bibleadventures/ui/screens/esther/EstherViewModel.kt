@@ -7,9 +7,6 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.decisionpath.DecisionOutcome
-import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGame
-import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
@@ -51,16 +48,15 @@ data class EstherUiState(
         chart = EstherContent.corridorChart,
         requiredHits = EstherContent.CORRIDOR_REQUIRED_HITS,
     ),
-    val decisionPathState: DecisionPathGameState = DecisionPathGameState(steps = EstherContent.revealSteps),
     val reward: EstherRewardResult? = null,
 )
 
 /**
- * One chapter, 5 sequential mini-puzzles: Royal Attire (hidden object),
- * Courtyard Stealth, Messenger Sudoku, Corridor Courage Meter, and Reveal
- * Haman's Plot — merged from what were briefly 5 separate chapters back
- * into "Esther's Rescue of Her People" per playtesting feedback. Awards
- * one badge and every scripture card earned along the way.
+ * One chapter, 4 sequential mini-puzzles: Royal Attire (hidden object),
+ * Courtyard Stealth, Messenger Sudoku, and Corridor Courage Meter — merged
+ * from what were briefly 5 separate chapters back into "Esther's Rescue of
+ * Her People" per playtesting feedback. Awards one badge and every
+ * scripture card earned along the way.
  */
 class EstherViewModel(
     private val progressionService: ProgressionService,
@@ -151,17 +147,6 @@ class EstherViewModel(
     /** Called as the corridor's real-time clock advances, so notes nobody tapped in time get marked missed (feedback only, never a setback). */
     fun onCorridorTimeAdvanced(nowMs: Long) {
         _uiState.update { current -> current.copy(rhythmLaneState = RhythmLaneGame.onTimeAdvanced(current.rhythmLaneState, nowMs)) }
-    }
-
-    fun onRevealOptionTapped(optionId: String) {
-        _uiState.update { current ->
-            val next = DecisionPathGame.onOptionTapped(current.decisionPathState, optionId)
-            when (next.lastOutcome) {
-                DecisionOutcome.CORRECT, DecisionOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
-                else -> Unit
-            }
-            current.copy(decisionPathState = next)
-        }
     }
 
     /** Records mid-adventure progress so "Continue Adventure" and a future resume can see it. */
