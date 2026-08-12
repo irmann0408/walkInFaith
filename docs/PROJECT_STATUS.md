@@ -1031,6 +1031,94 @@ reset) stays deferred.
   `SettingsNavigationTest.kt` (instrumented). Full instrumented suite
   re-run twice clean after the timing fix.
 
+#### Narrator voice: deeper and slower ("Calm Storyteller" tuning)
+Per the user's direct request, much later in the project (well after the
+milestone above shipped): the platform `TextToSpeech` narrator read at its
+engine default pitch/rate (both 1.0) everywhere. Android's TTS API doesn't
+let an app reliably pick a specific "character" voice across devices — which
+voices exist depends entirely on whatever TTS engine is installed — but
+`setPitch`/`setSpeechRate` are universally supported regardless of engine,
+so tuning was the only portable lever available.
+- Presented the user 3 numeric presets to pick from by description (since
+  audio can't be previewed as text) — Subtle & Warm (0.90/0.90), **Calm
+  Storyteller (0.80/0.82, chosen)**, and Deep & Slow (0.70/0.75, flagged as
+  risking a slightly robotic/distorted result on some devices' TTS engines
+  below roughly 0.7).
+- Applied as two new `RealAudioController.kt` constants
+  (`NARRATION_PITCH`/`NARRATION_SPEECH_RATE`), set once via
+  `tts.setPitch(...)`/`tts.setSpeechRate(...)` right after TTS
+  initialization succeeds. Global by construction — every chapter's
+  Intro/Lesson screens and `StoryBeatScreen`'s context cards all narrate
+  through this same single `RealAudioController.speak(...)`, so no
+  per-screen changes were needed.
+- Not unit-testable (real device/engine-dependent TTS audio quality, no
+  logic branch to assert against) — verified by installing to the user's
+  device directly. `./gradlew build` still green (no test/logic surface
+  touched, just two tuning constants).
+
+**Follow-up same day**: the user reported the "Calm Storyteller" tuning
+still read as high-pitched. Root cause, on reflection rather than
+guesswork: most devices' default TTS voice is female, and a 20% pitch cut
+alone doesn't turn a female voice into a convincing deep male one — it just
+sounds like a slightly lower female voice. Two changes:
+- **`NARRATION_PITCH` dropped further, 0.80 -> 0.65** — close to the floor
+  where some engines start introducing audible distortion, called out
+  explicitly in the constant's own doc comment so a future pass doesn't
+  push it lower without knowing why 0.65 was already a deliberate edge.
+- **New `RealAudioController.selectDeepMaleVoice(engine)`**, called during
+  TTS init right after `language` is set and *before* `setPitch`/
+  `setSpeechRate` — `TextToSpeech.setVoice(...)` can itself reset
+  pitch/rate back to that voice's own defaults on some engines, so voice
+  selection has to run first or the pitch/rate tuning above would get
+  silently undone. Best-effort only, by necessity: Android's public
+  `Voice` API has no gender field at all, so this filters `engine.voices`
+  for names containing "male" but not "female" (a real, if unofficial,
+  naming convention several TTS engines' voice packs follow), preferring
+  one in the device's current locale that doesn't require a network
+  connection (keeps narration working offline) before falling back to any
+  language, then giving up and leaving the engine's own default voice in
+  place if nothing matches — never crashes or silently breaks narration on
+  a device/engine that doesn't expose gendered voice names at all, same
+  defensive posture as the rest of this class.
+- Same as above: not unit-testable, verified by installing to the user's
+  device. If this still doesn't land as a convincing deep male voice on the
+  user's specific device, the next lever would be enumerating that device's
+  actual `TextToSpeech.voices` names directly (they're opaque, engine-
+  specific identifiers — there's no way to know them without querying that
+  real device) rather than guessing further presets blind.
+
+**Follow-up same day**: the user shared their own reference `TextToSpeech`
+snippet for comparison. Two real, worthwhile differences adopted from it,
+one deliberate difference kept:
+- **Adopted — explicitly request Google's TTS engine.** The previous
+  version trusted whatever TTS engine the device had configured as
+  default; some vendors ship their own engine with few or no voices, or
+  none with gender-labeled names, silently making `selectDeepMaleVoice`
+  find nothing to select — likely the actual reason the first pass read as
+  unchanged. New `GOOGLE_TTS_ENGINE_PACKAGE = "com.google.android.tts"`
+  constant, requested via `TextToSpeech`'s 3-arg constructor. Unlike the
+  shared snippet (which had no fallback), `initializeTts(preferGoogleEngine: Boolean)`
+  retries once with the device's own default engine if Google's isn't
+  installed and its init callback reports a non-SUCCESS status — same
+  "never crash on missing audio hardware/engines, degrade gracefully"
+  posture as the rest of this class, now applied to engine selection too.
+- **Adopted — `Locale.getDefault()` -> `Locale.US`.** This app has no
+  localization system at all (English-only content, one `values/strings.xml`),
+  so narration should always use an English voice/pronunciation regardless
+  of device region — using the device's default locale was a latent
+  mismatch (predating this whole narration-tuning pass) that would mispronounce
+  English text in a non-English voice/accent on a device set to another
+  region. Applied both to `engine.language` and `selectDeepMaleVoice`'s
+  locale filter.
+- **Kept different, deliberately — voice selection still runs *before*
+  pitch/rate, not after.** The shared snippet set pitch first, then applied
+  the voice. `setVoice(...)` can itself reset pitch/rate back to that
+  voice's own defaults on some engines, so setting pitch before selecting
+  the voice risks the voice swap silently undoing it — voice-then-pitch
+  guarantees the pitch/rate tuning is the last word regardless of engine
+  behavior.
+- Same as always: not unit-testable (real device/engine-dependent), `./gradlew build` still green, installed to the user's device to verify.
+
 ### Chapters 5a–5e — The Esther arc (5 short chapters, replacing the original single Esther chapter)
 Your daughter found the original single-chapter "Esther's Rescue of Her
 People" (one thin banquet-timing puzzle) too easy. Rebuilt from scratch as
