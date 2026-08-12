@@ -1,4 +1,4 @@
-package com.bibleadventures.ui.screens.jericho.settingupcamp
+package com.bibleadventures.ui.screens.jesuscalmsstorm.loadingtheboat
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -53,61 +54,51 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
-import com.bibleadventures.game.stories.JerichoContent
+import com.bibleadventures.game.stories.JesusCalmsStormContent
 import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.screens.jericho.JerichoViewModel
+import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private val STONE_SIZE = 64.dp
+private val ITEM_SIZE = 64.dp
 private val SNAP_RADIUS = 72.dp
 private val STACK_LEVEL_RISE = 20.dp
-private val DROP_ZONE_WIDTH = 160.dp
-private val DROP_ZONE_HEIGHT = 200.dp
 
 /**
- * Twelve memorial stones (Joshua 4:1-9), each randomly assigned a distinct
- * number 1-99 fresh every playthrough, dragged one at a time onto a growing
- * monument **in ascending order** — [com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState.nextExpectedId]
- * enforces which stone is next; dragging the wrong one onto the drop zone
- * just re-prompts (no progress lost, matches this app's no-failure-state
- * rule), only the correct next stone animates into the stack. The tray's
- * on-screen order is a separate, fixed shuffle (`JerichoViewModel`'s
- * `campTrayOrder`) — deliberately independent of the required placement
- * order, so the tray layout itself never gives away the answer. A drop
- * within [SNAP_RADIUS] of the monument is the forgiving target (no
- * punishing precision); a miss (or a correct-but-out-of-radius stone)
- * resets instantly. Reuses the drag idiom already proven twice in this app
- * (`NoahsArkOrganizeArkScreen`, `DavidGoliathSlingPracticeScreen`) —
- * `detectDragGestures` + `Modifier.offset` + `boundsInRoot()` hit-testing
- * — with an [Animatable]-driven snap animation once a drop is confirmed
- * both close enough *and* the correct next stone.
- *
- * A real bug found on-device during verification, worth flagging since it's
- * an easy trap for the next real-drag screen: keying the gesture detector
- * only on `pointerInput(stoneId)` captured the drop zone's center in a
- * closure at first launch and never saw it update once the drop zone's
- * real position was measured (the gesture-detector coroutine only
- * relaunches when its keys change, and `stoneId` never does) — every drop
- * silently measured its distance against `Offset.Zero`. Fixed by keying
- * `pointerInput` on the drop zone center too, so the detector relaunches
- * (and recaptures the fresh value) once the real position is known.
+ * Six items loaded aboard before departure (Mark 4:36), each assigned a
+ * random distinct weight 1-99 fresh every playthrough, dragged one at a
+ * time onto a growing pile **heaviest first** —
+ * [com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState.nextExpectedId]
+ * enforces which item is next; dragging the wrong one onto the boat just
+ * re-prompts (no progress lost). The tray's on-screen order is a separate,
+ * fixed shuffle ([JesusCalmsStormViewModel]'s `boatTrayOrder`),
+ * deliberately independent of the required placement order, so the tray
+ * layout itself never gives away the answer. Reuses the exact drag/snap
+ * idiom already proven by `JerichoSettingUpCampScreen` — `detectDragGestures`
+ * + `Modifier.offset` + `boundsInRoot()` hit-testing, with an [Animatable]
+ * -driven snap once a drop is confirmed both close enough *and* the
+ * correct next item — reskinned here with 6 distinct item icons instead of
+ * one repeated stone image, since unlike Jericho's interchangeable stones
+ * each boat item looks different. Each item's weight is shown as a visible
+ * number badge on its icon (same role as Jericho's stones printing their
+ * own number directly) — the icon alone can't tell a child which item is
+ * heaviest, so the number is the actual thing being compared.
  */
 @Composable
-fun JerichoSettingUpCampScreen(
-    viewModel: JerichoViewModel,
+fun JesusCalmsStormLoadingTheBoatScreen(
+    viewModel: JesusCalmsStormViewModel,
     onContinue: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    JerichoSettingUpCampContent(
-        campState = uiState.campState,
-        stoneValues = uiState.campStoneValues,
-        trayOrder = uiState.campTrayOrder,
-        onStonePlaced = viewModel::onCampStonePlaced,
+    JesusCalmsStormLoadingTheBoatContent(
+        loadingState = uiState.loadingState,
+        itemWeights = uiState.boatItemWeights,
+        trayOrder = uiState.boatTrayOrder,
+        onItemPlaced = viewModel::onBoatItemPlaced,
         onContinue = onContinue,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
@@ -115,34 +106,19 @@ fun JerichoSettingUpCampScreen(
 }
 
 @Composable
-private fun JerichoSettingUpCampContent(
-    campState: StackBuildGameState,
-    stoneValues: Map<String, Int>,
+private fun JesusCalmsStormLoadingTheBoatContent(
+    loadingState: StackBuildGameState,
+    itemWeights: Map<String, Int>,
     trayOrder: List<String>,
-    onStonePlaced: (String) -> Unit,
+    onItemPlaced: (String) -> Unit,
     onContinue: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     var dropZoneCenter by remember { mutableStateOf(Offset.Zero) }
     val snapRadiusPx = with(LocalDensity.current) { SNAP_RADIUS.toPx() }
-    val dropZoneDescription = stringResource(R.string.jericho_camp_dropzone_content_description)
-    val remainingStoneIds = trayOrder.filter { it in campState.remainingIds }
-
-    // All 12 stones stacking at the full STACK_LEVEL_RISE would need
-    // 64dp + 20dp*11 = 284dp of height — more than DROP_ZONE_HEIGHT, so the
-    // last several stones were rendering above the frame's top edge,
-    // clipped invisible by the Box's own .clip(). Shrinks the per-level
-    // rise just enough that the full stack always fits inside the frame,
-    // regardless of how many stones campState.itemIds ends up holding —
-    // self-adjusting rather than a magic number tied to today's count of
-    // 12, so this can't silently re-break if that count ever changes.
-    val stoneCount = campState.itemIds.size
-    val stackLevelRise = if (stoneCount > 1) {
-        ((DROP_ZONE_HEIGHT - STONE_SIZE) / (stoneCount - 1)).coerceAtMost(STACK_LEVEL_RISE)
-    } else {
-        STACK_LEVEL_RISE
-    }
+    val dropZoneDescription = stringResource(R.string.jesus_calms_storm_loading_dropzone_content_description)
+    val remainingItemIds = trayOrder.filter { it in loadingState.remainingIds }
 
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Column(
@@ -153,21 +129,21 @@ private fun JerichoSettingUpCampContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = stringResource(R.string.jericho_camp_title),
+                text = stringResource(R.string.jesus_calms_storm_loading_title),
                 style = MaterialTheme.typography.headlineMedium,
             )
             Text(
-                text = stringResource(R.string.jericho_camp_instructions),
+                text = stringResource(R.string.jesus_calms_storm_loading_instructions),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 8.dp),
             )
             Text(
-                text = stringResource(R.string.jericho_camp_progress_label, campState.placedOrder.size, campState.itemIds.size),
+                text = stringResource(R.string.jesus_calms_storm_loading_progress_label, loadingState.placedOrder.size, loadingState.itemIds.size),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
             )
 
-            val feedback = when (campState.lastOutcome) {
+            val feedback = when (loadingState.lastOutcome) {
                 StackBuildOutcome.PLACED, StackBuildOutcome.COMPLETE -> stringResource(R.string.feedback_great_job)
                 StackBuildOutcome.WRONG_ORDER -> stringResource(R.string.feedback_try_another_one)
                 StackBuildOutcome.NONE -> ""
@@ -178,8 +154,8 @@ private fun JerichoSettingUpCampContent(
 
             Box(
                 modifier = Modifier
-                    .width(DROP_ZONE_WIDTH)
-                    .height(DROP_ZONE_HEIGHT)
+                    .width(180.dp)
+                    .height(200.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
@@ -187,14 +163,17 @@ private fun JerichoSettingUpCampContent(
                     .semantics { contentDescription = dropZoneDescription },
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                campState.placedOrder.forEachIndexed { level, stoneId ->
-                    key(stoneId) {
-                        StoneTile(
-                            value = stoneValues.getValue(stoneId),
+                loadingState.placedOrder.forEachIndexed { level, itemId ->
+                    key(itemId) {
+                        Box(
                             modifier = Modifier
-                                .size(STONE_SIZE)
-                                .offset(y = -(stackLevelRise * level)),
-                        )
+                                .size(ITEM_SIZE)
+                                .offset(y = -(STACK_LEVEL_RISE * level)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(painter = painterResource(itemIconRes(itemId)), contentDescription = null, modifier = Modifier.fillMaxSize())
+                            WeightBadge(weight = itemWeights.getValue(itemId), modifier = Modifier.align(Alignment.TopEnd))
+                        }
                     }
                 }
             }
@@ -203,20 +182,20 @@ private fun JerichoSettingUpCampContent(
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                remainingStoneIds.chunked(4).forEach { row ->
+                remainingItemIds.chunked(3).forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     ) {
-                        row.forEach { stoneId ->
-                            key(stoneId) {
-                                DraggableStone(
-                                    stoneId = stoneId,
-                                    value = stoneValues.getValue(stoneId),
-                                    isNextExpected = stoneId == campState.nextExpectedId,
+                        row.forEach { itemId ->
+                            key(itemId) {
+                                DraggableBoatItem(
+                                    itemId = itemId,
+                                    weight = itemWeights.getValue(itemId),
+                                    isNextExpected = itemId == loadingState.nextExpectedId,
                                     dropZoneCenter = dropZoneCenter,
                                     snapRadiusPx = snapRadiusPx,
-                                    onSnapped = onStonePlaced,
+                                    onSnapped = onItemPlaced,
                                 )
                             }
                         }
@@ -224,7 +203,7 @@ private fun JerichoSettingUpCampContent(
                 }
             }
 
-            if (previouslyCompleted && !campState.isComplete) {
+            if (previouslyCompleted && !loadingState.isComplete) {
                 Text(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
@@ -232,7 +211,7 @@ private fun JerichoSettingUpCampContent(
                 )
             }
 
-            if (campState.isComplete || previouslyCompleted) {
+            if (loadingState.isComplete || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,
@@ -244,9 +223,9 @@ private fun JerichoSettingUpCampContent(
 }
 
 @Composable
-private fun DraggableStone(
-    stoneId: String,
-    value: Int,
+private fun DraggableBoatItem(
+    itemId: String,
+    weight: Int,
     isNextExpected: Boolean,
     dropZoneCenter: Offset,
     snapRadiusPx: Float,
@@ -257,7 +236,7 @@ private fun DraggableStone(
     val scaleAnim = remember { Animatable(1f) }
     var baseTopLeft by remember { mutableStateOf(Offset.Zero) }
     var itemSize by remember { mutableStateOf(IntSize.Zero) }
-    val name = stringResource(R.string.jericho_camp_stone_content_description, value)
+    val name = stringResource(R.string.jesus_calms_storm_loading_item_content_description, stringResource(itemNameRes(itemId)), weight)
     val scope = rememberCoroutineScope()
 
     Box(
@@ -269,8 +248,8 @@ private fun DraggableStone(
             .offset {
                 IntOffset((dragOffset.x + snapOffset.value.x).roundToInt(), (dragOffset.y + snapOffset.value.y).roundToInt())
             }
-            .size(STONE_SIZE)
-            .pointerInput(stoneId, isNextExpected, dropZoneCenter) {
+            .size(ITEM_SIZE)
+            .pointerInput(itemId, isNextExpected, dropZoneCenter) {
                 detectDragGestures(
                     onDragEnd = {
                         val releasedCenter = baseTopLeft + dragOffset + Offset(itemSize.width / 2f, itemSize.height / 2f)
@@ -279,7 +258,7 @@ private fun DraggableStone(
                             val target = dropZoneCenter - releasedCenter
                             scope.launch {
                                 snapOffset.animateTo(target, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
-                                onSnapped(stoneId)
+                                onSnapped(itemId)
                             }
                             scope.launch {
                                 scaleAnim.animateTo(1.15f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
@@ -287,11 +266,10 @@ private fun DraggableStone(
                             }
                         } else {
                             // Either outside the snap radius, or the right spot but the wrong
-                            // stone — either way, reset instantly, no penalty. A same-radius
+                            // item — either way, reset instantly, no penalty. A same-radius
                             // wrong-order drop still notifies the ViewModel so feedback text
-                            // updates (see `onSnapped`'s WRONG_ORDER handling), just without
-                            // the accept animation.
-                            if (distance <= snapRadiusPx) onSnapped(stoneId)
+                            // updates, just without the accept animation.
+                            if (distance <= snapRadiusPx) onSnapped(itemId)
                             dragOffset = Offset.Zero
                         }
                     },
@@ -306,32 +284,66 @@ private fun DraggableStone(
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            painter = painterResource(R.drawable.ic_stone_smooth),
+            painter = painterResource(itemIconRes(itemId)),
             contentDescription = null,
             modifier = Modifier.size(56.dp).scale(scaleAnim.value),
         )
-        Text(text = value.toString(), style = MaterialTheme.typography.titleMedium)
+        WeightBadge(weight = weight, modifier = Modifier.align(Alignment.TopEnd))
     }
 }
 
+/**
+ * A small always-visible number badge — the actual thing a child compares
+ * to decide what's heaviest, since the icon alone can't communicate weight.
+ * Placed at the corner so it never obscures the item's own icon.
+ */
 @Composable
-private fun StoneTile(value: Int, modifier: Modifier = Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Image(painter = painterResource(R.drawable.ic_stone_smooth), contentDescription = null, modifier = Modifier.fillMaxSize())
-        Text(text = value.toString(), style = MaterialTheme.typography.titleMedium)
+private fun WeightBadge(weight: Int, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary)
+            .size(22.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = weight.toString(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimary,
+        )
     }
+}
+
+private fun itemIconRes(itemId: String): Int = when (itemId) {
+    "anchor" -> R.drawable.ic_anchor
+    "water_jars" -> R.drawable.ic_water_jars
+    "fishing_nets" -> R.drawable.ic_fishing_nets
+    "food_basket" -> R.drawable.ic_leftover_basket
+    "oars" -> R.drawable.ic_oars
+    "cushion" -> R.drawable.ic_cushion
+    else -> R.drawable.ic_anchor
+}
+
+private fun itemNameRes(itemId: String): Int = when (itemId) {
+    "anchor" -> R.string.jesus_calms_storm_loading_item_anchor
+    "water_jars" -> R.string.jesus_calms_storm_loading_item_water_jars
+    "fishing_nets" -> R.string.jesus_calms_storm_loading_item_fishing_nets
+    "food_basket" -> R.string.jesus_calms_storm_loading_item_food_basket
+    "oars" -> R.string.jesus_calms_storm_loading_item_oars
+    "cushion" -> R.string.jesus_calms_storm_loading_item_cushion
+    else -> R.string.jesus_calms_storm_loading_item_anchor
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun JerichoSettingUpCampPreview() {
-    val previewValues = JerichoContent.campStoneIds.zip((1..99).shuffled().take(JerichoContent.campStoneIds.size)).toMap()
+private fun JesusCalmsStormLoadingTheBoatPreview() {
+    val previewWeights = JesusCalmsStormContent.boatItemIds.zip((1..99).shuffled().take(JesusCalmsStormContent.boatItemIds.size)).toMap()
     BibleAdventuresTheme {
-        JerichoSettingUpCampContent(
-            campState = StackBuildGameState(itemIds = previewValues.entries.sortedBy { it.value }.map { it.key }),
-            stoneValues = previewValues,
-            trayOrder = JerichoContent.campStoneIds,
-            onStonePlaced = {},
+        JesusCalmsStormLoadingTheBoatContent(
+            loadingState = StackBuildGameState(itemIds = previewWeights.entries.sortedByDescending { it.value }.map { it.key }),
+            itemWeights = previewWeights,
+            trayOrder = JesusCalmsStormContent.boatItemIds,
+            onItemPlaced = {},
             onContinue = {},
         )
     }

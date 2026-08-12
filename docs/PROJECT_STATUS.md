@@ -56,16 +56,16 @@ Settings also complete)
 
 ## Current milestone
 
-**Chapter 7 — Feeding the 5,000: COMPLETE.** A user-supplied blueprint for
-this chapter proposed weaker mechanics than this codebase now builds (a
-"tap the basket to multiply" clicker, and a "patience timer" that would
-have been this app's first real failure state) — rejected and rebuilt with
-6 real mini-puzzles instead: Gathering the Crowd, Searching for Food, The
-Boy's Gift, The Miracle Multiplication, Serving the Crowd, and Gathering
-the Leftovers. See "Chapter 7 — Feeding the 5,000" further down. Chain is
-unchanged: Noah's Ark → David & Goliath → Good Samaritan → Daniel →
-Esther's Rescue of Her People → Jericho → Feeding the 5,000 → Jesus Calms
-the Storm (the last chapter, still gameplay-free — see Next tasks).
+**Chapter 8 — Jesus Calms the Storm: COMPLETE.** The last chapter in the
+chain now has real gameplay — 4 mini-puzzles (Loading the Boat, Bailing
+the Boat, Reaching Jesus, Peace Be Still), built entirely from existing
+`game/puzzles` engines with **zero new engines**, per an explicit
+"no easy puzzle" request from the user rejecting their own draft plan's
+weaker custom-built mechanics. See "Chapter 8 — Jesus Calms the Storm"
+further down. Full chain, all now with real gameplay: Noah's Ark → David &
+Goliath → Good Samaritan → Daniel → Esther's Rescue of Her People →
+Jericho → Feeding the 5,000 → Jesus Calms the Storm. No chapter-content
+gaps remain — see Next tasks for what's left (Milestone 6, Parent Area).
 
 ## Completed features
 
@@ -2168,6 +2168,23 @@ Two follow-up requests on the drag-and-stack puzzle, same day.
   the ascending-order rework is exactly the kind of real-time drag-gesture
   change this project always double-checks on a physical device.
 
+**Follow-up fix (user playtest report): stacked stones overflowing the
+frame.** With 12 stones at the fixed `STACK_LEVEL_RISE = 20.dp`, the full
+stack needs `64dp + 20dp*11 = 284dp` of height, but the drop-zone `Box`
+was only `.height(200.dp)` — the upper stones rendered above the frame's
+top edge and were clipped invisible by the Box's own `.clip()`. Fixed with
+a self-adjusting per-level rise instead of a new magic number:
+`stackLevelRise = ((DROP_ZONE_HEIGHT - STONE_SIZE) / (stoneCount - 1)).coerceAtMost(STACK_LEVEL_RISE)`,
+computed from the actual `campState.itemIds.size` — the full stack always
+fits inside the frame regardless of how many stones this puzzle ever ends
+up holding, rather than re-breaking silently if that count changes again.
+Extracted `DROP_ZONE_WIDTH`/`DROP_ZONE_HEIGHT` as named constants (used by
+both the Box's size modifier and the new rise calculation) instead of
+duplicating the `160.dp`/`200.dp` literals. Only the visual rise changed —
+`SNAP_RADIUS` and the drop zone's hit-test geometry are untouched, so no
+risk to the existing drag-and-snap solvers in `JerichoFlowTest`,
+`Feeding5000FlowTest`, or `JesusCalmsStormFlowTest`.
+
 ### Chapter 7 — Feeding the 5,000
 
 The seventh full chapter, unlocked automatically once The Battle of Jericho
@@ -2520,14 +2537,114 @@ controls.
   device hiccup rather than a real bug, since two immediate re-runs both
   passed cleanly with no code changes in between).
 
+### Chapter 8 — Jesus Calms the Storm
+
+The eighth and **last** chapter in the chain (Mark 4:35-41), unlocked
+automatically once Feeding the 5,000 is completed. `ChapterId.JESUS_CALMS_STORM`
+and its `ChapterCatalog` entry already existed as a gameplay-free
+placeholder; this milestone wired up real gameplay behind it. The user
+gave their own draft plan (a custom `PointerInputScope` drag system, a raw
+game-loop `LaunchedEffect` timer, direct `SoundPool` calls, hand-rolled
+`Canvas` rendering) and asked for something *better* — rejected in favor of
+building the whole chapter out of this app's existing `game/puzzles`
+engines exclusively, with an explicit, unusual constraint: **no easy
+puzzle**. All 4 real mini-puzzles below are pulled from this app's
+moderate-to-hardest engine tier (`stackbuild`, `rhythmlane` x2,
+`gridmaze`) — **zero new puzzle engines**, the first chapter in this app
+to ship entirely on existing engines with no new one required. Scene flow:
+Intro → Setting Out context → **Loading the Boat** → A Furious Squall
+context → **Bailing the Boat** → Choice → Where Is Jesus? context →
+**Reaching Jesus** → Quiet! Be Still! context → **Peace, Be Still** →
+Lesson → Reward.
+
+- **Loading the Boat** reuses `stackbuild` unchanged — 6 boat items
+  (anchor, water jars, fishing nets, food basket, oars, Jesus's cushion —
+  a deliberate callback, since he sleeps on it two scenes later), each
+  assigned a random distinct weight 1-99 fresh every playthrough, dragged
+  onto the boat **heaviest first** (`itemIds` built by sorting
+  `descending` by weight — the exact inverse of Jericho's ascending memorial
+  stones, same engine, same drag/snap idiom from `JerichoSettingUpCampScreen`,
+  reskinned with 6 distinct item icons instead of one repeated stone image).
+- **Bailing the Boat** reuses `rhythmlane`'s catch semantics
+  (`onLaneTapped`) exactly as Gathering the Leftovers does — a disciple
+  (the player's own `CharacterPreview`) steered between 3 lanes to be
+  wherever the water's pouring in before it lands. Its chart is
+  deliberately the densest in the app: 5 notes per loop (every prior
+  3-lane chart has 3), spaced 600ms apart, `requiredHits = 15` — higher
+  than Feeding the 5,000's Catching (12), the hardest sustained
+  rhythm-lane challenge shipped so far.
+- **Reaching Jesus** reuses `gridmaze`'s GOAL-only mode (no
+  collectible/checkpoint) exactly as Daniel's Darius maze does, but the
+  map itself is a **genuine perfect maze** — generated via randomized
+  spanning-tree backtracking (a small Python script, not hand-guessed) and
+  verified by BFS, giving real dead-end branches and a single forced
+  30-move solution, longer than Daniel's 28. First hand-authored maze in
+  this app built via an algorithm instead of by eye, specifically so its
+  difficulty could be deliberately tuned past the existing bar rather than
+  approximated.
+- **Peace, Be Still** is the climax: `rhythmlane`'s tap semantics
+  (`onLaneTapped`) again, but reskinned as 3 **static, always-visible word
+  buttons** (PEACE/BE/STILL) instead of a steered object — the first
+  `rhythmlane` use in the app where the player must recognize *which word*
+  is live, not just track a spatial position, which is what makes it hard
+  despite only needing 3 hits (said once, matching the miracle's
+  instant, one-time nature — the engine's `HIT_WINDOW_MS`/`PERFECT_WINDOW_MS`
+  are fixed constants, not per-chart tunable, so this cognitive
+  differentiation is what actually raises the difficulty, not tighter
+  timing windows). The storm background recedes across 3 stages tied
+  directly to `hits` via a plain `Color.lerp`, not a hand-rolled `Canvas`
+  sweep — the "climax visual payoff" from the user's own draft, achieved
+  with existing Compose primitives instead of new rendering machinery.
+- Reward: badge `UNSHAKEN_FAITH` ("Unshaken Faith"), scripture card
+  `MARK_4_39` (WEB translation, matching this app's established
+  free-redistribution rule for Bible text).
+- New content file `JesusCalmsStormContent.kt`, ViewModel, 4 puzzle
+  screens + 4 narrative screens, all following the exact same
+  graph-scoped-ViewModel/`Destination`/`AppViewModelProvider` wiring
+  pattern as every prior chapter — no structural deviation.
+- Tests: `JesusCalmsStormViewModelTest.kt` (initial-state, each puzzle
+  handler, scene tracking, idempotent `onChapterFinished`) and a new
+  `JesusCalmsStormFlowTest.kt` — since this is the **last** chapter, no
+  other flow test needs to complete it as a prerequisite (a first for this
+  session's chapter work, every prior chapter added prerequisite burden to
+  several existing flow-test files; this one only adds itself). Its own
+  prerequisite chain now covers all 7 prior chapters, including a new
+  `completeFeeding5000()` helper mirroring `Feeding5000FlowTest`'s own
+  `@Test` body. Passed on-device individually, then twice back-to-back
+  (two real-time `rhythmlane` mechanics in this chapter), then the full
+  21-class instrumented suite (20/21 passed — the sole failure was the
+  pre-existing, already-documented `WorldMapNavigationTest` ordering
+  flakiness, confirmed unrelated).
+- **Post-ship fixes** (user playtest feedback):
+  - *Loading the Boat*: item weight was only in the (invisible)
+    accessibility content description, never shown to sighted players.
+    Fixed by adding a visible numbered `WeightBadge` to each item icon,
+    matching the "print the number on the tile" convention already
+    established by Jericho's stones.
+  - *Peace, Be Still*: `RhythmLaneGame.onLaneTapped` judges each lane
+    independently by its own timing window, so it doesn't know or care
+    about cross-lane order — a player could tap BE or STILL out of turn
+    whenever that word's window happened to be near, undercutting the
+    "say Jesus's actual words in order" intent. Fixed at the ViewModel
+    layer, not the shared engine (which several other chapters rely on
+    for order-independent lanes): `onPeaceBeStillWordTapped` only forwards
+    a tap to the engine when its lane matches
+    `chart.notes[hits].lane` — since `peaceBeStillChart`'s notes are
+    already listed PEACE/BE/STILL in that order, the current hit count
+    directly indexes the next required word. The screen mirrors this by
+    only glowing the expected word, so a mid-window BE or STILL no longer
+    visibly invites a tap it wouldn't honor. A wrong-lane tap remains a
+    pure no-op, consistent with every other engine's "never punish, just
+    don't advance" rule.
+
 ## Next tasks
 
-The natural next step per the current order is **Milestone 6 — Parent
-Area**: a parental gate, progress summary, and reset-progress functionality
-(spec section 17) — the audio/narration toggles portion of Settings is
-already built (see "Audio, Narration & Settings" above). The one remaining
-content gap is **Chapter 8 — Jesus Calms the Storm**, the last chapter in
-`ChapterCatalog`'s chain, still gameplay-free.
+All 8 chapters in `ChapterCatalog`'s chain now have real gameplay — Jesus
+Calms the Storm (the last chapter) shipped this session. The natural next
+step is **Milestone 6 — Parent Area**: a parental gate, progress summary,
+and reset-progress functionality (spec section 17) — the audio/narration
+toggles portion of Settings is already built (see "Audio, Narration &
+Settings" above). No further chapter-content gaps remain.
 
 ## Architectural decisions log
 
@@ -2833,3 +2950,30 @@ content gap is **Chapter 8 — Jesus Calms the Storm**, the last chapter in
   should freeze-first the same way — the completion-based `LaunchedEffect`
   key is necessary for a *self-completing* mechanic, but not sufficient on
   its own for one that isn't.
+- **A whole chapter can ship on zero new puzzle engines, if the request is
+  actually checked against all 14 existing ones first.** Jesus Calms the
+  Storm's 4 mini-puzzles all reuse `stackbuild`/`rhythmlane`/`gridmaze`
+  content-only (one of them, Bailing the Boat, is `rhythmlane`'s *seventh*
+  consumer). This confirms the standing rule ("no shared engine abstraction
+  built ahead of a second chapter actually needing one") scales past a
+  single reuse: an engine reused seven times at seven different visual/
+  narrative skins is still not a signal to generalize further or extract a
+  framework — it's the rule working as intended. The "no easy puzzle"
+  constraint was met entirely through *content* tuning (denser charts,
+  higher `requiredHits`, a harder-than-usual maze, a cognitively different
+  reskin of an existing mechanic), never an engine change — worth
+  remembering next time a request sounds like it needs new engineering
+  when it's actually a content/tuning problem.
+- **A hand-authored maze doesn't have to be hand-guessed.** Every prior
+  maze in this app (Good Samaritan's, Daniel's Darius maze, Feeding the
+  5,000's Serving the Crowd) was designed by eye and verified after the
+  fact by BFS. Jesus Calms the Storm's Reaching Jesus maze inverted that:
+  generated via a small offline Python script (randomized spanning-tree
+  backtracking over a grid of junctions, producing a genuine "perfect
+  maze" with exactly one route between any two cells — real dead-end
+  branches guaranteed by construction, not by luck), then the BFS-verified
+  shortest/only path was copied in as `reachingJesusSolutionPath`. This
+  reliably produced a harder, longer-solution maze (30 moves vs. Daniel's
+  28) on the first attempt, instead of iterating by hand toward a target
+  difficulty. Worth reaching for again whenever a maze's difficulty is the
+  actual design goal, not just its theme.

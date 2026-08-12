@@ -21,6 +21,7 @@ import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.JerichoContent
+import com.bibleadventures.game.stories.JesusCalmsStormContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.StoryBeatScreen
@@ -81,6 +82,15 @@ import com.bibleadventures.ui.screens.jericho.settingupcamp.JerichoSettingUpCamp
 import com.bibleadventures.ui.screens.jericho.shout.JerichoShoutScreen
 import com.bibleadventures.ui.screens.jericho.sixdaymarch.JerichoSixDayMarchScreen
 import com.bibleadventures.ui.screens.jericho.spiesescape.JerichoSpiesEscapeScreen
+import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormChoiceScreen
+import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormIntroScreen
+import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormLessonScreen
+import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormRewardScreen
+import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
+import com.bibleadventures.ui.screens.jesuscalmsstorm.bailingtheboat.JesusCalmsStormBailingTheBoatScreen
+import com.bibleadventures.ui.screens.jesuscalmsstorm.loadingtheboat.JesusCalmsStormLoadingTheBoatScreen
+import com.bibleadventures.ui.screens.jesuscalmsstorm.peacebestill.JesusCalmsStormPeaceBeStillScreen
+import com.bibleadventures.ui.screens.jesuscalmsstorm.reachingjesus.JesusCalmsStormReachingJesusScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.noahsark.findanimals.NoahsArkFindAnimalsScreen
@@ -148,6 +158,8 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                         navController.navigate(Destination.Jericho.Intro.route)
                     } else if (chapterId == ChapterId.FEEDING_5000) {
                         navController.navigate(Destination.Feeding5000.Intro.route)
+                    } else if (chapterId == ChapterId.JESUS_CALMS_STORM) {
+                        navController.navigate(Destination.JesusCalmsStorm.Intro.route)
                     }
                 },
             )
@@ -165,6 +177,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         estherGraph(navController)
         jerichoGraph(navController)
         feeding5000Graph(navController)
+        jesusCalmsStormGraph(navController)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
                 backStackEntry.arguments?.getString(Destination.ComingSoon.ARG_FEATURE_TITLE).orEmpty()
@@ -1100,6 +1113,138 @@ private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
             )
         }
     }
+}
+
+private fun NavGraphBuilder.jesusCalmsStormGraph(navController: NavHostController) {
+    navigation(
+        startDestination = Destination.JesusCalmsStorm.Intro.route,
+        route = Destination.JesusCalmsStorm.GRAPH_ROUTE,
+    ) {
+        composable(Destination.JesusCalmsStorm.Intro.route) { entry ->
+            val viewModel = navController.jesusCalmsStormViewModel(entry)
+            JesusCalmsStormIntroScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.JesusCalmsStorm.LoadingContext.route)
+                },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.LoadingContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jesus_calms_storm_loading_context_title,
+                lineRes = JesusCalmsStormContent.loadingContextLines,
+                onContinue = { navController.navigate(Destination.JesusCalmsStorm.LoadingTheBoat.route) },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.LoadingTheBoat.route) { entry ->
+            val viewModel = navController.jesusCalmsStormViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JesusCalmsStormLoadingTheBoatScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "loading_the_boat" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("loading_the_boat")
+                    navController.navigate(Destination.JesusCalmsStorm.StormContext.route)
+                },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.StormContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jesus_calms_storm_storm_context_title,
+                lineRes = JesusCalmsStormContent.stormContextLines,
+                onContinue = { navController.navigate(Destination.JesusCalmsStorm.BailingTheBoat.route) },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.BailingTheBoat.route) { entry ->
+            val viewModel = navController.jesusCalmsStormViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JesusCalmsStormBailingTheBoatScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "bailing_the_boat" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("bailing_the_boat")
+                    navController.navigate(Destination.JesusCalmsStorm.Choice.route)
+                },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.Choice.route) { entry ->
+            val viewModel = navController.jesusCalmsStormViewModel(entry)
+            JesusCalmsStormChoiceScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("choice")
+                    navController.navigate(Destination.JesusCalmsStorm.FindJesusContext.route)
+                },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.FindJesusContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jesus_calms_storm_findjesus_context_title,
+                lineRes = JesusCalmsStormContent.findJesusContextLines,
+                onContinue = { navController.navigate(Destination.JesusCalmsStorm.ReachingJesus.route) },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.ReachingJesus.route) { entry ->
+            val viewModel = navController.jesusCalmsStormViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JesusCalmsStormReachingJesusScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "reaching_jesus" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("reaching_jesus")
+                    navController.navigate(Destination.JesusCalmsStorm.CalmContext.route)
+                },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.CalmContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.jesus_calms_storm_calm_context_title,
+                lineRes = JesusCalmsStormContent.calmContextLines,
+                onContinue = { navController.navigate(Destination.JesusCalmsStorm.PeaceBeStill.route) },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.PeaceBeStill.route) { entry ->
+            val viewModel = navController.jesusCalmsStormViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            JesusCalmsStormPeaceBeStillScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "peace_be_still" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("peace_be_still")
+                    navController.navigate(Destination.JesusCalmsStorm.Lesson.route)
+                },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.Lesson.route) { entry ->
+            val viewModel = navController.jesusCalmsStormViewModel(entry)
+            JesusCalmsStormLessonScreen(
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson")
+                    navController.navigate(Destination.JesusCalmsStorm.Reward.route)
+                },
+            )
+        }
+        composable(Destination.JesusCalmsStorm.Reward.route) { entry ->
+            JesusCalmsStormRewardScreen(
+                viewModel = navController.jesusCalmsStormViewModel(entry),
+                onReturnToMap = {
+                    // Clears the whole Jesus Calms the Storm back stack so Back from the map
+                    // can't re-enter a finished run or re-trigger onChapterFinished().
+                    navController.navigate(Destination.WorldMap.route) {
+                        popUpTo(Destination.WorldMap.route)
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavHostController.jesusCalmsStormViewModel(entry: NavBackStackEntry): JesusCalmsStormViewModel {
+    val parentEntry = remember(entry) { getBackStackEntry(Destination.JesusCalmsStorm.GRAPH_ROUTE) }
+    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 
 @Composable

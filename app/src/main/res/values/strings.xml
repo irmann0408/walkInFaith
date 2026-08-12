@@ -656,6 +656,78 @@
     <string name="feeding_5000_lesson_title">A Little Becomes Enough</string>
     <string name="feeding_5000_lesson_text">The boy didn\'t have much — just a small lunch. But he gave it anyway, and Jesus made it more than enough for thousands. When we share what we have, even if it seems small, God can do more with it than we ever could alone.</string>
 
+    <string name="jesus_calms_storm_intro_line_1">As evening came, Jesus said to his disciples, \'Let us go over to the other side of the lake.\'</string>
+    <string name="jesus_calms_storm_intro_line_2">Leaving the crowd behind, they took him along, just as he was, in the boat.</string>
+
+    <string name="jesus_calms_storm_loading_context_title">Setting Out</string>
+    <string name="jesus_calms_storm_loading_context_line_1">Before they could sail, the boat had to be loaded and ready.</string>
+    <string name="jesus_calms_storm_loading_context_line_2">Help load the heaviest things first, so the boat stays steady on the water.</string>
+
+    <string name="jesus_calms_storm_loading_title">Loading the Boat</string>
+    <string name="jesus_calms_storm_loading_instructions">Drag each item onto the boat, heaviest first, so it stays balanced.</string>
+    <string name="jesus_calms_storm_loading_progress_label">%1$d of %2$d items loaded</string>
+    <string name="jesus_calms_storm_loading_dropzone_content_description">Place the item in the boat</string>
+    <string name="jesus_calms_storm_loading_item_content_description">%1$s, weight %2$d</string>
+    <string name="jesus_calms_storm_loading_item_anchor">Anchor</string>
+    <string name="jesus_calms_storm_loading_item_water_jars">Water Jars</string>
+    <string name="jesus_calms_storm_loading_item_fishing_nets">Fishing Nets</string>
+    <string name="jesus_calms_storm_loading_item_food_basket">Food Basket</string>
+    <string name="jesus_calms_storm_loading_item_oars">Oars</string>
+    <string name="jesus_calms_storm_loading_item_cushion">Jesus\'s Cushion</string>
+
+    <string name="jesus_calms_storm_storm_context_title">A Furious Squall</string>
+    <string name="jesus_calms_storm_storm_context_line_1">Jesus was in the stern, sleeping on a cushion.</string>
+    <string name="jesus_calms_storm_storm_context_line_2">A furious squall came up, and the waves broke over the boat, until it was nearly swamped.</string>
+
+    <string name="jesus_calms_storm_bailing_title">Bailing the Boat</string>
+    <string name="jesus_calms_storm_bailing_instructions">Use the arrows to move to wherever the water is pouring in, before it fills the boat.</string>
+    <string name="jesus_calms_storm_bailing_progress_label">Bailed %1$d of %2$d waves</string>
+    <string name="jesus_calms_storm_bailing_character_content_description">Disciple, spot %1$d</string>
+    <string name="jesus_calms_storm_bailing_move_left_content_description">Move left</string>
+    <string name="jesus_calms_storm_bailing_move_right_content_description">Move right</string>
+    <string name="jesus_calms_storm_bailing_wave_content_description">Water pouring in</string>
+
+    <string name="jesus_calms_storm_choice_title">What Would You Do?</string>
+    <string name="jesus_calms_storm_choice_instructions">The storm is fierce and the boat is filling with water. What would you do first?</string>
+    <string name="jesus_calms_storm_choice_option_1">Grab the oars and row harder!</string>
+    <string name="jesus_calms_storm_choice_option_2">Hold onto the mast, tight!</string>
+    <string name="jesus_calms_storm_choice_option_3">Cry out to Jesus for help!</string>
+    <string name="jesus_calms_storm_choice_reaction_1">Rowing hard is brave — but the storm was far too strong for oars alone.</string>
+    <string name="jesus_calms_storm_choice_reaction_2">Holding on tight kept the disciples safe — but the storm still raged on.</string>
+    <string name="jesus_calms_storm_choice_reaction_3">Crying out to Jesus was exactly the right instinct — he was there all along.</string>
+
+    <string name="jesus_calms_storm_findjesus_context_title">Where Is Jesus?</string>
+    <string name="jesus_calms_storm_findjesus_context_line_1">In all the chaos, the disciples couldn\'t understand how Jesus could sleep through it.</string>
+    <string name="jesus_calms_storm_findjesus_context_line_2">Make your way to the stern to wake him: \'Teacher, don\'t you care if we drown?\'</string>
+
+    <string name="jesus_calms_storm_reaching_jesus_title">Reaching Jesus</string>
+    <string name="jesus_calms_storm_reaching_jesus_instructions">Use the arrows to make your way across the storm-tossed deck to Jesus.</string>
+    <string name="jesus_calms_storm_reaching_jesus_player_content_description">You</string>
+    <string name="jesus_calms_storm_reaching_jesus_goal_content_description">Jesus, asleep on a cushion</string>
+    <string name="jesus_calms_storm_reaching_jesus_direction_up">Up</string>
+    <string name="jesus_calms_storm_reaching_jesus_direction_down">Down</string>
+    <string name="jesus_calms_storm_reaching_jesus_direction_left">Left</string>
+    <string name="jesus_calms_storm_reaching_jesus_direction_right">Right</string>
+
+    <string name="jesus_calms_storm_calm_context_title">Quiet! Be Still!</string>
+    <string name="jesus_calms_storm_calm_context_line_1">Jesus got up and rebuked the wind, and said to the waves, \'Quiet! Be still!\'</string>
+    <string name="jesus_calms_storm_calm_context_line_2">Say each word the moment it\'s ready, just as Jesus did.</string>
+
+    <string name="jesus_calms_storm_peace_be_still_title">Peace, Be Still</string>
+    <string name="jesus_calms_storm_peace_be_still_instructions">Tap each word the instant it\'s ready — say it just as Jesus did.</string>
+    <string name="jesus_calms_storm_peace_be_still_progress_label">%1$d of %2$d spoken</string>
+    <string name="jesus_calms_storm_peace_be_still_word_peace">Peace</string>
+    <string name="jesus_calms_storm_peace_be_still_word_be">Be</string>
+    <string name="jesus_calms_storm_peace_be_still_word_still">Still</string>
+
+    <string name="jesus_calms_storm_lesson_title">Why Are You Afraid?</string>
+    <string name="jesus_calms_storm_lesson_text">The wind died down, and it was completely calm. Jesus asked, \'Why are you so afraid? Do you still have no faith?\' The disciples were amazed, saying, \'Who is this? Even the wind and the waves obey him!\' When life feels like a storm, Jesus is right there with us — and he is always in control, even when we\'re afraid.</string>
+
+    <string name="badge_unshaken_faith_title">Unshaken Faith</string>
+    <string name="badge_unshaken_faith_description">Stayed with Jesus through the storm, and watched him calm the wind and the waves with just a word.</string>
+    <string name="scripture_mark_4_39_title">Peace, Be Still</string>
+    <string name="scripture_mark_4_39_text">"He awoke, and rebuked the wind, and said to the sea, \'Peace! Be still!\' The wind ceased, and there was a great calm."</string>
+
     <string name="reward_title">Adventure Complete!</string>
     <string name="reward_stars_content_description">%1$d out of %2$d stars earned</string>
 </resources>

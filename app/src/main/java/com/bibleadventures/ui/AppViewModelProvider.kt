@@ -13,6 +13,7 @@ import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
+import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.screens.mainmenu.MainMenuViewModel
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsViewModel
@@ -70,6 +71,10 @@ object AppViewModelProvider {
         initializer {
             val container = bibleAdventuresApplication().container
             Feeding5000ViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
+        }
+        initializer {
+            val container = bibleAdventuresApplication().container
+            JesusCalmsStormViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
         }
         initializer {
             BadgesViewModel(bibleAdventuresApplication().container.playerProfileRepository)

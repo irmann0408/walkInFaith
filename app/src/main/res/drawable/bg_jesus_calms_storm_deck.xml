@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="300dp"
+    android:viewportWidth="300"
+    android:viewportHeight="300">
+    <!-- Base: warm wooden deck -->
+    <path android:fillColor="#FFC49A6C" android:pathData="M0,0 L300,0 L300,300 L0,300 Z" />
+
+    <!-- Plank lines for texture -->
+    <path android:fillColor="#FFAD7F52" android:fillAlpha="0.5" android:pathData="M0,60 L300,60 L300,68 L0,68 Z" />
+    <path android:fillColor="#FFAD7F52" android:fillAlpha="0.5" android:pathData="M0,140 L300,140 L300,148 L0,148 Z" />
+    <path android:fillColor="#FFAD7F52" android:fillAlpha="0.5" android:pathData="M0,220 L300,220 L300,228 L0,228 Z" />
+
+    <!-- Calm blue water strip along the bottom -->
+    <path android:fillColor="#FF6FA8C9" android:fillAlpha="0.6" android:pathData="M0,270 L300,270 L300,300 L0,300 Z" />
+</vector>

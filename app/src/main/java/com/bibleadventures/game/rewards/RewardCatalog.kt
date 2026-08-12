@@ -18,6 +18,7 @@ object RewardCatalog {
         EstherReward.badge,
         JerichoReward.badge,
         Feeding5000Reward.badge,
+        JesusCalmsStormReward.badge,
     )
     val scriptureCards: List<ScriptureCard> = listOf(
         NoahsArkReward.scriptureCard,
@@ -26,5 +27,6 @@ object RewardCatalog {
         DanielReward.scriptureCard,
         JerichoReward.scriptureCard,
         Feeding5000Reward.scriptureCard,
+        JesusCalmsStormReward.scriptureCard,
     ) + EstherReward.scriptureCards
 }

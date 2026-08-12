@@ -175,6 +175,26 @@ sealed class Destination(val route: String) {
         }
     }
 
+    /** Nested graph — every scene shares one graph-scoped `JesusCalmsStormViewModel`. */
+    sealed class JesusCalmsStorm(route: String) : Destination(route) {
+        data object Intro : JesusCalmsStorm("jesus_calms_storm/intro")
+        data object LoadingContext : JesusCalmsStorm("jesus_calms_storm/loading_context")
+        data object LoadingTheBoat : JesusCalmsStorm("jesus_calms_storm/loading_the_boat")
+        data object StormContext : JesusCalmsStorm("jesus_calms_storm/storm_context")
+        data object BailingTheBoat : JesusCalmsStorm("jesus_calms_storm/bailing_the_boat")
+        data object Choice : JesusCalmsStorm("jesus_calms_storm/choice")
+        data object FindJesusContext : JesusCalmsStorm("jesus_calms_storm/find_jesus_context")
+        data object ReachingJesus : JesusCalmsStorm("jesus_calms_storm/reaching_jesus")
+        data object CalmContext : JesusCalmsStorm("jesus_calms_storm/calm_context")
+        data object PeaceBeStill : JesusCalmsStorm("jesus_calms_storm/peace_be_still")
+        data object Lesson : JesusCalmsStorm("jesus_calms_storm/lesson")
+        data object Reward : JesusCalmsStorm("jesus_calms_storm/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "jesus_calms_storm"
+        }
+    }
+
     /** Temporary landing spot for menu items not yet implemented. */
     data class ComingSoon(val featureTitle: String) : Destination("coming_soon") {
         companion object {
