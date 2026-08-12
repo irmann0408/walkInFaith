@@ -2,6 +2,7 @@ package com.bibleadventures.game.puzzles.stackbuild
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -10,49 +11,57 @@ class StackBuildGameTest {
     private fun threeItemState(): StackBuildGameState = StackBuildGameState(itemIds = listOf("a", "b", "c"))
 
     @Test
-    fun `placing an item appends it to placedOrder`() {
-        val next = StackBuildGame.onItemPlaced(threeItemState(), "b")
+    fun `placing the correct next item appends it to placedOrder`() {
+        val next = StackBuildGame.onItemPlaced(threeItemState(), "a")
 
-        assertEquals(listOf("b"), next.placedOrder)
+        assertEquals(listOf("a"), next.placedOrder)
+        assertEquals(StackBuildOutcome.PLACED, next.lastOutcome)
     }
 
     @Test
-    fun `items can be placed in any order`() {
+    fun `placing an item out of order does not advance, but keeps prior progress`() {
         var state = threeItemState()
-        state = StackBuildGame.onItemPlaced(state, "c")
+        state = StackBuildGame.onItemPlaced(state, "a") // correct
+        state = StackBuildGame.onItemPlaced(state, "c") // wrong — "b" is expected next
+
+        assertEquals(listOf("a"), state.placedOrder)
+        assertEquals(StackBuildOutcome.WRONG_ORDER, state.lastOutcome)
+    }
+
+    @Test
+    fun `placing items in the required order completes the stack`() {
+        var state = threeItemState()
         state = StackBuildGame.onItemPlaced(state, "a")
         state = StackBuildGame.onItemPlaced(state, "b")
+        state = StackBuildGame.onItemPlaced(state, "c")
 
-        assertEquals(listOf("c", "a", "b"), state.placedOrder)
+        assertEquals(listOf("a", "b", "c"), state.placedOrder)
+        assertEquals(StackBuildOutcome.COMPLETE, state.lastOutcome)
         assertTrue(state.isComplete)
     }
 
     @Test
-    fun `placing the same item twice is a no-op`() {
-        val once = StackBuildGame.onItemPlaced(threeItemState(), "a")
-        val twice = StackBuildGame.onItemPlaced(once, "a")
+    fun `nextExpectedId tracks the next required item, null once complete`() {
+        var state = threeItemState()
+        assertEquals("a", state.nextExpectedId)
 
-        assertEquals(once, twice)
-    }
+        state = StackBuildGame.onItemPlaced(state, "a")
+        assertEquals("b", state.nextExpectedId)
 
-    @Test
-    fun `placing an unknown item id is a no-op`() {
-        val state = threeItemState()
-
-        val next = StackBuildGame.onItemPlaced(state, "not-a-real-item")
-
-        assertEquals(state, next)
+        state = StackBuildGame.onItemPlaced(state, "b")
+        state = StackBuildGame.onItemPlaced(state, "c")
+        assertNull(state.nextExpectedId)
     }
 
     @Test
     fun `remainingIds excludes already-placed items`() {
-        val next = StackBuildGame.onItemPlaced(threeItemState(), "b")
+        val next = StackBuildGame.onItemPlaced(threeItemState(), "a")
 
-        assertEquals(listOf("a", "c"), next.remainingIds)
+        assertEquals(listOf("b", "c"), next.remainingIds)
     }
 
     @Test
-    fun `isComplete is true only once every item is placed`() {
+    fun `isComplete is true only once every item is placed in order`() {
         var state = threeItemState()
         assertFalse(state.isComplete)
 

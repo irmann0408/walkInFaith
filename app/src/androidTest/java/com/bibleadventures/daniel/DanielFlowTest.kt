@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -70,9 +71,19 @@ class DanielFlowTest {
         // Scene 3b: Into the Lions' Den context card.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 4: Lions' Den — connect the lights in order.
-        DanielContent.lionsDenPoints.forEach { point ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(point.nameRes)).performClick()
+        // Scene 4: The Angel's Shield — 5 random math problems, one per
+        // light. A wrong guess is free (no failure state), so there's no
+        // need to compute the answer: just try each of the 3 positionally-
+        // tagged choices until the light count advances.
+        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) { problemIndex ->
+            val targetLabel = activity.getString(R.string.daniel_lions_den_progress_label, problemIndex + 1, DanielContent.LIONS_DEN_PROBLEM_COUNT)
+            var solved = false
+            var choiceIndex = 0
+            while (!solved && choiceIndex < 3) {
+                composeTestRule.onNodeWithTag("lions_den_choice_$choiceIndex").performClick()
+                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
+                choiceIndex++
+            }
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 

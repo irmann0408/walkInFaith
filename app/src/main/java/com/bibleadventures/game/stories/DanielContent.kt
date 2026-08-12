@@ -1,14 +1,31 @@
 package com.bibleadventures.game.stories
 
-import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.dodge.DodgeBeat
 import com.bibleadventures.game.puzzles.dodge.DodgeLane
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 
-/** One tappable light in the Lions' Den "connect in order" puzzle. Chapter-local — extract only if a second chapter needs this shape. */
-data class LightPointDef(val id: String, val position: Offset, @StringRes val nameRes: Int)
+/** Shared across chapters (also used by Jericho's Blow the Shofar) — same shape everywhere, same reason [MathProblem] is. */
+enum class MathOperator { ADD, SUBTRACT, MULTIPLY, DIVIDE }
+
+/**
+ * One math problem in a "solve it, pick from 3 choices" puzzle — [choiceValues]
+ * holds all 3 answer choices (including [correctValue]), already shuffled.
+ * Shared shape, not Daniel-specific: Jericho's Blow the Shofar reuses this
+ * exact data class for its own multiplication/division problems, same
+ * "reuse a content shape once a second chapter needs it" precedent as
+ * [ChoiceOptionDef].
+ */
+data class MathProblem(val id: String, val operandA: Int, val operandB: Int, val operator: MathOperator, val choiceValues: List<Int>) {
+    val correctValue: Int
+        get() = when (operator) {
+            MathOperator.ADD -> operandA + operandB
+            MathOperator.SUBTRACT -> operandA - operandB
+            MathOperator.MULTIPLY -> operandA * operandB
+            MathOperator.DIVIDE -> operandA / operandB
+        }
+}
 
 /**
  * Static content for the Daniel and the Lions chapter. Kept separate from
@@ -53,17 +70,21 @@ object DanielContent {
         R.string.daniel_lions_den_context_line_2,
     )
 
-    // Five lights arranged in an arc/dome over Daniel, so connecting them in
-    // order reads as a shield of light forming overhead once complete.
-    val lionsDenPoints: List<LightPointDef> = listOf(
-        LightPointDef("light_1", Offset(0.15f, 0.55f), R.string.daniel_light_1),
-        LightPointDef("light_2", Offset(0.3f, 0.3f), R.string.daniel_light_2),
-        LightPointDef("light_3", Offset(0.5f, 0.18f), R.string.daniel_light_3),
-        LightPointDef("light_4", Offset(0.7f, 0.3f), R.string.daniel_light_4),
-        LightPointDef("light_5", Offset(0.85f, 0.55f), R.string.daniel_light_5),
-    )
+    /** How many math problems (one per light) form the Angel's Shield puzzle. */
+    const val LIONS_DEN_PROBLEM_COUNT = 5
 
-    val lionsDenPointIds: List<String> get() = lionsDenPoints.map { it.id }
+    // Five positions arranged in an arc/dome over Daniel, so lighting them in
+    // order reads as a shield of light forming overhead once complete. Purely
+    // visual/progress now — the lights themselves aren't tappable; solving
+    // [com.bibleadventures.ui.screens.daniel.DanielViewModel]'s randomly
+    // generated math problems is what advances them.
+    val lionsDenLightPositions: List<Offset> = listOf(
+        Offset(0.15f, 0.55f),
+        Offset(0.3f, 0.3f),
+        Offset(0.5f, 0.18f),
+        Offset(0.7f, 0.3f),
+        Offset(0.85f, 0.55f),
+    )
 
     val dariusContextLines: List<Int> = listOf(
         R.string.daniel_darius_context_line_1,

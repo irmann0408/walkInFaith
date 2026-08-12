@@ -5,21 +5,6 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmNote
 
-/** One of the 12 memorial stones — no position needed, "Setting Up Camp" renders a plain tray, not a hidden-object search. */
-data class CampStoneDef(val id: String, val nameRes: Int)
-
-/**
- * One colored note in the Shofar sequence. Unlike [DanielContent.lionsDenPoints]'s
- * fixed list-order-is-tap-order shape, both the required tap order and each note's
- * on-screen position are shuffled fresh per playthrough (see
- * [com.bibleadventures.ui.screens.jericho.JerichoViewModel]'s `newShofarPlacements`) —
- * this def only carries the color's identity, not its placement.
- */
-data class ShofarNoteDef(val id: String, val nameRes: Int)
-
-/** One shuffled-per-playthrough placement of a [ShofarNoteDef]: which color, at which screen position. [position] is fractional (0..1) within the scene area. */
-data class ShofarNotePlacement(val id: String, val nameRes: Int, val position: Offset)
-
 /**
  * Static content for the Battle of Jericho chapter. Kept separate from
  * the game engine packages under `game/puzzles` so those stay reusable by
@@ -80,21 +65,15 @@ object JerichoContent {
         R.string.jericho_camp_context_line_2,
     )
 
-    /** Twelve stones "from the middle of the Jordan," one per tribe (Joshua 4:1-9) — order-independent, tap each to place it. */
-    val campStones: List<CampStoneDef> = listOf(
-        CampStoneDef("stone_1", R.string.jericho_camp_stone_1),
-        CampStoneDef("stone_2", R.string.jericho_camp_stone_2),
-        CampStoneDef("stone_3", R.string.jericho_camp_stone_3),
-        CampStoneDef("stone_4", R.string.jericho_camp_stone_4),
-        CampStoneDef("stone_5", R.string.jericho_camp_stone_5),
-        CampStoneDef("stone_6", R.string.jericho_camp_stone_6),
-        CampStoneDef("stone_7", R.string.jericho_camp_stone_7),
-        CampStoneDef("stone_8", R.string.jericho_camp_stone_8),
-        CampStoneDef("stone_9", R.string.jericho_camp_stone_9),
-        CampStoneDef("stone_10", R.string.jericho_camp_stone_10),
-        CampStoneDef("stone_11", R.string.jericho_camp_stone_11),
-        CampStoneDef("stone_12", R.string.jericho_camp_stone_12),
-    )
+    /**
+     * Twelve stones "from the middle of the Jordan," one per tribe (Joshua
+     * 4:1-9). Each is assigned a random distinct number 1-99 fresh every
+     * playthrough (see [com.bibleadventures.ui.screens.jericho.JerichoViewModel])
+     * — the player must stack them in ascending order, lowest first. No
+     * per-stone name needed anymore (the number is what the player reasons
+     * about), same simplification as Daniel's lights and the shofar notes.
+     */
+    val campStoneIds: List<String> = (1..12).map { "stone_$it" }
 
     // "Arrange tents + trust Joshua's leadership" folded into narrative context here,
     // rather than a second required interaction alongside the stone-placing puzzle.
@@ -159,25 +138,19 @@ object JerichoContent {
     const val FAST_MARCH_REQUIRED_HITS = 7
 
     /**
-     * Reuses `game/puzzles/sequence` exactly as-is (already Daniel's Lions'
-     * Den mechanic) — but unlike Lions' Den's fixed discovery-based order,
-     * Blow the Shofar tells the player which color to tap next via an
-     * on-screen message, and shuffles both the required tap order and each
-     * note's screen position fresh every playthrough (see
-     * [com.bibleadventures.ui.screens.jericho.JerichoViewModel]) so the
-     * puzzle stays a real puzzle despite the guidance (Joshua 6:4's seven
-     * trumpets, reframed as five taps for a shorter, kid-paced puzzle).
+     * Reuses `game/puzzles/decisionpath` (also Daniel's Angel's Shield
+     * mechanic) — solve a randomly generated multiplication/division
+     * problem, pick the right answer from 3 choices, and the next colored
+     * note lights up (Joshua 6:4's seven trumpets, reframed as five
+     * problems for a shorter, kid-paced puzzle). Problem generation lives
+     * in [com.bibleadventures.ui.screens.jericho.JerichoViewModel], not
+     * here, same as Daniel's `newLionsDenProblems` — this file stays
+     * static content only.
      */
-    val shofarNoteColors: List<ShofarNoteDef> = listOf(
-        ShofarNoteDef("red", R.string.jericho_shofar_note_red),
-        ShofarNoteDef("orange", R.string.jericho_shofar_note_orange),
-        ShofarNoteDef("yellow", R.string.jericho_shofar_note_yellow),
-        ShofarNoteDef("green", R.string.jericho_shofar_note_green),
-        ShofarNoteDef("blue", R.string.jericho_shofar_note_blue),
-    )
+    val shofarNoteIds: List<String> = listOf("red", "orange", "yellow", "green", "blue")
 
-    /** Fixed pool of 5 screen positions, arranged in a curved horn-like arc — which color lands in which slot is shuffled per playthrough. */
-    val shofarNotePositionSlots: List<Offset> = listOf(
+    /** Fixed 5 screen positions, arranged in a curved horn-like arc — purely visual/progress now, like [lionsDenLightPositions]. */
+    val shofarNotePositions: List<Offset> = listOf(
         Offset(0.15f, 0.55f),
         Offset(0.3f, 0.3f),
         Offset(0.5f, 0.18f),

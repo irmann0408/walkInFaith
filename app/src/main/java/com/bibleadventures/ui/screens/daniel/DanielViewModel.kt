@@ -16,12 +16,15 @@ import com.bibleadventures.game.puzzles.gridmaze.GridMazeGame
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
-import com.bibleadventures.game.puzzles.sequence.SequenceGame
-import com.bibleadventures.game.puzzles.sequence.SequenceGameState
-import com.bibleadventures.game.puzzles.sequence.SequenceOutcome
+import com.bibleadventures.game.puzzles.decisionpath.DecisionOutcome
+import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGame
+import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
+import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
 import com.bibleadventures.game.rewards.DanielReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.DanielContent
+import com.bibleadventures.game.stories.MathOperator
+import com.bibleadventures.game.stories.MathProblem
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,13 +34,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 data class DanielRewardResult(val stars: Int)
 
 data class DanielUiState(
     val dodgeState: DodgeGameState = DodgeGameState(beats = DanielContent.stealthBeats),
     val selectedChoiceId: String? = null,
-    val sequenceState: SequenceGameState = SequenceGameState(pointIds = DanielContent.lionsDenPointIds),
+    val lionsDenState: DecisionPathGameState,
+    val lionsDenProblems: List<MathProblem>,
     val gridMazeState: GridMazeState,
     val reward: DanielRewardResult? = null,
 )
@@ -82,15 +87,14 @@ class DanielViewModel(
         _uiState.update { it.copy(selectedChoiceId = choiceId) }
     }
 
-    fun onLightPointTapped(pointId: String) {
+    fun onLionsDenAnswerTapped(choiceValue: Int) {
         _uiState.update { current ->
-            val next = SequenceGame.onPointTapped(current.sequenceState, pointId)
+            val next = DecisionPathGame.onOptionTapped(current.lionsDenState, choiceValue.toString())
             when (next.lastOutcome) {
-                SequenceOutcome.POINT_CONNECTED, SequenceOutcome.COMPLETE ->
-                    audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+                DecisionOutcome.CORRECT, DecisionOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
                 else -> Unit
             }
-            current.copy(sequenceState = next)
+            current.copy(lionsDenState = next)
         }
     }
 
@@ -134,8 +138,59 @@ class DanielViewModel(
         val startRow = DanielContent.dariusMapLayout.indexOfFirst { it.contains('S') }
         val startCol = DanielContent.dariusMapLayout[startRow].indexOf('S')
 
+        val lionsDenProblems = newLionsDenProblems()
         return DanielUiState(
+            lionsDenState = DecisionPathGameState(
+                steps = lionsDenProblems.map { problem ->
+                    DecisionStep(
+                        id = problem.id,
+                        correctOptionId = problem.correctValue.toString(),
+                        optionIds = problem.choiceValues.map { it.toString() },
+                    )
+                },
+            ),
+            lionsDenProblems = lionsDenProblems,
             gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(startRow, startCol)),
         )
+    }
+
+    /**
+     * Randomly generated fresh every playthrough (confirmed with the user —
+     * rounding operands to multiples of 10 would make this too easy for a
+     * 7+ audience). Subtraction always draws the larger operand first so the
+     * result is never negative; the two distractor choices are near-misses
+     * (a small and a larger offset from the true answer) so the correct one
+     * isn't obvious by magnitude alone.
+     */
+    private fun newLionsDenProblems(random: Random = Random.Default): List<MathProblem> {
+        return (1..DanielContent.LIONS_DEN_PROBLEM_COUNT).map { index ->
+            val operator = if (random.nextBoolean()) MathOperator.ADD else MathOperator.SUBTRACT
+            val (operandA, operandB) = if (operator == MathOperator.SUBTRACT) {
+                // a in [2, 999], b in [1, a-1] — guarantees 1 <= a-b <= 998, never negative or zero.
+                val a = random.nextInt(2, 1000)
+                val b = random.nextInt(1, a)
+                a to b
+            } else {
+                random.nextInt(1, 1000) to random.nextInt(1, 1000)
+            }
+            val correctValue = if (operator == MathOperator.ADD) operandA + operandB else operandA - operandB
+
+            val distractors = mutableSetOf<Int>()
+            while (distractors.size < 2) {
+                val offset = listOf(-1, 1).random(random) * (if (distractors.isEmpty()) random.nextInt(1, 21) else random.nextInt(20, 151))
+                val candidate = correctValue + offset
+                if (candidate >= 0 && candidate != correctValue && candidate !in distractors) {
+                    distractors += candidate
+                }
+            }
+
+            MathProblem(
+                id = "problem_$index",
+                operandA = operandA,
+                operandB = operandB,
+                operator = operator,
+                choiceValues = (distractors + correctValue).shuffled(random),
+            )
+        }
     }
 }

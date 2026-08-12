@@ -10,6 +10,7 @@ import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
 import com.bibleadventures.game.stories.DanielContent
+import com.bibleadventures.game.stories.MathOperator
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -70,26 +71,60 @@ class DanielViewModelTest {
     }
 
     @Test
-    fun `onLightPointTapped connects points in order and plays a sound`() {
+    fun `onLionsDenAnswerTapped with the correct value advances the step and plays a sound`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
-        val pointIds = DanielContent.lionsDenPointIds
+        val correctValue = viewModel.uiState.value.lionsDenState.currentStep!!.correctOptionId.toInt()
 
-        viewModel.onLightPointTapped(pointIds[0])
+        viewModel.onLionsDenAnswerTapped(correctValue)
 
-        assertEquals(listOf(pointIds[0]), viewModel.uiState.value.sequenceState.connectedIds)
+        assertEquals(1, viewModel.uiState.value.lionsDenState.currentStepIndex)
         assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
     }
 
     @Test
-    fun `onLightPointTapped out of order does not undo prior progress`() {
+    fun `onLionsDenAnswerTapped with a wrong value does not advance and never fails`() {
         val viewModel = createViewModel()
-        val pointIds = DanielContent.lionsDenPointIds
+        val step = viewModel.uiState.value.lionsDenState.currentStep!!
+        val wrongValue = step.optionIds.map { it.toInt() }.first { it.toString() != step.correctOptionId }
 
-        viewModel.onLightPointTapped(pointIds[0])
-        viewModel.onLightPointTapped(pointIds[2]) // out of order, expected pointIds[1]
+        viewModel.onLionsDenAnswerTapped(wrongValue)
 
-        assertEquals(listOf(pointIds[0]), viewModel.uiState.value.sequenceState.connectedIds)
+        assertEquals(0, viewModel.uiState.value.lionsDenState.currentStepIndex)
+    }
+
+    @Test
+    fun `answering all problems correctly completes the Angel's Shield`() {
+        val viewModel = createViewModel()
+
+        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) {
+            val correctValue = viewModel.uiState.value.lionsDenState.currentStep!!.correctOptionId.toInt()
+            viewModel.onLionsDenAnswerTapped(correctValue)
+        }
+
+        assertTrue(viewModel.uiState.value.lionsDenState.isComplete)
+    }
+
+    @Test
+    fun `generated Angel's Shield problems are always well-formed`() {
+        // Constructed 100 times to exercise many random draws (Random.Default,
+        // unseeded) — same "check invariants across many random instances, not
+        // just one lucky run" discipline as SlidingPuzzleGameTest's shuffle tests.
+        repeat(100) {
+            val problems = createViewModel().uiState.value.lionsDenProblems
+
+            assertEquals(DanielContent.LIONS_DEN_PROBLEM_COUNT, problems.size)
+            problems.forEach { problem ->
+                assertTrue("operandA out of range: $problem", problem.operandA in 1..999)
+                assertTrue("operandB out of range: $problem", problem.operandB in 1..999)
+                if (problem.operator == MathOperator.SUBTRACT) {
+                    assertTrue("subtraction result not positive: $problem", problem.correctValue > 0)
+                }
+                assertEquals("choices weren't 3 distinct values: $problem", 3, problem.choiceValues.toSet().size)
+                assertTrue("correct value missing from choices: $problem", problem.correctValue in problem.choiceValues)
+                assertTrue("a choice was negative: $problem", problem.choiceValues.all { it >= 0 })
+            }
+        }
     }
 
     @Test

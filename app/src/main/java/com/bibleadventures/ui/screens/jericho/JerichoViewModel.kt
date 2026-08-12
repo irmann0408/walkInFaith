@@ -7,11 +7,12 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
+import com.bibleadventures.game.puzzles.decisionpath.DecisionOutcome
+import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGame
+import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
+import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGame
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
-import com.bibleadventures.game.puzzles.sequence.SequenceGame
-import com.bibleadventures.game.puzzles.sequence.SequenceGameState
-import com.bibleadventures.game.puzzles.sequence.SequenceOutcome
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildGame
@@ -19,7 +20,8 @@ import com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState
 import com.bibleadventures.game.rewards.JerichoReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.JerichoContent
-import com.bibleadventures.game.stories.ShofarNotePlacement
+import com.bibleadventures.game.stories.MathOperator
+import com.bibleadventures.game.stories.MathProblem
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -45,8 +47,12 @@ data class JerichoUiState(
         chart = JerichoContent.fastMarchChart,
         requiredHits = JerichoContent.FAST_MARCH_REQUIRED_HITS,
     ),
-    val shofarState: SequenceGameState,
-    val shofarPlacements: List<ShofarNotePlacement>,
+    val shofarState: DecisionPathGameState,
+    val shofarProblems: List<MathProblem>,
+    /** stoneId -> its randomly assigned 1-99 value (distinct), fresh every playthrough. */
+    val campStoneValues: Map<String, Int>,
+    /** Fixed, shuffled *display* order for the tray — independent of [campState]'s required (ascending-value) placement order, so the tray never visually gives away the answer. */
+    val campTrayOrder: List<String>,
     val shoutTaps: Int = 0,
     val reward: JerichoRewardResult? = null,
 ) {
@@ -147,11 +153,11 @@ class JerichoViewModel(
         _uiState.update { current -> current.copy(fastMarchState = RhythmLaneGame.onTimeAdvanced(current.fastMarchState, nowMs)) }
     }
 
-    fun onShofarNoteTapped(noteId: String) {
+    fun onShofarAnswerTapped(choiceValue: Int) {
         _uiState.update { current ->
-            val next = SequenceGame.onPointTapped(current.shofarState, noteId)
+            val next = DecisionPathGame.onOptionTapped(current.shofarState, choiceValue.toString())
             when (next.lastOutcome) {
-                SequenceOutcome.POINT_CONNECTED, SequenceOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+                DecisionOutcome.CORRECT, DecisionOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
                 else -> Unit
             }
             current.copy(shofarState = next)
@@ -194,21 +200,66 @@ class JerichoViewModel(
     }
 
     private fun createInitialState(): JerichoUiState {
+        val shofarProblems = newShofarProblems()
         val random = Random.Default
-        val shofarPlacements = newShofarPlacements(random)
+        val campStoneValues = JerichoContent.campStoneIds.zip((1..99).shuffled(random).take(JerichoContent.campStoneIds.size)).toMap()
         return JerichoUiState(
             spiesEscapeState = SlidingPuzzleGame.newShuffled(size = JerichoContent.SPIES_ESCAPE_GRID_SIZE),
-            campState = StackBuildGameState(itemIds = JerichoContent.campStones.map { it.id }),
-            shofarState = SequenceGameState(pointIds = JerichoContent.shofarNoteColors.map { it.id }.shuffled(random)),
-            shofarPlacements = shofarPlacements,
+            campState = StackBuildGameState(itemIds = campStoneValues.entries.sortedBy { it.value }.map { it.key }),
+            shofarState = DecisionPathGameState(
+                steps = shofarProblems.map { problem ->
+                    DecisionStep(
+                        id = problem.id,
+                        correctOptionId = problem.correctValue.toString(),
+                        optionIds = problem.choiceValues.map { it.toString() },
+                    )
+                },
+            ),
+            shofarProblems = shofarProblems,
+            campStoneValues = campStoneValues,
+            campTrayOrder = JerichoContent.campStoneIds.shuffled(random),
         )
     }
 
-    /** Shuffles which color lands at which screen slot — the required tap order is shuffled separately (see [createInitialState]), so neither layout nor order can be memorized across playthroughs. */
-    private fun newShofarPlacements(random: Random = Random.Default): List<ShofarNotePlacement> {
-        val shuffledPositions = JerichoContent.shofarNotePositionSlots.shuffled(random)
-        return JerichoContent.shofarNoteColors.mapIndexed { index, def ->
-            ShofarNotePlacement(id = def.id, nameRes = def.nameRes, position = shuffledPositions[index])
+    /**
+     * Randomly generated fresh every playthrough. Tuned down from the
+     * initial "operands 1-99" version after a playtest pass — a 2-digit x
+     * 2-digit or 2-digit / 2-digit problem was too hard to stay fun for a
+     * 7+ audience. Now: multiplicand/dividend is a 1-2 digit number
+     * (1-99), multiplier/divisor is always single-digit (1-9), e.g. "12 x
+     * 3". Division still draws the divisor and quotient first so the
+     * result is always a clean whole number, with the quotient capped so
+     * the dividend (divisor * quotient) stays within 1-99.
+     */
+    private fun newShofarProblems(random: Random = Random.Default): List<MathProblem> {
+        return JerichoContent.shofarNoteIds.indices.map { index ->
+            val operator = if (random.nextBoolean()) MathOperator.MULTIPLY else MathOperator.DIVIDE
+            val (operandA, operandB) = if (operator == MathOperator.DIVIDE) {
+                val divisor = random.nextInt(1, 10)
+                val maxQuotient = 99 / divisor
+                val quotient = random.nextInt(1, maxQuotient + 1)
+                (divisor * quotient) to divisor
+            } else {
+                random.nextInt(1, 100) to random.nextInt(1, 10)
+            }
+            val correctValue = if (operator == MathOperator.MULTIPLY) operandA * operandB else operandA / operandB
+
+            val distractors = mutableSetOf<Int>()
+            while (distractors.size < 2) {
+                val offset = listOf(-1, 1).random(random) * (if (distractors.isEmpty()) random.nextInt(1, 21) else random.nextInt(20, 151))
+                val candidate = correctValue + offset
+                if (candidate >= 0 && candidate != correctValue && candidate !in distractors) {
+                    distractors += candidate
+                }
+            }
+
+            MathProblem(
+                id = "problem_${index + 1}",
+                operandA = operandA,
+                operandB = operandB,
+                operator = operator,
+                choiceValues = (distractors + correctValue).shuffled(random),
+            )
         }
     }
 }

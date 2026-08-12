@@ -1,14 +1,25 @@
 # Project Status
 
-Last updated: 2026-08-12 (Setting Up Camp reworked from tap-to-collect into
+Last updated: 2026-08-12 (Setting Up Camp: the snap-into-place animation
+sped up (was noticeably slow to settle), and the puzzle now requires
+stacking the 12 randomly-valued (1-99, distinct) stones in ascending order
+rather than any order — a real `stackbuild` engine redesign, not just
+content. Jericho's Blow the Shofar reworked the same way
+as Daniel's Angel's Shield, right after it — tap-a-color replaced with
+solving a randomly generated multiplication/division problem (operands
+1-99) and picking the right answer from 3 choices to sound each of the 5
+notes; `MathOperator`/`MathProblem` extended to a shared shape both
+chapters now use. Daniel's "The Angel's Shield" reworked from
+tap-the-lights-in-order into a math mini-game — solve a randomly generated
+addition/subtraction problem and pick the right answer from 3 choices to
+light each of the 5 lights, reusing the previously-unused `decisionpath`
+engine. Setting Up Camp reworked from tap-to-collect into
 a real drag-and-stack puzzle — drag each of the 12 stones onto a growing
 monument, with a forgiving "gentle snap" radius and an animated slide-into-
 place; new `stackbuild` engine. Three of Jericho's mini-puzzles reworked
 after playtesting: The Silent March and Seven Times Around now use Esther's
 Corridor's 3-lane scrolling layout, paced slow/fast, with a footprint
-marker instead of a star; Blow the Shofar now guides the player with an
-on-screen "tap this next" message and shuffles both the tap order and each
-note's screen position every playthrough; The Battle of Jericho rebuilt
+marker instead of a star; The Battle of Jericho rebuilt
 with 4 real mini-puzzles, replacing its old 4-flashcard "March and the
 Shout," which was too easy; Esther's tail end trimmed — Reveal Haman's Plot
 and 5 surrounding screens collapsed into just the Lesson; Corridor Courage
@@ -758,6 +769,18 @@ general shape, not a mandatory checklist for every chapter.
 
 ## Follow-up (explicitly deferred, not built now)
 
+- **"Reset Progress" option on the Settings screen.** Currently the only way
+  to clear a player's save (`PlayerProfile`, DataStore Preferences) is
+  externally — `adb shell pm clear com.bibleadventures` or uninstalling —
+  since `SettingsScreen`/`SettingsViewModel` only expose the three audio
+  toggles today, and `PlayerProfileRepository` has no reset/clear method.
+  Came up because the user's own test device has accumulated real
+  completion state across many playtesting sessions, making it hard to
+  see a freshly-reworked puzzle's actual first-play state without an
+  external adb call. Would need a new repository method (write
+  `PlayerProfile.DEFAULT` back to the DataStore) plus a confirmation step
+  in the UI, since it's a destructive action a real player could trigger by
+  accident.
 - The blueprint's second "escort back to Jerusalem" phase, with hazards
   newly placed on the return trip.
 - An optional "donkey feed" pickup the user mentioned (temporary
@@ -1749,6 +1772,169 @@ a real drag gesture.
   back-to-back on-device after the fix (the first attempt, before the fix,
   failed exactly where predicted — camp puzzle never reached 12/12, so its
   Continue button never rendered).
+
+### The Angel's Shield reworked into a math mini-game
+
+Daniel's "The Angel's Shield" (part of the Lions' Den scene) was tap-5-lights-
+in-order via the `sequence` engine — another "just tapping the screen"
+complaint. Reworked so each light is earned by solving a randomly generated
+addition/subtraction problem and picking the correct answer from 3 choices.
+
+- **Reused `game/puzzles/decisionpath`** — an engine that already existed in
+  this codebase with its own unit test but **zero screen/chapter consumers**,
+  built but never wired up. Its shape (`DecisionStep(id, correctOptionId,
+  optionIds)`, `currentStepIndex` as the advancing counter, never-FAILED
+  incorrect-answer handling) was exactly "one problem at a time, pick the
+  right choice, advance" — no engine changes needed. `game/puzzles/sequence`
+  (this scene's old engine) is untouched and still alive via Jericho's Blow
+  the Shofar.
+- **Problems are randomly generated fresh every playthrough**, confirmed
+  explicitly with the user — operands are genuinely any number 1–999, not
+  rounded to multiples of 10, since rounding would make it too easy for a
+  7+ audience. The generator (`DanielViewModel.newLionsDenProblems`) lives
+  in the ViewModel, not `DanielContent.kt`, per this codebase's rule that
+  `game/stories/*Content.kt` files hold only static content, never
+  generation logic — same precedent as `JerichoViewModel.newShofarPlacements`.
+  Subtraction always draws the larger operand first so the result is never
+  negative or zero (an age-appropriateness floor, not a difficulty cap);
+  the two wrong-answer choices are near-misses (small and larger random
+  offsets from the true answer) so the correct one isn't obvious by
+  magnitude alone, then all 3 are shuffled.
+- **Testing an instrumented flow through randomized content**: the
+  `DanielFlowTest`/`EstherFlowTest`/`JerichoFlowTest` helpers that complete
+  Daniel's chapter as a prerequisite can't hardcode which answer is correct
+  anymore. Solved by giving the 3 answer buttons a positional
+  `Modifier.testTag("lions_den_choice_0/1/2")` (this codebase's second use
+  of `testTag`, after `WorldMapScreen`'s chapter list) and having the test
+  simply try each of the 3 in turn until the "X of 5 lights lit" progress
+  label advances — no need to compute the actual answer at all, since a
+  wrong guess is free (no failure state). Unit tests verify the generator's
+  invariants (3-digit-ish operand range, subtraction never non-positive, 3
+  distinct non-negative choices including the true answer) across 100
+  constructed `DanielViewModel` instances rather than one lucky run, same
+  discipline as `SlidingPuzzleGameTest`'s seeded-shuffle tests.
+- Full `./gradlew build` green; full instrumented suite 19/19 twice
+  back-to-back on-device, first try (only the known pre-existing
+  `WorldMapNavigationTest` flakiness from real accumulated save data on this
+  device failed, both runs, not a regression).
+
+### Blow the Shofar reworked into a math mini-game, right after Angel's Shield
+
+Same request, same day, for Jericho's Blow the Shofar (which itself had
+just been reworked into a guided "tap this color next" puzzle earlier in
+this session) — the user asked to "do the same" as Angel's Shield, but with
+multiplication/division, operands 1–99.
+
+- **`MathOperator`/`MathProblem` (previously Daniel-only, in `DanielContent.kt`)
+  are now a shared shape.** Both live in `package com.bibleadventures.game.stories`,
+  and Jericho's `JerichoContent.kt` is in the same package — defining a
+  second, identically-named `MathOperator`/`MathProblem` there would have
+  been a hard compile-time redeclaration conflict, not just needless
+  duplication. Realizing this mid-implementation surfaced the actual right
+  call: this is exactly the same "define once where first needed, later
+  chapters just reuse it" precedent this codebase already has for
+  `ChoiceOptionDef` (defined once in `DavidGoliathContent.kt`, reused by
+  every later chapter's content file without a second declaration).
+  `MathOperator` extended from `{ADD, SUBTRACT}` to `{ADD, SUBTRACT,
+  MULTIPLY, DIVIDE}`; `MathProblem.correctValue` extended to a `when`
+  covering all 4. Each chapter's own ViewModel generator still only ever
+  produces its own two operators — Daniel never sees MULTIPLY/DIVIDE,
+  Jericho never sees ADD/SUBTRACT.
+- **Division always derives the dividend from a random divisor × quotient
+  (both 1–99)**, rather than picking a dividend and divisor directly — the
+  only way to guarantee a whole-number result without rejection-sampling.
+  The dividend itself isn't range-capped (can exceed 99), same "operands
+  are constrained, the result isn't" pattern as Daniel's uncapped addition
+  sum.
+- **The 5 shofar notes are now purely visual/progress**, lighting up as
+  problems are solved — same simplification Daniel's lights already went
+  through. `ShofarNoteDef`/`ShofarNotePlacement` (the shuffled-position
+  wrapper types from the *previous* Blow the Shofar rework) are gone
+  entirely: `shofarNoteColors: List<ShofarNoteDef>` became a plain
+  `shofarNoteIds: List<String>`, and the fixed 5 arc positions
+  (`shofarNotePositions`) no longer need per-playthrough shuffling, since
+  which note is "next" no longer matters — solving any problem just
+  advances the count by one, exactly like Daniel's lights.
+- **`game/puzzles/sequence` has no consumers left** after this change
+  (Daniel's Angel's Shield moved off it in the previous addendum; this was
+  its last user). Left in place, same as `decisionpath` sat unused for a
+  long time before Daniel's rework needed it — this codebase doesn't
+  delete an engine just because nothing currently calls it.
+- Same testing fix as Angel's Shield: `EstherFlowTest`/`JerichoFlowTest`/
+  `DanielFlowTest` (which all complete Jericho or Daniel as a chapter
+  prerequisite) can't hardcode the correct answer to random problems, so
+  the 3 answer buttons get positional `Modifier.testTag("shofar_choice_0/1/2")`,
+  and the test tries each in turn until the "X of 5 notes sounded" progress
+  label advances.
+- Full `./gradlew build` green; full instrumented suite 19/19 twice
+  back-to-back on-device, first try (only the same known pre-existing
+  `WorldMapNavigationTest` flakiness, not a regression).
+
+**Follow-up same day**: playtesting found the initial 1-99-for-both-operands
+range too hard to stay fun (a 2-digit × 2-digit problem is real multiplication
+homework, not a light puzzle). Tuned down in `JerichoViewModel.newShofarProblems`:
+multiplicand/dividend stays 1-2 digits (1-99), but the multiplier/divisor is
+now always single-digit (1-9), e.g. "12 × 3" — matching the user's example.
+Division still derives the dividend from divisor × quotient (both drawn
+first) with the quotient capped so the dividend stays ≤99. Unit test
+invariants tightened to assert `operandB in 1..9` across 100 random draws.
+Verified with `./gradlew build` plus `JerichoFlowTest`/`EstherFlowTest`
+on-device (single pass each — a generator-range tuning change, not a new
+real-time mechanic, so this didn't need the usual twice-back-to-back pass).
+
+### Setting Up Camp: faster snap + ascending-order stacking
+
+Two follow-up requests on the drag-and-stack puzzle, same day.
+
+- **Faster snap.** The accepted-drop position animation used
+  `Spring.StiffnessLow` — noticeably slow to settle, so a placed stone
+  visibly "floated" near the monument for a beat before joining the stack.
+  Changed to `Spring.StiffnessMedium` (same damping ratio, just a stiffer
+  spring) so the stone settles essentially on release. The scale-bounce
+  animation was already at the default `Spring.StiffnessMedium` (no
+  stiffness override there), so only the position spring needed the fix.
+- **Ascending-order stacking.** The puzzle moved from "any stone, any
+  order" to "each stone gets a random distinct 1-99 value every
+  playthrough, stack lowest first" — a real redesign of `stackbuild`, not
+  just content. `StackBuildGameState`/`StackBuildGame` gained
+  `nextExpectedId`/`lastOutcome: StackBuildOutcome` (`NONE, PLACED,
+  WRONG_ORDER, COMPLETE`) — `itemIds` is now the *required* order, and
+  `onItemPlaced` only advances on the correct next id; anything else just
+  sets `WRONG_ORDER` (never a failure, matches every other engine's wrong-
+  attempt handling). Safe to redesign in place since this engine has
+  exactly one consumer.
+  - **The tray's on-screen order had to stay independent of the required
+    order.** `campState.itemIds`/`remainingIds` are sorted ascending by
+    value (that's what makes `nextExpectedId` work) — if the *tray* had
+    rendered directly from that list, the stones would visually appear
+    already sorted, handing the player the answer. Fixed with a separate
+    `JerichoUiState.campTrayOrder: List<String>` — shuffled once at
+    `createInitialState()`, used only for tray layout, filtered as stones
+    get placed but never re-sorted.
+  - **Dragging the wrong stone onto the drop zone within radius**: the
+    screen now checks `stoneId == campState.nextExpectedId` before
+    accepting a radius-hit. Correct stone → the existing animated-snap
+    flow. Wrong stone → instant reset (same as a radius miss) but still
+    notifies the ViewModel, so `WRONG_ORDER` feedback text shows even
+    though nothing was dropped near it.
+  - **`CampStoneDef`/per-stone name strings removed.** With the number now
+    the only thing the player reasons about, individual stone names
+    (`jericho_camp_stone_1`.."_12", "Stone 1".."Stone 12") were dead
+    weight — same simplification already applied to Daniel's lights and
+    the shofar notes. `campStones: List<CampStoneDef>` became
+    `campStoneIds: List<String>` (twelve `"stone_N"` ids, no display name).
+  - **Test technique**: `JerichoFlowTest`'s Setting Up Camp helper can't
+    know stone values in advance, but unlike the 3-choice math quizzes, a
+    12-stone puzzle is too expensive to brute-force (up to 78 wrong drags
+    in the worst case). Instead it scans candidate values 1-99 checking
+    which content descriptions currently exist (a cheap semantics-tree
+    query, not a gesture) and drags the smallest one present — always the
+    correct next stone, since remaining values only shrink as the required
+    order (ascending) gets consumed.
+- Full `./gradlew build` green; full instrumented suite 19/19 twice
+  back-to-back on-device, first try — both changes verified together since
+  the ascending-order rework is exactly the kind of real-time drag-gesture
+  change this project always double-checks on a physical device.
 
 ## Next tasks
 

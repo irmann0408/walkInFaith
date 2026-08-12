@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState
+import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
 import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
@@ -64,19 +65,22 @@ private val SNAP_RADIUS = 72.dp
 private val STACK_LEVEL_RISE = 20.dp
 
 /**
- * Twelve memorial stones (Joshua 4:1-9), dragged one at a time onto a
- * growing monument — any stone, any order (the source material doesn't
- * rank the tribes' stones), so [com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState.placedOrder]
- * only tracks the *act* of stacking, not which named stone fills which
- * level. A drop within [SNAP_RADIUS] of the monument slides smoothly into
- * place (a gentle, forgiving target — no punishing precision, matching
- * this app's no-failure-state rule); a miss just resets instantly, no
- * penalty, try again. Reuses the drag idiom already proven twice in this
- * app (`NoahsArkOrganizeArkScreen`, `DavidGoliathSlingPracticeScreen`) —
+ * Twelve memorial stones (Joshua 4:1-9), each randomly assigned a distinct
+ * number 1-99 fresh every playthrough, dragged one at a time onto a growing
+ * monument **in ascending order** — [com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState.nextExpectedId]
+ * enforces which stone is next; dragging the wrong one onto the drop zone
+ * just re-prompts (no progress lost, matches this app's no-failure-state
+ * rule), only the correct next stone animates into the stack. The tray's
+ * on-screen order is a separate, fixed shuffle (`JerichoViewModel`'s
+ * `campTrayOrder`) — deliberately independent of the required placement
+ * order, so the tray layout itself never gives away the answer. A drop
+ * within [SNAP_RADIUS] of the monument is the forgiving target (no
+ * punishing precision); a miss (or a correct-but-out-of-radius stone)
+ * resets instantly. Reuses the drag idiom already proven twice in this app
+ * (`NoahsArkOrganizeArkScreen`, `DavidGoliathSlingPracticeScreen`) —
  * `detectDragGestures` + `Modifier.offset` + `boundsInRoot()` hit-testing
- * — with one addition new to this codebase: an [Animatable]-driven snap
- * animation once a drop is confirmed close enough, instead of an instant
- * placement.
+ * — with an [Animatable]-driven snap animation once a drop is confirmed
+ * both close enough *and* the correct next stone.
  *
  * A real bug found on-device during verification, worth flagging since it's
  * an easy trap for the next real-drag screen: keying the gesture detector
@@ -99,6 +103,8 @@ fun JerichoSettingUpCampScreen(
 
     JerichoSettingUpCampContent(
         campState = uiState.campState,
+        stoneValues = uiState.campStoneValues,
+        trayOrder = uiState.campTrayOrder,
         onStonePlaced = viewModel::onCampStonePlaced,
         onContinue = onContinue,
         previouslyCompleted = previouslyCompleted,
@@ -109,6 +115,8 @@ fun JerichoSettingUpCampScreen(
 @Composable
 private fun JerichoSettingUpCampContent(
     campState: StackBuildGameState,
+    stoneValues: Map<String, Int>,
+    trayOrder: List<String>,
     onStonePlaced: (String) -> Unit,
     onContinue: () -> Unit,
     previouslyCompleted: Boolean = false,
@@ -117,7 +125,7 @@ private fun JerichoSettingUpCampContent(
     var dropZoneCenter by remember { mutableStateOf(Offset.Zero) }
     val snapRadiusPx = with(LocalDensity.current) { SNAP_RADIUS.toPx() }
     val dropZoneDescription = stringResource(R.string.jericho_camp_dropzone_content_description)
-    val remainingStones = JerichoContent.campStones.filter { it.id in campState.remainingIds }
+    val remainingStoneIds = trayOrder.filter { it in campState.remainingIds }
 
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Column(
@@ -142,6 +150,15 @@ private fun JerichoSettingUpCampContent(
                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
             )
 
+            val feedback = when (campState.lastOutcome) {
+                StackBuildOutcome.PLACED, StackBuildOutcome.COMPLETE -> stringResource(R.string.feedback_great_job)
+                StackBuildOutcome.WRONG_ORDER -> stringResource(R.string.feedback_try_another_one)
+                StackBuildOutcome.NONE -> ""
+            }
+            Box(modifier = Modifier.height(28.dp)) {
+                Text(text = feedback, style = MaterialTheme.typography.titleMedium)
+            }
+
             Box(
                 modifier = Modifier
                     .width(160.dp)
@@ -155,9 +172,8 @@ private fun JerichoSettingUpCampContent(
             ) {
                 campState.placedOrder.forEachIndexed { level, stoneId ->
                     key(stoneId) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_stone_smooth),
-                            contentDescription = null,
+                        StoneTile(
+                            value = stoneValues.getValue(stoneId),
                             modifier = Modifier
                                 .size(STONE_SIZE)
                                 .offset(y = -(STACK_LEVEL_RISE * level)),
@@ -167,19 +183,20 @@ private fun JerichoSettingUpCampContent(
             }
 
             Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                remainingStones.chunked(4).forEach { row ->
+                remainingStoneIds.chunked(4).forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     ) {
-                        row.forEach { stone ->
-                            key(stone.id) {
+                        row.forEach { stoneId ->
+                            key(stoneId) {
                                 DraggableStone(
-                                    stoneId = stone.id,
-                                    nameRes = stone.nameRes,
+                                    stoneId = stoneId,
+                                    value = stoneValues.getValue(stoneId),
+                                    isNextExpected = stoneId == campState.nextExpectedId,
                                     dropZoneCenter = dropZoneCenter,
                                     snapRadiusPx = snapRadiusPx,
                                     onSnapped = onStonePlaced,
@@ -212,7 +229,8 @@ private fun JerichoSettingUpCampContent(
 @Composable
 private fun DraggableStone(
     stoneId: String,
-    nameRes: Int,
+    value: Int,
+    isNextExpected: Boolean,
     dropZoneCenter: Offset,
     snapRadiusPx: Float,
     onSnapped: (String) -> Unit,
@@ -222,7 +240,7 @@ private fun DraggableStone(
     val scaleAnim = remember { Animatable(1f) }
     var baseTopLeft by remember { mutableStateOf(Offset.Zero) }
     var itemSize by remember { mutableStateOf(IntSize.Zero) }
-    val name = stringResource(nameRes)
+    val name = stringResource(R.string.jericho_camp_stone_content_description, value)
     val scope = rememberCoroutineScope()
 
     Box(
@@ -235,15 +253,15 @@ private fun DraggableStone(
                 IntOffset((dragOffset.x + snapOffset.value.x).roundToInt(), (dragOffset.y + snapOffset.value.y).roundToInt())
             }
             .size(STONE_SIZE)
-            .pointerInput(stoneId, dropZoneCenter) {
+            .pointerInput(stoneId, isNextExpected, dropZoneCenter) {
                 detectDragGestures(
                     onDragEnd = {
                         val releasedCenter = baseTopLeft + dragOffset + Offset(itemSize.width / 2f, itemSize.height / 2f)
                         val distance = (releasedCenter - dropZoneCenter).getDistance()
-                        if (distance <= snapRadiusPx) {
+                        if (distance <= snapRadiusPx && isNextExpected) {
                             val target = dropZoneCenter - releasedCenter
                             scope.launch {
-                                snapOffset.animateTo(target, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                                snapOffset.animateTo(target, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
                                 onSnapped(stoneId)
                             }
                             scope.launch {
@@ -251,6 +269,12 @@ private fun DraggableStone(
                                 scaleAnim.animateTo(1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                             }
                         } else {
+                            // Either outside the snap radius, or the right spot but the wrong
+                            // stone — either way, reset instantly, no penalty. A same-radius
+                            // wrong-order drop still notifies the ViewModel so feedback text
+                            // updates (see `onSnapped`'s WRONG_ORDER handling), just without
+                            // the accept animation.
+                            if (distance <= snapRadiusPx) onSnapped(stoneId)
                             dragOffset = Offset.Zero
                         }
                     },
@@ -269,15 +293,27 @@ private fun DraggableStone(
             contentDescription = null,
             modifier = Modifier.size(56.dp).scale(scaleAnim.value),
         )
+        Text(text = value.toString(), style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
+private fun StoneTile(value: Int, modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Image(painter = painterResource(R.drawable.ic_stone_smooth), contentDescription = null, modifier = Modifier.fillMaxSize())
+        Text(text = value.toString(), style = MaterialTheme.typography.titleMedium)
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun JerichoSettingUpCampPreview() {
+    val previewValues = JerichoContent.campStoneIds.zip((1..99).shuffled().take(JerichoContent.campStoneIds.size)).toMap()
     BibleAdventuresTheme {
         JerichoSettingUpCampContent(
-            campState = StackBuildGameState(itemIds = JerichoContent.campStones.map { it.id }),
+            campState = StackBuildGameState(itemIds = previewValues.entries.sortedBy { it.value }.map { it.key }),
+            stoneValues = previewValues,
+            trayOrder = JerichoContent.campStoneIds,
             onStonePlaced = {},
             onContinue = {},
         )

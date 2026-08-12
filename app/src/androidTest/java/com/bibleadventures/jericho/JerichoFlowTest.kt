@@ -106,16 +106,9 @@ class JerichoFlowTest {
         // Scene 3b: Crossing the Jordan context.
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 4: Setting Up Camp — 12 memorial stones, drag each onto the
-        // monument in any order; waitForIdle() lets each snap animation (and
-        // the resulting tray re-layout) settle before the next drag starts.
-        JerichoContent.campStones.forEach { stone ->
-            dragOntoContentDescription(
-                itemNode = composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)),
-                targetContentDescription = activity.getString(R.string.jericho_camp_dropzone_content_description),
-            )
-            composeTestRule.waitForIdle()
-        }
+        // Scene 4: Setting Up Camp — 12 memorial stones, each randomly
+        // valued 1-99, dragged onto the monument in ascending order.
+        completeSettingUpCamp()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         // Scene 4b: Camp by the River context -> The Walls of Jericho context.
@@ -133,9 +126,10 @@ class JerichoFlowTest {
         completeMarch(JerichoContent.fastMarchChart, JerichoContent.FAST_MARCH_REQUIRED_HITS, R.string.jericho_fast_march_lane_content_description)
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
-        // Scene 7: Blow the Shofar — order and screen positions are shuffled
-        // per playthrough, so tap whichever color the on-screen "Tap the ___
-        // next" message currently names, five times.
+        // Scene 7: Blow the Shofar — 5 random multiplication/division
+        // problems; a wrong guess is free (no failure state), so just try
+        // each of the 3 positionally-tagged choices until the note count
+        // advances.
         completeBlowShofar()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -328,8 +322,18 @@ class JerichoFlowTest {
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Into the Lions' Den context
 
-        DanielContent.lionsDenPoints.forEach { point ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(point.nameRes)).performClick()
+        // The Angel's Shield — 5 random math problems; a wrong guess is free
+        // (no failure state), so just try each of the 3 positionally-tagged
+        // choices until the light count advances.
+        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) { problemIndex ->
+            val targetLabel = activity.getString(R.string.daniel_lions_den_progress_label, problemIndex + 1, DanielContent.LIONS_DEN_PROBLEM_COUNT)
+            var solved = false
+            var choiceIndex = 0
+            while (!solved && choiceIndex < 3) {
+                composeTestRule.onNodeWithTag("lions_den_choice_$choiceIndex").performClick()
+                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
+                choiceIndex++
+            }
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -571,6 +575,33 @@ class JerichoFlowTest {
     }
 
     /**
+     * Stone values are random every playthrough (1-99, no duplicates), so
+     * this can't know in advance which stone is smallest. Checking whether
+     * a given value's content description currently exists is a cheap
+     * semantics-tree query, not a real gesture, so scanning 1..99 to find
+     * the smallest value still present among the remaining tray stones is
+     * fast — and that smallest value is always the correct next stone,
+     * since the required order is ascending.
+     */
+    private fun completeSettingUpCamp() {
+        val activity = composeTestRule.activity
+        val dropZoneDescription = activity.getString(R.string.jericho_camp_dropzone_content_description)
+
+        repeat(JerichoContent.campStoneIds.size) {
+            val smallestRemainingValue = (1..99).first { value ->
+                val label = activity.getString(R.string.jericho_camp_stone_content_description, value)
+                composeTestRule.onAllNodesWithContentDescription(label).fetchSemanticsNodes().isNotEmpty()
+            }
+            val label = activity.getString(R.string.jericho_camp_stone_content_description, smallestRemainingValue)
+            dragOntoContentDescription(
+                itemNode = composeTestRule.onNodeWithContentDescription(label),
+                targetContentDescription = dropZoneDescription,
+            )
+            composeTestRule.waitForIdle()
+        }
+    }
+
+    /**
      * Freezes the Compose test clock and advances it to each of [chart]'s
      * authored notes' exact `hitTimeMs` in turn, tapping that note's lane —
      * same deterministic frozen-clock technique as Esther's corridor
@@ -602,21 +633,24 @@ class JerichoFlowTest {
     }
 
     /**
-     * Order and screen positions are shuffled per playthrough, so this reads
-     * the live "Tap the ___ next" instruction each step (checking each of
-     * the 5 known color names against the current on-screen label) and taps
-     * whichever note it currently names — deterministic without assuming a
-     * fixed order, same "interrogate live state" discipline as
-     * [solveSlidingPuzzle]'s BFS solver.
+     * Problems are randomly generated (multiplication/division), so this
+     * can't compute the answer itself — it doesn't need to, since a wrong
+     * guess is free (no failure state): for each of the 5 problems, try
+     * `shofar_choice_0`/`_1`/`_2` in turn and stop once the "X of 5 notes
+     * sounded" progress label advances. Same discipline as [completeMarch]
+     * and Daniel's Angel's Shield fix.
      */
     private fun completeBlowShofar() {
         val activity = composeTestRule.activity
-        repeat(JerichoContent.shofarNoteColors.size) {
-            val note = JerichoContent.shofarNoteColors.first { def ->
-                val label = activity.getString(R.string.jericho_blow_shofar_next_note_label, activity.getString(def.nameRes))
-                composeTestRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
+        repeat(JerichoContent.shofarNoteIds.size) { problemIndex ->
+            val targetLabel = activity.getString(R.string.jericho_blow_shofar_progress_label, problemIndex + 1, JerichoContent.shofarNoteIds.size)
+            var solved = false
+            var choiceIndex = 0
+            while (!solved && choiceIndex < 3) {
+                composeTestRule.onNodeWithTag("shofar_choice_$choiceIndex").performClick()
+                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
+                choiceIndex++
             }
-            composeTestRule.onNodeWithContentDescription(activity.getString(note.nameRes)).performClick()
         }
     }
 

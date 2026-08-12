@@ -5,7 +5,9 @@ import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
+import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
 import com.bibleadventures.game.stories.JerichoContent
+import com.bibleadventures.game.stories.MathOperator
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -42,9 +44,27 @@ class JerichoViewModelTest {
     fun `initial camp state holds all 12 stones, none placed`() {
         val state = createViewModel().uiState.value.campState
 
-        assertEquals(JerichoContent.campStones.size, state.itemIds.size)
+        assertEquals(JerichoContent.campStoneIds.size, state.itemIds.size)
         assertTrue(state.placedOrder.isEmpty())
         assertFalse(state.isComplete)
+    }
+
+    @Test
+    fun `initial camp stone values are 12 distinct numbers 1-99`() {
+        val values = createViewModel().uiState.value.campStoneValues
+
+        assertEquals(JerichoContent.campStoneIds.toSet(), values.keys)
+        assertEquals(12, values.values.toSet().size)
+        assertTrue(values.values.all { it in 1..99 })
+    }
+
+    @Test
+    fun `camp state's required order is ascending by stone value`() {
+        val viewModel = createViewModel()
+        val state = viewModel.uiState.value
+
+        val expectedOrder = state.campStoneValues.entries.sortedBy { it.value }.map { it.key }
+        assertEquals(expectedOrder, state.campState.itemIds)
     }
 
     @Test
@@ -69,26 +89,37 @@ class JerichoViewModelTest {
     }
 
     @Test
-    fun `onCampStonePlaced stacks a stone and plays a sound only once per stone`() {
+    fun `onCampStonePlaced with the lowest-value stone advances and plays a sound`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
-        val stoneId = JerichoContent.campStones[0].id
+        val lowestStoneId = viewModel.uiState.value.campState.nextExpectedId!!
 
-        viewModel.onCampStonePlaced(stoneId)
-        viewModel.onCampStonePlaced(stoneId) // already placed, re-placing is a no-op
+        viewModel.onCampStonePlaced(lowestStoneId)
 
-        assertEquals(listOf(stoneId), viewModel.uiState.value.campState.placedOrder)
+        assertEquals(listOf(lowestStoneId), viewModel.uiState.value.campState.placedOrder)
         assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
     }
 
     @Test
-    fun `stones can be placed in any order`() {
+    fun `onCampStonePlaced out of order does not advance and never fails`() {
         val viewModel = createViewModel()
-        val shuffledIds = JerichoContent.campStones.map { it.id }.reversed()
+        val state = viewModel.uiState.value.campState
+        val outOfOrderStoneId = state.itemIds.last() // the highest value, never correct first
 
-        shuffledIds.forEach { viewModel.onCampStonePlaced(it) }
+        viewModel.onCampStonePlaced(outOfOrderStoneId)
 
-        assertEquals(shuffledIds, viewModel.uiState.value.campState.placedOrder)
+        assertTrue(viewModel.uiState.value.campState.placedOrder.isEmpty())
+        assertEquals(StackBuildOutcome.WRONG_ORDER, viewModel.uiState.value.campState.lastOutcome)
+    }
+
+    @Test
+    fun `stones must be placed in ascending order to complete the monument`() {
+        val viewModel = createViewModel()
+        val requiredOrder = viewModel.uiState.value.campState.itemIds
+
+        requiredOrder.forEach { viewModel.onCampStonePlaced(it) }
+
+        assertEquals(requiredOrder, viewModel.uiState.value.campState.placedOrder)
         assertTrue(viewModel.uiState.value.campState.isComplete)
     }
 
@@ -128,26 +159,62 @@ class JerichoViewModelTest {
     }
 
     @Test
-    fun `initial shofar arrangement covers all 5 colors at 5 distinct positions`() {
-        val placements = createViewModel().uiState.value.shofarPlacements
+    fun `onShofarAnswerTapped with the correct value advances the step and plays a sound`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
+        val correctValue = viewModel.uiState.value.shofarState.currentStep!!.correctOptionId.toInt()
 
-        assertEquals(JerichoContent.shofarNoteColors.map { it.id }.toSet(), placements.map { it.id }.toSet())
-        assertEquals(5, placements.map { it.position }.toSet().size)
+        viewModel.onShofarAnswerTapped(correctValue)
+
+        assertEquals(1, viewModel.uiState.value.shofarState.currentStepIndex)
+        assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
     }
 
     @Test
-    fun `onShofarNoteTapped plays a sound only on the correct next note, advancing through all 5`() {
-        val audioController = FakeAudioController()
-        val viewModel = createViewModel(audioController = audioController)
-        val notesInOrder = viewModel.uiState.value.shofarState.pointIds
+    fun `onShofarAnswerTapped with a wrong value does not advance and never fails`() {
+        val viewModel = createViewModel()
+        val step = viewModel.uiState.value.shofarState.currentStep!!
+        val wrongValue = step.optionIds.map { it.toInt() }.first { it.toString() != step.correctOptionId }
 
-        viewModel.onShofarNoteTapped(notesInOrder[4]) // out of order — index 0 is expected first
-        assertTrue(audioController.playedEffects.isEmpty())
+        viewModel.onShofarAnswerTapped(wrongValue)
 
-        notesInOrder.forEach { viewModel.onShofarNoteTapped(it) }
+        assertEquals(0, viewModel.uiState.value.shofarState.currentStepIndex)
+    }
+
+    @Test
+    fun `answering all problems correctly sounds every note`() {
+        val viewModel = createViewModel()
+
+        repeat(JerichoContent.shofarNoteIds.size) {
+            val correctValue = viewModel.uiState.value.shofarState.currentStep!!.correctOptionId.toInt()
+            viewModel.onShofarAnswerTapped(correctValue)
+        }
 
         assertTrue(viewModel.uiState.value.shofarState.isComplete)
-        assertEquals(5, audioController.playedEffects.size)
+    }
+
+    @Test
+    fun `generated Blow the Shofar problems are always well-formed`() {
+        // Constructed 100 times to exercise many random draws (Random.Default,
+        // unseeded) — same "check invariants across many random instances, not
+        // just one lucky run" discipline as SlidingPuzzleGameTest's shuffle tests.
+        repeat(100) {
+            val problems = createViewModel().uiState.value.shofarProblems
+
+            assertEquals(JerichoContent.shofarNoteIds.size, problems.size)
+            problems.forEach { problem ->
+                assertTrue("operator should be multiply or divide: $problem", problem.operator == MathOperator.MULTIPLY || problem.operator == MathOperator.DIVIDE)
+                // Kept easy for a 7+ audience: multiplicand/dividend is 1-2 digits, multiplier/divisor is always single-digit.
+                assertTrue("operandA (multiplicand/dividend) out of range: $problem", problem.operandA in 1..99)
+                assertTrue("operandB (multiplier/divisor) should be single-digit: $problem", problem.operandB in 1..9)
+                if (problem.operator == MathOperator.DIVIDE) {
+                    assertEquals("division should be exact: $problem", 0, problem.operandA % problem.operandB)
+                }
+                assertEquals("choices weren't 3 distinct values: $problem", 3, problem.choiceValues.toSet().size)
+                assertTrue("correct value missing from choices: $problem", problem.correctValue in problem.choiceValues)
+                assertTrue("a choice was negative: $problem", problem.choiceValues.all { it >= 0 })
+            }
+        }
     }
 
     @Test

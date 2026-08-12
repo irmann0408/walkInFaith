@@ -2,9 +2,11 @@ package com.bibleadventures.ui.screens.jericho.blowshofar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
@@ -25,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -32,21 +36,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
-import com.bibleadventures.game.puzzles.sequence.SequenceGameState
+import com.bibleadventures.game.puzzles.decisionpath.DecisionOutcome
+import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
+import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
 import com.bibleadventures.game.stories.JerichoContent
-import com.bibleadventures.game.stories.ShofarNotePlacement
+import com.bibleadventures.game.stories.MathOperator
+import com.bibleadventures.game.stories.MathProblem
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
 /**
- * Reuses `game/puzzles/sequence` exactly as-is (already Daniel's Lions'
- * Den mechanic) — but unlike Lions' Den's discovery-based order, this
- * screen is guided: an on-screen message names which colored note to tap
- * next, updating after each correct tap. Both the required tap order and
- * each note's screen position are shuffled fresh every playthrough (see
- * [JerichoViewModel]'s `newShofarPlacements`), so the puzzle stays real
- * despite the guidance — you can't just memorize a fixed layout or order.
+ * Blow the Shofar: solve a math problem (multiplication or division, random
+ * every playthrough — [com.bibleadventures.ui.screens.jericho.JerichoViewModel.newShofarProblems])
+ * and pick the correct answer from 3 choices to light the next colored
+ * note. Wrong guesses just re-prompt the same problem, never a setback —
+ * reuses `game/puzzles/decisionpath`, the same engine and never-FAILED
+ * shape as Daniel's Angel's Shield.
  */
 @Composable
 fun JerichoBlowShofarScreen(
@@ -59,8 +65,8 @@ fun JerichoBlowShofarScreen(
 
     JerichoBlowShofarContent(
         shofarState = uiState.shofarState,
-        placements = uiState.shofarPlacements,
-        onNoteTapped = viewModel::onShofarNoteTapped,
+        problems = uiState.shofarProblems,
+        onAnswerTapped = viewModel::onShofarAnswerTapped,
         onContinue = onContinue,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
@@ -78,9 +84,9 @@ private fun colorFor(noteId: String): Color = when (noteId) {
 
 @Composable
 private fun JerichoBlowShofarContent(
-    shofarState: SequenceGameState,
-    placements: List<ShofarNotePlacement>,
-    onNoteTapped: (String) -> Unit,
+    shofarState: DecisionPathGameState,
+    problems: List<MathProblem>,
+    onAnswerTapped: (Int) -> Unit,
     onContinue: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
@@ -102,15 +108,19 @@ private fun JerichoBlowShofarContent(
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 8.dp),
             )
+            Text(
+                text = stringResource(R.string.jericho_blow_shofar_progress_label, shofarState.currentStepIndex, JerichoContent.shofarNoteIds.size),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+            )
 
-            val nextNote = shofarState.nextExpectedId?.let { id -> placements.first { it.id == id } }
-            val instruction = if (nextNote != null) {
-                stringResource(R.string.jericho_blow_shofar_next_note_label, stringResource(nextNote.nameRes))
-            } else {
-                stringResource(R.string.feedback_great_job)
+            val feedback = when (shofarState.lastOutcome) {
+                DecisionOutcome.CORRECT, DecisionOutcome.COMPLETE -> stringResource(R.string.feedback_great_job)
+                DecisionOutcome.INCORRECT -> stringResource(R.string.feedback_try_another_one)
+                DecisionOutcome.NONE -> ""
             }
             Box(modifier = Modifier.height(32.dp)) {
-                Text(text = instruction, style = MaterialTheme.typography.titleLarge)
+                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
             }
 
             BoxWithConstraints(
@@ -118,13 +128,39 @@ private fun JerichoBlowShofarContent(
                     .fillMaxWidth()
                     .aspectRatio(1f),
             ) {
-                placements.forEach { placement ->
-                    NoteTarget(
-                        placement = placement,
-                        isConnected = placement.id in shofarState.connectedIds,
-                        onClick = { onNoteTapped(placement.id) },
-                        modifier = Modifier.offset(x = maxWidth * placement.position.x - 24.dp, y = maxHeight * placement.position.y - 24.dp),
+                JerichoContent.shofarNoteIds.forEachIndexed { index, noteId ->
+                    val position = JerichoContent.shofarNotePositions[index]
+                    NoteLight(
+                        noteId = noteId,
+                        isLit = index < shofarState.currentStepIndex,
+                        modifier = Modifier.offset(x = maxWidth * position.x - 24.dp, y = maxHeight * position.y - 24.dp),
                     )
+                }
+            }
+
+            val currentProblem = shofarState.currentStep?.let { step -> problems.first { it.id == step.id } }
+            if (currentProblem != null) {
+                val problemText = when (currentProblem.operator) {
+                    MathOperator.MULTIPLY -> stringResource(R.string.jericho_blow_shofar_multiplication_problem, currentProblem.operandA, currentProblem.operandB)
+                    else -> stringResource(R.string.jericho_blow_shofar_division_problem, currentProblem.operandA, currentProblem.operandB)
+                }
+                Text(
+                    text = problemText,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                ) {
+                    currentProblem.choiceValues.forEachIndexed { index, value ->
+                        AnswerChoice(
+                            value = value,
+                            testTag = "shofar_choice_$index",
+                            onClick = { onAnswerTapped(value) },
+                        )
+                    }
                 }
             }
 
@@ -148,40 +184,55 @@ private fun JerichoBlowShofarContent(
 }
 
 @Composable
-private fun NoteTarget(
-    placement: ShofarNotePlacement,
-    isConnected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val name = stringResource(placement.nameRes)
-
+private fun NoteLight(noteId: String, isLit: Boolean, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(48.dp)
             .clip(CircleShape)
-            .background(colorFor(placement.id))
-            .clickable(onClickLabel = name, onClick = onClick)
-            .semantics { contentDescription = name },
+            .background(if (isLit) colorFor(noteId) else MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
-        if (isConnected) {
+        if (isLit) {
             Icon(imageVector = Icons.Filled.Check, contentDescription = null, tint = Color.White)
         }
+    }
+}
+
+@Composable
+private fun AnswerChoice(value: Int, testTag: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .testTag(testTag)
+            .size(width = 88.dp, height = 56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = value.toString() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = value.toString(), style = MaterialTheme.typography.titleLarge)
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun JerichoBlowShofarPreview() {
-    val previewPlacements = JerichoContent.shofarNoteColors.mapIndexed { index, def ->
-        ShofarNotePlacement(def.id, def.nameRes, JerichoContent.shofarNotePositionSlots[index])
-    }
+    val previewProblems = listOf(
+        MathProblem(id = "problem_1", operandA = 12, operandB = 7, operator = MathOperator.MULTIPLY, choiceValues = listOf(84, 74, 94)),
+    )
     BibleAdventuresTheme {
         JerichoBlowShofarContent(
-            shofarState = SequenceGameState(pointIds = previewPlacements.map { it.id }),
-            placements = previewPlacements,
-            onNoteTapped = {},
+            shofarState = DecisionPathGameState(
+                steps = previewProblems.map { p ->
+                    DecisionStep(
+                        id = p.id,
+                        correctOptionId = p.correctValue.toString(),
+                        optionIds = p.choiceValues.map { it.toString() },
+                    )
+                },
+            ),
+            problems = previewProblems,
+            onAnswerTapped = {},
             onContinue = {},
         )
     }
