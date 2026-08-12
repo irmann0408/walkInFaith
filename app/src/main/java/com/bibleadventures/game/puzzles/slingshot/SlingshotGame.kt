@@ -30,14 +30,14 @@ object SlingshotGame {
         shieldMinFraction: Float,
         shieldMaxFraction: Float,
     ): SlingshotGameState {
-        if (state.isHit) return state
+        if (state.isComplete) return state
 
         val aimMatchesMark = abs(aimedPosition - markPosition) <= HIT_TOLERANCE
         val markWithinShield = markPosition in shieldMinFraction..shieldMaxFraction
         val hit = aimMatchesMark && markWithinShield
         return state.copy(
+            hits = if (hit) (state.hits + 1).coerceAtMost(state.requiredHits) else state.hits,
             lastOutcome = if (hit) SlingshotOutcome.HIT else SlingshotOutcome.MISS,
-            isHit = state.isHit || hit,
         )
     }
 }

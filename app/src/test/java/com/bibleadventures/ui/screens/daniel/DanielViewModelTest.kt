@@ -5,10 +5,10 @@ import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
-import com.bibleadventures.game.puzzles.dodge.DodgeLane
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.MathOperator
 import com.bibleadventures.progress.ProgressionService
@@ -47,18 +47,76 @@ class DanielViewModelTest {
         assertEquals(GridTileType.GOAL, state.grid[6][6])
     }
 
+    // --- Hurrying to Pray (rhythmlane, avoid semantics) ---
+
     @Test
-    fun `onLaneTapped plays a sound when Daniel dodges, not on a wrong step`() {
+    fun `onHurryToPrayLaneMoved clamps to the 3 lanes, never a failure`() {
+        val viewModel = createViewModel()
+
+        repeat(5) { viewModel.onHurryToPrayLaneMoved(-1) }
+        assertEquals(0, viewModel.uiState.value.characterLane)
+
+        repeat(5) { viewModel.onHurryToPrayLaneMoved(1) }
+        assertEquals(2, viewModel.uiState.value.characterLane)
+    }
+
+    @Test
+    fun `moving out of an official's lane before they arrive registers an avoid and plays a sound`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
+        val note = DanielContent.hurryToPrayChart.notes.first()
+        val safeLane = (0..2).first { it != note.lane }
 
-        val hazardLane = DanielContent.stealthBeats[0].hazardLane
-        viewModel.onLaneTapped(hazardLane) // wrong lane, TRY_AGAIN
-        assertTrue(audioController.playedEffects.isEmpty())
+        moveHurryToPrayLaneTo(viewModel, safeLane)
+        viewModel.onHurryToPrayTimeAdvanced(note.hitTimeMs)
 
-        val safeLane = if (hazardLane == DodgeLane.LEFT) DodgeLane.RIGHT else DodgeLane.LEFT
-        viewModel.onLaneTapped(safeLane)
+        assertEquals(1, viewModel.uiState.value.hurryToPrayState.hits)
+        assertFalse(viewModel.uiState.value.hurryToPrayState.isComplete)
         assertEquals(listOf(SoundEffect.OBSTACLE_DODGED), audioController.playedEffects)
+    }
+
+    @Test
+    fun `staying in an official's own lane when they arrive does not register an avoid`() {
+        val viewModel = createViewModel()
+        val note = DanielContent.hurryToPrayChart.notes.first()
+
+        moveHurryToPrayLaneTo(viewModel, note.lane)
+        viewModel.onHurryToPrayTimeAdvanced(note.hitTimeMs)
+
+        assertEquals(0, viewModel.uiState.value.hurryToPrayState.hits)
+    }
+
+    @Test
+    fun `completing all 3 required avoids marks Hurrying to Pray complete`() {
+        val viewModel = createViewModel()
+
+        completeHurryToPray(viewModel, DanielContent.hurryToPrayChart, DanielContent.HURRY_TO_PRAY_REQUIRED_AVOIDS)
+
+        assertTrue(viewModel.uiState.value.hurryToPrayState.isComplete)
+    }
+
+    /** Mirrors DavidGoliathViewModelTest's `completeCrossingValley` — loops the chart as many times as needed, parking Daniel out of each note's lane before its exact hit time. */
+    private fun completeHurryToPray(viewModel: DanielViewModel, chart: RhythmLaneChart, requiredAvoids: Int) {
+        var hits = 0
+        var loopIndex = 0L
+        while (hits < requiredAvoids) {
+            chart.notes.forEach { note ->
+                if (hits < requiredAvoids) {
+                    val safeLane = (0..2).first { it != note.lane }
+                    moveHurryToPrayLaneTo(viewModel, safeLane)
+                    viewModel.onHurryToPrayTimeAdvanced(loopIndex * chart.loopDurationMs + note.hitTimeMs)
+                    hits++
+                }
+            }
+            loopIndex++
+        }
+    }
+
+    private fun moveHurryToPrayLaneTo(viewModel: DanielViewModel, targetLane: Int) {
+        while (viewModel.uiState.value.characterLane != targetLane) {
+            val delta = if (viewModel.uiState.value.characterLane < targetLane) 1 else -1
+            viewModel.onHurryToPrayLaneMoved(delta)
+        }
     }
 
     @Test

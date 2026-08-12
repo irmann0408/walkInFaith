@@ -7,10 +7,6 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.dodge.DodgeGame
-import com.bibleadventures.game.puzzles.dodge.DodgeGameState
-import com.bibleadventures.game.puzzles.dodge.DodgeLane
-import com.bibleadventures.game.puzzles.dodge.DodgeOutcome
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeGame
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
@@ -20,6 +16,8 @@ import com.bibleadventures.game.puzzles.decisionpath.DecisionOutcome
 import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGame
 import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
 import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGame
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.rewards.DanielReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.DanielContent
@@ -38,8 +36,16 @@ import kotlin.random.Random
 
 data class DanielRewardResult(val stars: Int)
 
+/** Only screen-level movement math needs this — the engine only ever sees caller-supplied bounds, never a lane count. */
+private const val HURRY_TO_PRAY_LANE_COUNT = 3
+
 data class DanielUiState(
-    val dodgeState: DodgeGameState = DodgeGameState(beats = DanielContent.stealthBeats),
+    val hurryToPrayState: RhythmLaneGameState = RhythmLaneGameState(
+        chart = DanielContent.hurryToPrayChart,
+        requiredHits = DanielContent.HURRY_TO_PRAY_REQUIRED_AVOIDS,
+    ),
+    /** Which of the 3 lanes Daniel currently stands in — moved one lane at a time via [DanielViewModel.onHurryToPrayLaneMoved]. Starts centered so both edges are one move away. */
+    val characterLane: Int = 1,
     val selectedChoiceId: String? = null,
     val lionsDenState: DecisionPathGameState,
     val lionsDenProblems: List<MathProblem>,
@@ -73,13 +79,27 @@ class DanielViewModel(
             initialValue = emptySet(),
         )
 
-    fun onLaneTapped(lane: DodgeLane) {
+    /** Moves Daniel by [deltaLane] (-1 left, +1 right), clamped to the 3 lanes — never a no-op-that-looks-broken, it just stops at the edge. */
+    fun onHurryToPrayLaneMoved(deltaLane: Int) {
         _uiState.update { current ->
-            val next = DodgeGame.onLaneTapped(current.dodgeState, lane)
-            if (next.lastOutcome == DodgeOutcome.DODGED) {
+            current.copy(characterLane = (current.characterLane + deltaLane).coerceIn(0, HURRY_TO_PRAY_LANE_COUNT - 1))
+        }
+    }
+
+    /**
+     * Same role as every other `rhythmlane` screen's per-frame time-advance
+     * tick (marks a fully-passed official MISSED, feedback only), plus the
+     * actual avoid judgment via `RhythmLaneGame.onLaneAvoided` — a literal
+     * reskin of `DavidGoliathViewModel.onCrossingValleyTimeAdvanced`.
+     */
+    fun onHurryToPrayTimeAdvanced(nowMs: Long) {
+        _uiState.update { current ->
+            val afterMisses = RhythmLaneGame.onTimeAdvanced(current.hurryToPrayState, nowMs)
+            val afterAvoid = RhythmLaneGame.onLaneAvoided(afterMisses, current.characterLane, nowMs)
+            if (afterAvoid.hits > current.hurryToPrayState.hits) {
                 audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
             }
-            current.copy(dodgeState = next)
+            current.copy(hurryToPrayState = afterAvoid)
         }
     }
 

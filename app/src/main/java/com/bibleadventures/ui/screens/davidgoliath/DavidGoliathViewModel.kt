@@ -8,10 +8,6 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.dodge.DodgeGame
-import com.bibleadventures.game.puzzles.dodge.DodgeGameState
-import com.bibleadventures.game.puzzles.dodge.DodgeLane
-import com.bibleadventures.game.puzzles.dodge.DodgeOutcome
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGame
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
@@ -19,6 +15,8 @@ import com.bibleadventures.game.puzzles.matching.MatchItem
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.puzzles.matching.MatchingGame
 import com.bibleadventures.game.puzzles.matching.MatchingGameState
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGame
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGame
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotOutcome
@@ -35,8 +33,21 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 data class DavidGoliathRewardResult(val stars: Int)
+
+/** Only screen-level movement math needs this — the engine only ever sees caller-supplied bounds, never a lane count. */
+private const val CROSSING_VALLEY_LANE_COUNT = 3
+
+/**
+ * Screen-geometry concept, not engine state — mirrors how the shield's
+ * fractional bounds were already a caller-supplied concept
+ * ([SlingshotGame.onStoneReleased] never knows "where" the shield is, only
+ * whether a release matches it). The engine only counts hits; this decides
+ * where the shield practice target relocates to after each one.
+ */
+enum class ShieldZone { LEFT, MIDDLE, RIGHT }
 
 data class DavidGoliathUiState(
     val hiddenObjectState: HiddenObjectGameState,
@@ -47,7 +58,14 @@ data class DavidGoliathUiState(
     val reward: DavidGoliathRewardResult? = null,
     val lastRiverbedDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
     val sheepCountingState: MatchingGameState,
-    val dodgeState: DodgeGameState = DodgeGameState(beats = DavidGoliathContent.dodgeBeats),
+    val crossingValleyState: RhythmLaneGameState = RhythmLaneGameState(
+        chart = DavidGoliathContent.crossingValleyChart,
+        requiredHits = DavidGoliathContent.CROSSING_VALLEY_REQUIRED_AVOIDS,
+    ),
+    /** Which of the 3 lanes David currently stands in — moved one lane at a time via [DavidGoliathViewModel.onCrossingValleyLaneMoved]. Starts centered so both edges are one move away. */
+    val characterLane: Int = 1,
+    /** Where the practice shield currently sits — relocated to a random *different* zone after each hit, so every hit produces a visible move, never a repeat in place. */
+    val shieldZone: ShieldZone = ShieldZone.LEFT,
 )
 
 class DavidGoliathViewModel(
@@ -101,23 +119,44 @@ class DavidGoliathViewModel(
         }
     }
 
-    fun onLaneTapped(lane: DodgeLane) {
+    /** Moves David by [deltaLane] (-1 left, +1 right), clamped to the 3 lanes — never a no-op-that-looks-broken, it just stops at the edge. */
+    fun onCrossingValleyLaneMoved(deltaLane: Int) {
         _uiState.update { current ->
-            val next = DodgeGame.onLaneTapped(current.dodgeState, lane)
-            if (next.lastOutcome == DodgeOutcome.DODGED) {
+            current.copy(characterLane = (current.characterLane + deltaLane).coerceIn(0, CROSSING_VALLEY_LANE_COUNT - 1))
+        }
+    }
+
+    /**
+     * Same role as every other `rhythmlane` screen's per-frame time-advance
+     * tick (marks a fully-passed rock MISSED, feedback only), plus the
+     * actual avoid judgment: reuses [RhythmLaneGame.onLaneAvoided] — the
+     * inverse of Gathering the Leftovers' catch semantics — checking
+     * [DavidGoliathUiState.characterLane] against whichever rock is
+     * currently landing. The challenge is moving out of a rock's lane
+     * *before* it lands, not reacting to it once it has.
+     */
+    fun onCrossingValleyTimeAdvanced(nowMs: Long) {
+        _uiState.update { current ->
+            val afterMisses = RhythmLaneGame.onTimeAdvanced(current.crossingValleyState, nowMs)
+            val afterAvoid = RhythmLaneGame.onLaneAvoided(afterMisses, current.characterLane, nowMs)
+            if (afterAvoid.hits > current.crossingValleyState.hits) {
                 audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
             }
-            current.copy(dodgeState = next)
+            current.copy(crossingValleyState = afterAvoid)
         }
     }
 
     fun onStoneReleased(aimedPosition: Float, markPosition: Float, shieldMinFraction: Float, shieldMaxFraction: Float) {
         _uiState.update { current ->
             val next = SlingshotGame.onStoneReleased(current.slingshotState, aimedPosition, markPosition, shieldMinFraction, shieldMaxFraction)
-            if (next.lastOutcome == SlingshotOutcome.HIT) {
+            val isNewHit = next.hits > current.slingshotState.hits
+            if (isNewHit) {
                 audioController.playSfx(SoundEffect.TARGET_HIT)
             }
-            current.copy(slingshotState = next)
+            current.copy(
+                slingshotState = next,
+                shieldZone = if (isNewHit) nextRandomShieldZone(current.shieldZone) else current.shieldZone,
+            )
         }
     }
 
@@ -142,6 +181,12 @@ class DavidGoliathViewModel(
             audioController.playSfx(SoundEffect.REWARD_CELEBRATION)
             _uiState.update { it.copy(reward = DavidGoliathRewardResult(stars = stars)) }
         }
+    }
+
+    /** Excludes [current] so every hit produces a visible relocation, never an occasional no-op-looking repeat. */
+    private fun nextRandomShieldZone(current: ShieldZone): ShieldZone {
+        val choices = ShieldZone.entries.filter { it != current }
+        return choices[Random.Default.nextInt(choices.size)]
     }
 
     private fun createInitialState(): DavidGoliathUiState {

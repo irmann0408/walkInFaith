@@ -20,3 +20,15 @@ data class HiddenItemDef(
 
 /** A tappable item that doesn't belong — never required, never penalized, always retryable. */
 data class DecoyItemDef(val id: String, @DrawableRes val iconRes: Int, @StringRes val nameRes: Int)
+
+/**
+ * A purely visual, hand-positioned distractor in a hidden-object scene —
+ * never registered as a [HiddenItemDef]/`HiddenItem`, so tapping one is a
+ * screen-level no-op by construction, not an engine concern (never wired to
+ * a click handler at all). Distinct from [DecoyItemDef] (no fixed position
+ * of its own — shuffled into a shared pool with the real items instead) —
+ * extracted here once a second chapter (Esther's Royal Attire) needed this
+ * exact "own position, no name" shape, first established by Feeding the
+ * 5,000's crowd/basket decoys.
+ */
+data class DecoyItem(val id: String, val position: Offset, @DrawableRes val iconRes: Int)

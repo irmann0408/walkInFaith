@@ -1,6 +1,23 @@
 # Project Status
 
-Last updated: 2026-08-12 (Feeding the 5,000 built as a full new chapter — 6
+Last updated: 2026-08-12 (Follow-up redesign of 4 shipped mini-games: David
+& Goliath's Crossing the Valley and Daniel's Hurrying to Pray both moved off
+the old 2-lane tap-the-safe-side `dodge` engine onto a new `RhythmLaneGame.onLaneAvoided`
+— the inverse of Gathering the Leftovers' catch semantics — steering a single
+character between 3 lanes to avoid, not catch, 3 falling hazards; Esther's
+Royal Attire hidden-object scene gained 20 new decoy objects plus a live
+"still to find" checklist that removes each real item's name the instant
+it's found; David & Goliath's Sling Practice now requires 3 real hits
+(shield relocates to a random different zone after each), the target
+mark's rendered line is half its old width, and its motion finally moved
+off `rememberInfiniteTransition` onto the same manual `withFrameNanos`
+clock every other real-time mechanic in this app already used — closing
+out a design tension flagged since Chapter 2. See "Architectural decisions
+log" for a real Compose-testing pitfall hit and fixed along the way: a
+`LaunchedEffect` loop with no time-based stopping condition can never let
+`assertExists()`/`waitForIdle()` succeed while the test clock auto-advances,
+regardless of how long the idling timeout is raised. Before that: Feeding
+the 5,000 built as a full new chapter — 6
 real mini-puzzles: Gathering the Crowd (new `groupfill` engine, drag
 families into seating circles summing exactly to Mark 6:40's fifties/
 hundreds), Searching for Food and The Boy's Gift (`hiddenobject` reused
@@ -374,8 +391,126 @@ time the chapter is (re)started, same mechanism the Matching shuffle already rel
 - A physical device (Samsung Galaxy S25 Ultra, `SM-S938B`) is used for
   `connectedAndroidTest` instead of an emulator/AVD — connect via USB with debugging
   enabled.
+- A physical device left idle mid-instrumented-test-run can dim/lock its
+  screen and briefly drop the adb connection, aborting the run with an
+  unrelated-looking `AdbCommandRejectedException`. Fixed for this session
+  via `adb shell svc power stayon true` and raising `screen_off_timeout` —
+  worth doing once per device setup, not code-related.
+
+### Crossing the Valley / Hurrying to Pray / Royal Attire / Sling Practice redesign
+Four follow-up requests on already-shipped mini-games, all in David &
+Goliath, Daniel, and Esther's chapters.
+- **David & Goliath's Crossing the Valley and Daniel's Hurrying to Pray**
+  moved off the old 2-lane tap-the-safe-side `dodge` engine onto
+  `rhythmlane`, reusing Gathering the Leftovers' exact "single object
+  steered between 3 lanes via left/right buttons, falling hazards
+  auto-judged every frame" shape — but inverted via a new
+  `RhythmLaneGame.onLaneAvoided` (sibling to `onLaneTapped`, same
+  `RhythmLaneGameState`/chart/`judgedNoteKeys` unchanged): succeeds when
+  the character's current lane does *not* match a note landing within the
+  hit window. `requiredHits = 3` for both. `DavidGoliathContent.crossingValleyChart`/
+  `DanielContent.hurryToPrayChart` (3 notes, one per lane, `loopDurationMs
+  = 3600`) replace the old `dodgeBeats`/`stealthBeats`. The old
+  `game/puzzles/dodge` engine and `DodgeGameTest.kt` are left in place,
+  unreferenced — same precedent as `game/puzzles/sequence`. Both screens
+  render the player's own `CharacterPreview` sliding between lanes
+  (`animateDpAsState`), replacing a generic marker.
+- **Esther's Royal Attire** hidden-object scene gained 20 new decoy
+  drawables (mirror, vase, candle, book, goblet, fan, jewelry box, comb,
+  pillow, tassel, chair, plant, bowl, ring, necklace, scroll, oil lamp,
+  rug, hairpin, hairbrush — never wired to a click handler, same
+  never-clickable-decoy precedent as Feeding the 5,000's Boy's Gift) and a
+  live `RemainingAttireChecklist` composable that lists each unfound real
+  item's name, derived straight from `HiddenObjectGameState.foundIds` with
+  no new engine/ViewModel state, disappearing entirely once everything's
+  found. `Feeding5000Content`'s local `DecoyItem(id, position, iconRes)`
+  was promoted to a shared type in `game/stories/ContentDefs.kt` now that
+  Royal Attire is a second consumer.
+- **David & Goliath's Sling Practice** now requires 3 real hits
+  (`SlingshotGameState.hits`/`requiredHits`, was a single `isHit: Boolean`)
+  and the shield relocates to a random *different* zone
+  (`ShieldZone.LEFT/MIDDLE/RIGHT`, a new enum in `DavidGoliathViewModel.kt`
+  — screen-geometry, not engine state, same as the shield's fractional
+  bounds always having been caller-supplied) after every hit. The target
+  mark's rendered line is now half its old width (rendering only,
+  `SlingshotGame.HIT_TOLERANCE` untouched). The mark's motion finally moved
+  off `rememberInfiniteTransition` onto the same manual `withFrameNanos`
+  accumulator every other real-time mechanic in this app already used —
+  closing out a design tension flagged since Chapter 2 (a relocating
+  shield made the old "shield's fixed position was placed to match the
+  animation's frozen `initialValue`" test workaround impossible to keep,
+  which was the trigger to finally fix it for real).
+- All 4 mechanics verified via unit tests (`RhythmLaneGameTest`'s new
+  `onLaneAvoided` cases, `DavidGoliathViewModelTest`/`DanielViewModelTest`'s
+  replaced lane-avoid cases, new sling-practice `hits`/`ShieldZone` cases,
+  `SlingshotGameTest`'s updated `hits`-based cases) and on-device
+  instrumented tests: `DavidGoliathFlowTest`, `DanielFlowTest`, and
+  `EstherFlowTest` each passed individually, then the full 20-class
+  instrumented suite passed twice back-to-back (aside from
+  `WorldMapNavigationTest`, a pre-existing, unrelated ordering flakiness —
+  see Known issues below).
+
+**Two immediate follow-ups on the above, same session:**
+- **Royal Attire's checklist now shows each unfound item's icon next to its
+  name**, not just the word — `RemainingAttireChecklist` renders a
+  `Row(icon, name)` per entry (icon from `HiddenItem.iconRes`, merged into
+  one semantics node via `Modifier.semantics(mergeDescendants = true)`), on
+  user feedback that the word alone wasn't enough to recognize which icon
+  to look for.
+- **Cross the Courtyard's guard now visibly passes through the middle
+  column** instead of jumping straight from the left side of the courtyard
+  to the right. `EstherContent.courtyardGuards`' single-guard patrol was 2
+  steps (`GridPosition(2,0)`, `GridPosition(2,2)`) — since
+  `StealthGame.onDirectionPressed` advances exactly one patrol step per
+  player move via `patrol[turnIndex % patrol.size]`, a 2-step cycle
+  necessarily alternates directly between the two ends with no step ever
+  landing on the middle cell. Extended to a 4-step ping-pong patrol (left,
+  middle, right, middle) so the cycle is a genuine back-and-forth walk.
+  Hand-traced the existing `courtyardSolutionPath` against the new patrol
+  move-by-move — still reaches the goal without ever being spotted
+  (confirmed by both `StealthGameTest`/`EstherViewModelTest` and
+  `EstherFlowTest` on-device), so the solution path itself needed no
+  changes.
+
+**One real bug fixed, same session, reported by the user after playing
+Sling Practice manually:** hits were sometimes not counted when the mark
+visually lined up with the shield, and sometimes counted when it didn't.
+Root cause: `DavidGoliathSlingPracticeScreen.kt`'s stone drag gesture lives
+inside `Modifier.pointerInput(Unit) { detectDragGestures(...) }`, which is
+set up once and never restarts. Its `onDragEnd` closure was reading
+`shieldMin`/`shieldMax` — plain `val`s computed from the `shieldZone`
+parameter at the top of the composable — so after the shield relocated to
+a new zone (which happens after every hit, by design), the *visible*
+shield moved but the closure's captured bounds didn't: the hit-test kept
+checking release position against the *previous* zone forever. `elapsedMs`
+never had this problem because it's a `MutableState` read via delegate,
+which is always live even inside a stale closure — `shieldZone`, an
+ordinary parameter, isn't. Fixed with `rememberUpdatedState(shieldZone)`
+and recomputing `shieldMinFraction`/`shieldMaxFraction` from that live
+value inside `onDragEnd`, the standard Compose idiom for exactly this
+"long-lived callback needs the current value of something that isn't a
+`MutableState`" situation. The instrumented test's own retry loop
+(`completeSlingPractice`) silently absorbed this bug's false negatives as
+extra iterations without ever asserting they shouldn't have happened,
+which is why it didn't catch this — worth remembering that a retry-until-success
+test helper isn't equivalent to actually asserting first-attempt
+correctness.
 
 ## Known issues / follow-ups
+
+- **`WorldMapNavigationTest` can fail when run after any chapter-completing
+  flow test in the same `connectedAndroidTest` invocation.** It asserts
+  every chapter after Noah's Ark is locked, which only holds for a fresh
+  save — this app's single save file persists real progress across test
+  classes within one suite run (no `pm clear` between classes), so if a
+  flow test that completes chapters happens to run first, this test's
+  assumption breaks. Reproduced consistently (same single failure, twice
+  back-to-back) while verifying this session's changes; confirmed
+  unrelated to those changes (the assertion and failure have nothing to do
+  with any of the 4 redesigned mechanics). Not fixed here — would need
+  either per-class data isolation (a custom test orchestrator / `pm clear`
+  hook) or reordering this test to run first, a test-infrastructure change
+  bigger than this session's scope.
 
 - Launcher icon is a placeholder vector shape, not final art.
 - minSdk 24 devices fall back to a non-adaptive icon; no legacy PNG mipmap was
@@ -2653,3 +2788,48 @@ content gap is **Chapter 8 — Jesus Calms the Storm**, the last chapter in
   mechanic's physical direction point opposite ways, that's a real defect
   worth a full engine swap (here, `rhythmlane` -> `gridmaze`), not a
   polish-later note.
+- **A `rhythmlane` "avoid" mechanic is a genuine sibling function, not a
+  parameter on the existing "catch" one.** `RhythmLaneGame.onLaneAvoided`
+  reuses every existing type (`RhythmLaneGameState`/`RhythmLaneChart`/
+  `judgedNoteKeys`/`HIT_WINDOW_MS`/`PERFECT_WINDOW_MS`) unchanged, but its
+  search is genuinely different from `onLaneTapped`'s: catching filters
+  candidate notes *by the tapped lane first*, while avoiding must search
+  the nearest note *across all lanes* (since a hazard landing in any lane
+  the character isn't in counts), then compare `candidate.lane` against
+  the current lane as a separate step. Getting this backwards (filtering
+  by current lane first, mirroring `onLaneTapped`'s shape) would silently
+  turn "avoid" into "wait passively until nothing's dangerous," never
+  actually rewarding a deliberate dodge.
+- **A `while(isActive) { withFrameNanos {...} }` loop with *no* time-based
+  stopping condition can never let Compose's test tooling reach idle,
+  regardless of how long `IdlingPolicies`' timeout is raised.** Discovered
+  converting Sling Practice's target mark off `rememberInfiniteTransition`:
+  every other real-time mechanic in this app (Corridor, the marches,
+  Catching, Crossing the Valley) keys its `LaunchedEffect` on `isComplete`
+  and exits once true — and *every one of those* is reachable via elapsed
+  time alone even with zero player input (a stationary lane/basket still
+  auto-catches or auto-avoids some fraction of notes every loop), so the
+  loop always has a path to naturally stop, letting
+  `assertExists()`/`waitForIdle()` eventually succeed once the auto-advancing
+  test clock pumps far enough. Sling Practice's mark has no such path —
+  completion only ever happens via an explicit stone-release gesture — so
+  even keying its `LaunchedEffect` on `isComplete` (the first fix tried)
+  didn't help: `isComplete` simply never becomes true while the clock
+  free-runs, so the loop runs forever and `waitForIdle()` times out no
+  matter how generous the budget (tested up to 90s). Confirmed via a
+  frame-counting `Log.d` inside the loop that Crossing the Valley's own
+  loop *does* terminate quickly and correctly (~300 frames, ~350ms real
+  time) — ruling it out — before finding Sling Practice's genuinely
+  never-terminating case. **The fix for a screen like this: never query
+  semantics while `mainClock.autoAdvance = true`.** Freeze the clock as the
+  very first action after an ordinary, un-frozen navigating click (not
+  around the click itself — freezing before it is separately unreliable,
+  per the entry above), advance by exactly one frame
+  (`advanceTimeByFrame()`) to let the first composition land, then drive
+  the mark forward in small deterministic `advanceTimeBy(50L)` steps,
+  reading its live rendered position after each and dragging onto it once
+  it's within the shield's true (rendered, not assumed) span. Any future
+  "endless ambient animation, completes only via explicit gesture" screen
+  should freeze-first the same way — the completion-based `LaunchedEffect`
+  key is necessary for a *self-completing* mechanic, but not sufficient on
+  its own for one that isn't.

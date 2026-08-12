@@ -7,14 +7,6 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmNote
 
 /**
- * A purely visual distractor in The Boy's Gift basket search — never
- * registered as a [com.bibleadventures.game.puzzles.hiddenobject.HiddenItem],
- * so tapping one is a screen-level no-op by construction, not an engine
- * concern (same zero-risk "decoy" pattern used elsewhere in this app).
- */
-data class DecoyItem(val id: String, val position: Offset, val iconRes: Int)
-
-/**
  * Static content for the Feeding the 5,000 chapter. Kept separate from the
  * game engine packages under `game/puzzles` so those stay reusable by
  * future chapters — same convention as every other chapter's content file.

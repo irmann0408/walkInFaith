@@ -2,9 +2,9 @@ package com.bibleadventures.game.stories
 
 import androidx.compose.ui.geometry.Offset
 import com.bibleadventures.R
-import com.bibleadventures.game.puzzles.dodge.DodgeBeat
-import com.bibleadventures.game.puzzles.dodge.DodgeLane
 import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmNote
 
 /** Shared across chapters (also used by Jericho's Blow the Shofar) — same shape everywhere, same reason [MathProblem] is. */
 enum class MathOperator { ADD, SUBTRACT, MULTIPLY, DIVIDE }
@@ -45,16 +45,22 @@ object DanielContent {
         R.string.daniel_stealth_context_line_2,
     )
 
-    // A short, discrete "hurry to the prayer room" sequence, mirroring
-    // DavidGoliathContent.dodgeBeats exactly — this is a literal reskin of
-    // the same engine, not a new mechanic. An official blocks one side of
-    // the hallway; Daniel steps to the clear side to keep moving. Framed as
-    // getting past, not hiding — Daniel 6:10 has him praying openly.
-    val stealthBeats: List<DodgeBeat> = listOf(
-        DodgeBeat("beat_1", DodgeLane.LEFT),
-        DodgeBeat("beat_2", DodgeLane.RIGHT),
-        DodgeBeat("beat_3", DodgeLane.LEFT),
+    /**
+     * A literal reskin of [DavidGoliathContent.crossingValleyChart] — same
+     * `rhythmlane`-via-`onLaneAvoided` shape, same 3 lanes/3 required
+     * avoids, only the hazard (an official blocking the hallway instead of
+     * a rolling rock) and background differ. Framed as getting past, not
+     * hiding — Daniel 6:10 has him praying openly.
+     */
+    val hurryToPrayChart = RhythmLaneChart(
+        notes = listOf(
+            RhythmNote("official_1", lane = 1, hitTimeMs = 800),
+            RhythmNote("official_2", lane = 0, hitTimeMs = 1800),
+            RhythmNote("official_3", lane = 2, hitTimeMs = 2800),
+        ),
+        loopDurationMs = 3600,
     )
+    const val HURRY_TO_PRAY_REQUIRED_AVOIDS = 3
 
     // Flavor-only responses at Daniel 6:10's real decision point — he "went
     // to his house... and prayed, and gave thanks before his God, as he did

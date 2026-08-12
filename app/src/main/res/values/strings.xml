@@ -233,9 +233,11 @@
     <string name="david_goliath_dodge_context_line_2">Loose rocks tumbled down the hillside — help him step out of the way.</string>
 
     <string name="david_goliath_dodge_title">Cross the Valley</string>
-    <string name="david_goliath_dodge_instructions">A rock is rolling in! Tap the safe side for David to step to.</string>
-    <string name="david_goliath_dodge_lane_left">Step Left</string>
-    <string name="david_goliath_dodge_lane_right">Step Right</string>
+    <string name="david_goliath_dodge_instructions">Use the arrows to move David out of the way before each rock lands.</string>
+    <string name="david_goliath_dodge_progress_label">Avoided %1$d of %2$d rocks</string>
+    <string name="david_goliath_dodge_character_content_description">David, lane %1$d</string>
+    <string name="david_goliath_dodge_move_left_content_description">Move David left</string>
+    <string name="david_goliath_dodge_move_right_content_description">Move David right</string>
     <string name="david_goliath_dodge_rock_content_description">Rolling rock</string>
 
     <string name="david_goliath_choose_stones_context_title">Down by the Stream</string>
@@ -259,9 +261,13 @@
     <string name="david_goliath_choice_reaction_3">David stood tall, trusting God completely!</string>
 
     <string name="david_goliath_sling_practice_title">Sling Practice</string>
-    <string name="david_goliath_sling_practice_instructions">Drag back and let go to help David aim true at the mark.</string>
+    <string name="david_goliath_sling_practice_instructions">Drag back and let go when the mark lines up with the shield. Hit it 3 times!</string>
+    <string name="david_goliath_sling_practice_progress_label">Hit %1$d of %2$d times</string>
     <string name="david_goliath_sling_target_mark_content_description">Target mark</string>
-    <string name="david_goliath_sling_shield_content_description">Goliath\'s shield</string>
+    <string name="david_goliath_sling_shield_content_description">Goliath\'s shield, %1$s</string>
+    <string name="david_goliath_sling_shield_zone_left">left</string>
+    <string name="david_goliath_sling_shield_zone_middle">middle</string>
+    <string name="david_goliath_sling_shield_zone_right">right</string>
     <string name="david_goliath_sling_stone_content_description">David\'s stone. Drag to aim, then let go.</string>
 
     <string name="david_goliath_lesson_title">Courage and Trusting God</string>
@@ -302,9 +308,11 @@
     <string name="daniel_stealth_context_line_2">Some officials were watching, hoping to catch him. Help Daniel hurry to his prayer room.</string>
 
     <string name="daniel_stealth_title">Hurry to the Prayer Room</string>
-    <string name="daniel_stealth_instructions">An official is blocking one side! Tap the clear side for Daniel to hurry through.</string>
-    <string name="daniel_stealth_lane_left">Step Left</string>
-    <string name="daniel_stealth_lane_right">Step Right</string>
+    <string name="daniel_stealth_instructions">Use the arrows to move Daniel out of the way before each official arrives.</string>
+    <string name="daniel_stealth_progress_label">Avoided %1$d of %2$d officials</string>
+    <string name="daniel_stealth_character_content_description">Daniel, lane %1$d</string>
+    <string name="daniel_stealth_move_left_content_description">Move Daniel left</string>
+    <string name="daniel_stealth_move_right_content_description">Move Daniel right</string>
     <string name="daniel_stealth_official_content_description">An official blocking the way</string>
 
     <string name="daniel_choice_title">Daniel\'s Prayer</string>
@@ -351,7 +359,8 @@
     <string name="esther_new_queen_search_context_line_2">Help her get ready by finding everything she needs.</string>
 
     <string name="esther_new_queen_royal_attire_title">Royal Attire</string>
-    <string name="esther_new_queen_royal_attire_instructions">Tap each item to gather it for Esther.</string>
+    <string name="esther_new_queen_royal_attire_instructions">Tap each item to gather it for Esther — some things in the room aren\'t hers.</string>
+    <string name="esther_new_queen_royal_attire_checklist_title">Still to find:</string>
     <string name="esther_new_queen_item_crown">Jeweled Crown</string>
     <string name="esther_new_queen_item_robe">Silk Robe</string>
     <string name="esther_new_queen_item_sash">Golden Sash</string>

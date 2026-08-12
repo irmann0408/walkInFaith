@@ -121,4 +121,77 @@ class RhythmLaneGameTest {
     fun `a fresh state has no last judgment`() {
         assertNull(freshState().lastJudgment)
     }
+
+    // --- onLaneAvoided: the inverse "dodge" semantics ---
+
+    @Test
+    fun `standing in a different lane exactly on time counts as a PERFECT avoid`() {
+        val next = RhythmLaneGame.onLaneAvoided(freshState(), currentLane = 1, nowMs = 400)
+
+        assertEquals(1, next.hits)
+        assertEquals(NoteJudgment.PERFECT, next.lastJudgment)
+    }
+
+    @Test
+    fun `standing in a different lane a little early or late within the window is a GREAT avoid`() {
+        val next = RhythmLaneGame.onLaneAvoided(freshState(), currentLane = 1, nowMs = 550)
+
+        assertEquals(1, next.hits)
+        assertEquals(NoteJudgment.GREAT, next.lastJudgment)
+    }
+
+    @Test
+    fun `standing in the hazard's own lane never counts as an avoid`() {
+        val state = freshState()
+        val next = RhythmLaneGame.onLaneAvoided(state, currentLane = 0, nowMs = 400) // n0 is lane 0
+
+        assertEquals(state, next)
+    }
+
+    @Test
+    fun `no nearby note is a pure no-op regardless of lane`() {
+        // Unlike onLaneTapped (which filters by lane first, so any moment outside its
+        // one requested lane's own windows is a no-op), onLaneAvoided searches the
+        // nearest note across ALL lanes — so this must land in an actual gap between
+        // every note's +/-300ms window: n0@400 -> [100,700], n1@1200 -> [900,1500],
+        // n2@2000 -> [1700,2300]. 800ms sits in the gap between n0's and n1's windows.
+        val state = freshState()
+        val next = RhythmLaneGame.onLaneAvoided(state, currentLane = 1, nowMs = 800)
+
+        assertEquals(state, next)
+    }
+
+    @Test
+    fun `a note never avoided in time can still be avoided on the next loop iteration`() {
+        var state = freshState()
+        state = RhythmLaneGame.onTimeAdvanced(state, nowMs = 1000) // n0 (lane 0) passes un-avoided in loop 0 (never in lane 0's window while in a different lane)
+        assertEquals(0, state.hits)
+
+        // Same note id, same lane, one loop later — avoided by standing in lane 1 this time.
+        state = RhythmLaneGame.onLaneAvoided(state, currentLane = 1, nowMs = 2400 + 400)
+
+        assertEquals(1, state.hits)
+    }
+
+    @Test
+    fun `avoids never exceed requiredHits`() {
+        var state = freshState(requiredHits = 1)
+        state = RhythmLaneGame.onLaneAvoided(state, currentLane = 1, nowMs = 400)
+        assertTrue(state.isComplete)
+
+        val unchanged = RhythmLaneGame.onLaneAvoided(state, currentLane = 1, nowMs = 2400 + 400)
+
+        assertEquals(state, unchanged)
+    }
+
+    @Test
+    fun `isComplete becomes true once requiredHits avoids is reached`() {
+        var state = freshState(requiredHits = 2)
+        state = RhythmLaneGame.onLaneAvoided(state, currentLane = 1, nowMs = 400) // avoids n0 (lane 0)
+        assertTrue(!state.isComplete)
+
+        state = RhythmLaneGame.onLaneAvoided(state, currentLane = 0, nowMs = 1200) // avoids n1 (lane 1)
+
+        assertTrue(state.isComplete)
+    }
 }

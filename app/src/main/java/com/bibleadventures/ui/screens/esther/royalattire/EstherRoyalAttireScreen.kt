@@ -2,9 +2,11 @@ package com.bibleadventures.ui.screens.esther.royalattire
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +37,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
+import com.bibleadventures.game.stories.DecoyItem
+import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -94,6 +98,18 @@ private fun EstherRoyalAttireContent(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
+
+                // Decoys render first, underneath, and are never wired to
+                // onItemTapped — a harmless no-op by construction, not
+                // something the engine defends against (same pattern as
+                // Feeding the 5,000's crowd/basket decoys).
+                EstherContent.royalAttireDecoys.forEach { decoy ->
+                    RoyalAttireDecoyTarget(
+                        decoy = decoy,
+                        modifier = Modifier.offset(x = maxWidth * decoy.position.x, y = maxHeight * decoy.position.y),
+                    )
+                }
+
                 hiddenObjectState.items.forEach { item ->
                     AttireItemTarget(
                         item = item,
@@ -103,6 +119,12 @@ private fun EstherRoyalAttireContent(
                     )
                 }
             }
+
+            RemainingAttireChecklist(
+                items = hiddenObjectState.items,
+                foundIds = hiddenObjectState.foundIds,
+                modifier = Modifier.padding(top = 16.dp),
+            )
 
             if (previouslyCompleted && !hiddenObjectState.isComplete) {
                 Text(
@@ -158,6 +180,59 @@ private fun AttireItemTarget(
                 contentDescription = null,
                 modifier = Modifier.size(32.dp).alpha(0.85f),
             )
+        }
+    }
+}
+
+/** Purely decorative — no click handling at all, so a tap here can never register as a find. */
+@Composable
+private fun RoyalAttireDecoyTarget(decoy: DecoyItem, modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(decoy.iconRes),
+        contentDescription = null,
+        modifier = modifier.size(32.dp).alpha(0.85f),
+    )
+}
+
+/**
+ * A live checklist of what's still hidden, named up front with its icon
+ * (unlike the on-image labels, which stay hidden until found so they don't
+ * give away *where* to look) — the icon is what a young player is actually
+ * scanning the scene for, so pairing it with the word (not just the word
+ * alone) is what makes the checklist usable. Each entry disappears the
+ * instant that item is found, derived straight from
+ * [HiddenObjectGameState.foundIds] with no new engine/ViewModel state
+ * needed.
+ */
+@Composable
+private fun RemainingAttireChecklist(items: List<HiddenItem>, foundIds: Set<String>, modifier: Modifier = Modifier) {
+    val remaining = items.filter { it.id !in foundIds }
+    if (remaining.isEmpty()) return
+
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = stringResource(R.string.esther_new_queen_royal_attire_checklist_title),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        remaining.forEach { item ->
+            val name = stringResource(item.contentDescriptionRes)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .semantics(mergeDescendants = true) {},
+            ) {
+                Image(
+                    painter = painterResource(item.iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                )
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
     }
 }

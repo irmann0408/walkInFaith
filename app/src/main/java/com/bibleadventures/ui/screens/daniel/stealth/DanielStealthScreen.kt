@@ -1,58 +1,74 @@
 package com.bibleadventures.ui.screens.daniel.stealth
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.domain.model.CharacterCustomization
-import com.bibleadventures.game.puzzles.dodge.DodgeBeat
-import com.bibleadventures.game.puzzles.dodge.DodgeGameState
-import com.bibleadventures.game.puzzles.dodge.DodgeLane
-import com.bibleadventures.game.puzzles.dodge.DodgeOutcome
+import com.bibleadventures.game.puzzles.rhythmlane.NoteJudgment
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
+import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.components.CharacterPreview
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+
+private const val LANE_COUNT = 3
+private val OFFICIAL_SIZE = 40.dp
+private val CHARACTER_SIZE = 72.dp
+private const val TRAVEL_DURATION_MS = 1500L
+private const val NOTE_GRACE_MS = 300L
 
 /**
  * A literal reskin of [com.bibleadventures.ui.screens.davidgoliath.dodge.DavidGoliathDodgeScreen] —
- * same [com.bibleadventures.game.puzzles.dodge.DodgeGame] engine, same
- * discrete/self-paced structure, only the art and copy change. An official
- * blocks one side of the hallway; Daniel steps to the clear side to keep
- * hurrying toward his prayer room — framed as getting past, not hiding,
- * since Daniel 6:10 has him praying openly once he arrives.
+ * same `rhythmlane`-via-`onLaneAvoided` shape, only the art and copy
+ * change. An official blocks one of the 3 lanes at a time; Daniel steers
+ * himself out of the way to keep hurrying toward his prayer room — framed
+ * as getting past, not hiding, since Daniel 6:10 has him praying openly
+ * once he arrives. `requiredHits = 3`.
  */
 @Composable
 fun DanielStealthScreen(
@@ -65,9 +81,11 @@ fun DanielStealthScreen(
     val character by viewModel.characterCustomization.collectAsStateWithLifecycle()
 
     DanielStealthContent(
-        dodgeState = uiState.dodgeState,
+        hurryToPrayState = uiState.hurryToPrayState,
+        characterLane = uiState.characterLane,
         character = character,
-        onLaneTapped = viewModel::onLaneTapped,
+        onLaneMoved = viewModel::onHurryToPrayLaneMoved,
+        onTimeAdvanced = viewModel::onHurryToPrayTimeAdvanced,
         onContinue = onContinue,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
@@ -76,28 +94,34 @@ fun DanielStealthScreen(
 
 @Composable
 private fun DanielStealthContent(
-    dodgeState: DodgeGameState,
+    hurryToPrayState: RhythmLaneGameState,
+    characterLane: Int,
     character: CharacterCustomization,
-    onLaneTapped: (DodgeLane) -> Unit,
+    onLaneMoved: (Int) -> Unit,
+    onTimeAdvanced: (Long) -> Unit,
     onContinue: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    // -1 = left, 0 = center, 1 = right. Purely presentational, mirrors
-    // DavidGoliathDodgeScreen's davidFraction exactly.
-    val danielFraction = remember { Animatable(0f) }
-    var lastTappedLane by remember { mutableStateOf<DodgeLane?>(null) }
+    var elapsedMs by remember { mutableLongStateOf(0L) }
+    val isComplete = hurryToPrayState.isComplete
 
-    // Deliberately lags dodgeState.currentBeat — see DavidGoliathDodgeScreen's
-    // displayedBeat for why (avoids the hazard appearing to move with Daniel).
-    var displayedBeat by remember { mutableStateOf(dodgeState.currentBeat) }
+    LaunchedEffect(isComplete) {
+        if (isComplete) return@LaunchedEffect
+        var startFrameNanos = -1L
+        while (isActive) {
+            withFrameNanos { frameNanos ->
+                if (startFrameNanos < 0) startFrameNanos = frameNanos
+                elapsedMs = (frameNanos - startFrameNanos) / 1_000_000
+            }
+            onTimeAdvanced(elapsedMs)
+        }
+    }
 
-    LaunchedEffect(dodgeState) {
-        val lane = lastTappedLane ?: return@LaunchedEffect
-        danielFraction.animateTo(if (lane == DodgeLane.LEFT) -1f else 1f, animationSpec = tween(350))
-        delay(450)
-        danielFraction.animateTo(0f, animationSpec = tween(350))
-        displayedBeat = dodgeState.currentBeat
+    val feedback = when (hurryToPrayState.lastJudgment) {
+        NoteJudgment.PERFECT, NoteJudgment.GREAT -> stringResource(R.string.feedback_great_job)
+        NoteJudgment.MISSED -> stringResource(R.string.feedback_try_another_one)
+        null -> ""
     }
 
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -117,79 +141,65 @@ private fun DanielStealthContent(
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 8.dp),
             )
+            Text(
+                text = stringResource(R.string.daniel_stealth_progress_label, hurryToPrayState.hits, hurryToPrayState.requiredHits),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+            )
 
-            val feedback = when (dodgeState.lastOutcome) {
-                DodgeOutcome.DODGED -> stringResource(R.string.feedback_great_job)
-                DodgeOutcome.TRY_AGAIN -> stringResource(R.string.feedback_try_another_one)
-                DodgeOutcome.NONE -> ""
-            }
-            Box(modifier = Modifier.height(32.dp)) {
-                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
+            Box(modifier = Modifier.height(28.dp).padding(top = 4.dp)) {
+                Text(text = feedback, style = MaterialTheme.typography.titleMedium)
             }
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1.6f),
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.bg_daniel_hallway),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                if (!dodgeState.isComplete) {
-                    val hazardLane = displayedBeat?.hazardLane
-                    Row(modifier = Modifier.fillMaxSize()) {
-                        Box(modifier = Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                            if (hazardLane == DodgeLane.LEFT) OfficialHazard(displayedBeat)
-                        }
-                        Box(modifier = Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                            if (hazardLane == DodgeLane.RIGHT) OfficialHazard(displayedBeat)
+            if (!isComplete) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth().aspectRatio(1.6f)) {
+                        Image(
+                            painter = painterResource(R.drawable.bg_daniel_hallway),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().weight(1f, fill = true),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                repeat(LANE_COUNT) { lane ->
+                                    FallingOfficialLane(
+                                        lane = lane,
+                                        chart = hurryToPrayState.chart,
+                                        judgedNoteKeys = hurryToPrayState.judgedNoteKeys,
+                                        elapsedMs = elapsedMs,
+                                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                                    )
+                                }
+                            }
+
+                            SingleCharacterTrack(
+                                characterLane = characterLane,
+                                character = character,
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            )
                         }
                     }
+
+                    LaneMoveControls(onLaneMoved = onLaneMoved, modifier = Modifier.padding(top = 12.dp))
                 }
+            }
 
-                val laneDistance = maxWidth * 0.25f
-
-                CharacterPreview(
-                    customization = character,
-                    modifier = Modifier
-                        .size(100.dp)
-                        .align(Alignment.BottomCenter)
-                        .offset(x = laneDistance * danielFraction.value),
+            if (previouslyCompleted && !isComplete) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
 
-            if (!dodgeState.isComplete) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                ) {
-                    AdventureMenuButton(
-                        text = stringResource(R.string.daniel_stealth_lane_left),
-                        onClick = { lastTappedLane = DodgeLane.LEFT; onLaneTapped(DodgeLane.LEFT) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    AdventureMenuButton(
-                        text = stringResource(R.string.daniel_stealth_lane_right),
-                        onClick = { lastTappedLane = DodgeLane.RIGHT; onLaneTapped(DodgeLane.RIGHT) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (previouslyCompleted) {
-                    Text(
-                        text = stringResource(R.string.puzzle_already_completed_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                    AdventureMenuButton(
-                        text = stringResource(R.string.action_continue),
-                        onClick = onContinue,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            } else {
+            if (isComplete || previouslyCompleted) {
                 AdventureMenuButton(
                     text = stringResource(R.string.action_continue),
                     onClick = onContinue,
@@ -200,24 +210,94 @@ private fun DanielStealthContent(
     }
 }
 
-/** Rolls into view whenever [beat] changes, mirroring DavidGoliathDodgeScreen's RockHazard. */
+/** Officials only — no character, no click handling; the single character in [SingleCharacterTrack] is what dodges. */
 @Composable
-private fun OfficialHazard(beat: DodgeBeat?) {
-    val name = stringResource(R.string.daniel_stealth_official_content_description)
-    val rollIn = remember { Animatable(0f) }
-    LaunchedEffect(beat) {
-        rollIn.snapTo(0f)
-        rollIn.animateTo(1f, animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing))
+private fun FallingOfficialLane(
+    lane: Int,
+    chart: RhythmLaneChart,
+    judgedNoteKeys: Set<String>,
+    elapsedMs: Long,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val trackHeight = maxHeight
+        visibleNotes(chart, lane, judgedNoteKeys, elapsedMs).forEach { msUntilHit ->
+            val fraction = (1f - msUntilHit.toFloat() / TRAVEL_DURATION_MS).coerceIn(0f, 1f)
+            Image(
+                painter = painterResource(R.drawable.ic_official_marker),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (trackHeight - OFFICIAL_SIZE) * fraction)
+                    .size(OFFICIAL_SIZE),
+            )
+        }
     }
-    Image(
-        painter = painterResource(R.drawable.ic_official_marker),
-        contentDescription = name,
+}
+
+/** Daniel, sliding to whichever of the 3 lanes [characterLane] names — same width as the [FallingOfficialLane] row above it, so his standing spot lines up under each lane. */
+@Composable
+private fun SingleCharacterTrack(characterLane: Int, character: CharacterCustomization, modifier: Modifier = Modifier) {
+    val characterDescription = stringResource(R.string.daniel_stealth_character_content_description, characterLane + 1)
+
+    BoxWithConstraints(modifier = modifier.height(96.dp)) {
+        val laneWidth = maxWidth / LANE_COUNT
+        val characterOffsetX by animateDpAsState(
+            targetValue = laneWidth * characterLane + (laneWidth - CHARACTER_SIZE) / 2,
+            label = "hurryToPrayCharacterOffsetX",
+        )
+        Box(
+            modifier = Modifier
+                .offset(x = characterOffsetX)
+                .align(Alignment.BottomStart)
+                .semantics { contentDescription = characterDescription },
+        ) {
+            CharacterPreview(customization = character, modifier = Modifier.size(CHARACTER_SIZE))
+        }
+    }
+}
+
+@Composable
+private fun LaneMoveControls(onLaneMoved: (Int) -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(56.dp)) {
+        MoveButton(
+            icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            contentDescription = stringResource(R.string.daniel_stealth_move_left_content_description),
+            onClick = { onLaneMoved(-1) },
+        )
+        MoveButton(
+            icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = stringResource(R.string.daniel_stealth_move_right_content_description),
+            onClick = { onLaneMoved(1) },
+        )
+    }
+}
+
+@Composable
+private fun MoveButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
+    Box(
         modifier = Modifier
             .size(56.dp)
-            .graphicsLayer {
-                translationY = rollIn.value * 60f
-            },
-    )
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .clickable(onClickLabel = contentDescription, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(imageVector = icon, contentDescription = contentDescription, modifier = Modifier.size(32.dp))
+    }
+}
+
+private fun visibleNotes(chart: RhythmLaneChart, lane: Int, judgedNoteKeys: Set<String>, elapsedMs: Long): List<Long> {
+    val currentLoopIndex = elapsedMs / chart.loopDurationMs
+    return chart.notes
+        .filter { it.lane == lane }
+        .flatMap { note ->
+            (currentLoopIndex..currentLoopIndex + 1).mapNotNull { loopIndex ->
+                if ("$loopIndex:${note.id}" in judgedNoteKeys) return@mapNotNull null
+                val msUntilHit = (loopIndex * chart.loopDurationMs + note.hitTimeMs) - elapsedMs
+                msUntilHit.takeIf { it in -NOTE_GRACE_MS..TRAVEL_DURATION_MS }
+            }
+        }
 }
 
 @Preview(showBackground = true)
@@ -225,9 +305,14 @@ private fun OfficialHazard(beat: DodgeBeat?) {
 private fun DanielStealthPreview() {
     BibleAdventuresTheme {
         DanielStealthContent(
-            dodgeState = DodgeGameState(beats = emptyList()),
+            hurryToPrayState = RhythmLaneGameState(
+                chart = DanielContent.hurryToPrayChart,
+                requiredHits = DanielContent.HURRY_TO_PRAY_REQUIRED_AVOIDS,
+            ),
+            characterLane = 1,
             character = CharacterCustomization(),
-            onLaneTapped = {},
+            onLaneMoved = {},
+            onTimeAdvanced = {},
             onContinue = {},
         )
     }

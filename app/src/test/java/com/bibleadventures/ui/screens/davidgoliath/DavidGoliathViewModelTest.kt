@@ -5,7 +5,7 @@ import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
-import com.bibleadventures.game.puzzles.dodge.DodgeLane
+import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.progress.ProgressionService
 import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -91,29 +92,76 @@ class DavidGoliathViewModelTest {
         assertEquals(listOf(SoundEffect.MATCH_SUCCESS), audioController.playedEffects)
     }
 
-    @Test
-    fun `initial dodge state holds all configured beats, not yet complete`() {
-        val state = createViewModel().uiState.value.dodgeState
+    // --- Crossing the Valley (rhythmlane, avoid semantics) ---
 
-        assertEquals(DavidGoliathContent.dodgeBeats, state.beats)
-        assertEquals(0, state.currentBeatIndex)
-        assertFalse(state.isComplete)
+    @Test
+    fun `onCrossingValleyLaneMoved clamps to the 3 lanes, never a failure`() {
+        val viewModel = createViewModel()
+
+        repeat(5) { viewModel.onCrossingValleyLaneMoved(-1) }
+        assertEquals(0, viewModel.uiState.value.characterLane)
+
+        repeat(5) { viewModel.onCrossingValleyLaneMoved(1) }
+        assertEquals(2, viewModel.uiState.value.characterLane)
     }
 
     @Test
-    fun `onLaneTapped plays a sound only when the correct lane is stepped to`() {
+    fun `moving out of a rock's lane before it lands registers an avoid and plays a sound`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
-        val hazardLane = viewModel.uiState.value.dodgeState.beats.first().hazardLane
+        val note = DavidGoliathContent.crossingValleyChart.notes.first()
+        val safeLane = (0..2).first { it != note.lane }
 
-        viewModel.onLaneTapped(hazardLane)
-        assertTrue(audioController.playedEffects.isEmpty())
-        assertEquals(0, viewModel.uiState.value.dodgeState.currentBeatIndex)
+        moveCrossingValleyLaneTo(viewModel, safeLane)
+        viewModel.onCrossingValleyTimeAdvanced(note.hitTimeMs)
 
-        val safeLane = if (hazardLane == DodgeLane.LEFT) DodgeLane.RIGHT else DodgeLane.LEFT
-        viewModel.onLaneTapped(safeLane)
+        assertEquals(1, viewModel.uiState.value.crossingValleyState.hits)
+        assertFalse(viewModel.uiState.value.crossingValleyState.isComplete)
         assertEquals(listOf(SoundEffect.OBSTACLE_DODGED), audioController.playedEffects)
-        assertEquals(1, viewModel.uiState.value.dodgeState.currentBeatIndex)
+    }
+
+    @Test
+    fun `staying in a rock's own lane when it lands does not register an avoid`() {
+        val viewModel = createViewModel()
+        val note = DavidGoliathContent.crossingValleyChart.notes.first()
+
+        moveCrossingValleyLaneTo(viewModel, note.lane)
+        viewModel.onCrossingValleyTimeAdvanced(note.hitTimeMs)
+
+        assertEquals(0, viewModel.uiState.value.crossingValleyState.hits)
+    }
+
+    @Test
+    fun `completing all 3 required avoids marks Crossing the Valley complete`() {
+        val viewModel = createViewModel()
+
+        completeCrossingValley(viewModel, DavidGoliathContent.crossingValleyChart, DavidGoliathContent.CROSSING_VALLEY_REQUIRED_AVOIDS)
+
+        assertTrue(viewModel.uiState.value.crossingValleyState.isComplete)
+    }
+
+    /** Mirrors Feeding5000ViewModelTest's `completeCatchingChart` — loops the chart as many times as needed, parking the character out of each note's lane before its exact hit time. */
+    private fun completeCrossingValley(viewModel: DavidGoliathViewModel, chart: RhythmLaneChart, requiredAvoids: Int) {
+        var hits = 0
+        var loopIndex = 0L
+        while (hits < requiredAvoids) {
+            chart.notes.forEach { note ->
+                if (hits < requiredAvoids) {
+                    val safeLane = (0..2).first { it != note.lane }
+                    moveCrossingValleyLaneTo(viewModel, safeLane)
+                    viewModel.onCrossingValleyTimeAdvanced(loopIndex * chart.loopDurationMs + note.hitTimeMs)
+                    hits++
+                }
+            }
+            loopIndex++
+        }
+    }
+
+    private fun moveCrossingValleyLaneTo(viewModel: DavidGoliathViewModel, targetLane: Int) {
+        while (viewModel.uiState.value.characterLane != targetLane) {
+            val delta = if (viewModel.uiState.value.characterLane < targetLane) 1 else -1
+            viewModel.onCrossingValleyLaneMoved(delta)
+        }
     }
 
     @Test
@@ -146,6 +194,45 @@ class DavidGoliathViewModelTest {
         viewModel.onStoneReleased(aimedPosition = 0.15f, markPosition = 0.15f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
 
         assertTrue(audioController.playedEffects.isEmpty())
+    }
+
+    @Test
+    fun `slingshotState requires 3 hits to complete, a miss between hits does not reset progress`() {
+        val viewModel = createViewModel()
+
+        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        assertEquals(1, viewModel.uiState.value.slingshotState.hits)
+        assertFalse(viewModel.uiState.value.slingshotState.isComplete)
+
+        viewModel.onStoneReleased(aimedPosition = 0.1f, markPosition = 0.9f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        assertEquals(1, viewModel.uiState.value.slingshotState.hits)
+
+        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+
+        assertEquals(3, viewModel.uiState.value.slingshotState.hits)
+        assertTrue(viewModel.uiState.value.slingshotState.isComplete)
+    }
+
+    @Test
+    fun `a hit relocates the practice shield to a different zone than it was in`() {
+        val viewModel = createViewModel()
+        val startZone = viewModel.uiState.value.shieldZone
+
+        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+
+        assertEquals(1, viewModel.uiState.value.slingshotState.hits)
+        assertNotEquals(startZone, viewModel.uiState.value.shieldZone)
+    }
+
+    @Test
+    fun `a miss does not relocate the practice shield`() {
+        val viewModel = createViewModel()
+        val startZone = viewModel.uiState.value.shieldZone
+
+        viewModel.onStoneReleased(aimedPosition = 0.1f, markPosition = 0.9f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+
+        assertEquals(startZone, viewModel.uiState.value.shieldZone)
     }
 
     @Test

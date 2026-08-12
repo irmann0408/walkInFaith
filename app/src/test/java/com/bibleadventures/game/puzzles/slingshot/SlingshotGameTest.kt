@@ -11,7 +11,7 @@ class SlingshotGameTest {
     private val shieldMax = 0.65f
 
     @Test
-    fun `a release within tolerance and inside the shield reports HIT and completes the game`() {
+    fun `a release within tolerance and inside the shield reports HIT and increases hits`() {
         val state = SlingshotGame.onStoneReleased(
             SlingshotGameState(),
             aimedPosition = 0.5f,
@@ -21,8 +21,8 @@ class SlingshotGameTest {
         )
 
         assertEquals(SlingshotOutcome.HIT, state.lastOutcome)
-        assertTrue(state.isHit)
-        assertTrue(state.isComplete)
+        assertEquals(1, state.hits)
+        assertFalse(state.isComplete)
     }
 
     @Test
@@ -36,7 +36,7 @@ class SlingshotGameTest {
         )
 
         assertEquals(SlingshotOutcome.MISS, state.lastOutcome)
-        assertFalse(state.isHit)
+        assertEquals(0, state.hits)
         assertFalse(state.isComplete)
     }
 
@@ -51,16 +51,33 @@ class SlingshotGameTest {
         )
 
         assertEquals(SlingshotOutcome.MISS, state.lastOutcome)
-        assertFalse(state.isHit)
+        assertEquals(0, state.hits)
     }
 
     @Test
-    fun `a miss does not block a later hit`() {
+    fun `a miss between hits does not reset progress`() {
         var state = SlingshotGameState()
-        state = SlingshotGame.onStoneReleased(state, aimedPosition = 0.1f, markPosition = 0.8f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
         state = SlingshotGame.onStoneReleased(state, aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
+        assertEquals(1, state.hits)
 
-        assertEquals(SlingshotOutcome.HIT, state.lastOutcome)
+        state = SlingshotGame.onStoneReleased(state, aimedPosition = 0.1f, markPosition = 0.8f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
+
+        assertEquals(SlingshotOutcome.MISS, state.lastOutcome)
+        assertEquals(1, state.hits)
+        assertFalse(state.isComplete)
+    }
+
+    @Test
+    fun `isComplete only flips true once requiredHits is reached, not after 1 or 2`() {
+        var state = SlingshotGameState(requiredHits = 3)
+        state = SlingshotGame.onStoneReleased(state, aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
+        assertFalse(state.isComplete)
+
+        state = SlingshotGame.onStoneReleased(state, aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
+        assertFalse(state.isComplete)
+
+        state = SlingshotGame.onStoneReleased(state, aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
+        assertEquals(3, state.hits)
         assertTrue(state.isComplete)
     }
 
@@ -107,12 +124,14 @@ class SlingshotGameTest {
     }
 
     @Test
-    fun `once hit, further releases are a no-op`() {
-        var state = SlingshotGame.onStoneReleased(SlingshotGameState(), aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
-        val afterHit = state
+    fun `once complete, further releases are a no-op`() {
+        var state = SlingshotGameState(requiredHits = 1)
+        state = SlingshotGame.onStoneReleased(state, aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
+        val afterComplete = state
+        assertTrue(afterComplete.isComplete)
 
         state = SlingshotGame.onStoneReleased(state, aimedPosition = 0.1f, markPosition = 0.9f, shieldMinFraction = shieldMin, shieldMaxFraction = shieldMax)
 
-        assertEquals(afterHit, state)
+        assertEquals(afterComplete, state)
     }
 }

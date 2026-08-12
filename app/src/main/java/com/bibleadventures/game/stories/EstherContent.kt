@@ -64,6 +64,38 @@ object EstherContent {
         HiddenItemDef("item_sandals", R.drawable.ic_item_sandals, R.string.esther_new_queen_item_sandals, Offset(0.65f, 0.75f)),
     )
 
+    /**
+     * Purely visual distractors for Royal Attire — see [DecoyItem]'s doc
+     * comment. 20 entries, 20 *distinct* new icons (not the same shape
+     * repeated) so the chamber reads as genuinely cluttered with palace
+     * belongings, not just 5 real items floating on an empty background.
+     * Hand-placed across the whole frame (`bg_esther_new_queen_chamber.xml`
+     * is a uniform camouflage-blob backdrop with no sky/ground split to
+     * avoid), staying clear of the 5 real items' own positions above.
+     */
+    val royalAttireDecoys: List<DecoyItem> = listOf(
+        DecoyItem("decoy_mirror", Offset(0.08f, 0.12f), R.drawable.ic_decoy_mirror),
+        DecoyItem("decoy_vase", Offset(0.28f, 0.12f), R.drawable.ic_decoy_vase),
+        DecoyItem("decoy_candle", Offset(0.48f, 0.10f), R.drawable.ic_decoy_candle),
+        DecoyItem("decoy_book", Offset(0.68f, 0.12f), R.drawable.ic_decoy_book),
+        DecoyItem("decoy_goblet", Offset(0.88f, 0.12f), R.drawable.ic_decoy_goblet),
+        DecoyItem("decoy_fan", Offset(0.08f, 0.35f), R.drawable.ic_decoy_fan),
+        DecoyItem("decoy_jewelry_box", Offset(0.28f, 0.35f), R.drawable.ic_decoy_jewelry_box),
+        DecoyItem("decoy_comb", Offset(0.48f, 0.35f), R.drawable.ic_decoy_comb),
+        DecoyItem("decoy_pillow", Offset(0.68f, 0.35f), R.drawable.ic_decoy_pillow),
+        DecoyItem("decoy_tassel", Offset(0.88f, 0.35f), R.drawable.ic_decoy_tassel),
+        DecoyItem("decoy_chair", Offset(0.08f, 0.58f), R.drawable.ic_decoy_chair),
+        DecoyItem("decoy_plant", Offset(0.28f, 0.60f), R.drawable.ic_decoy_plant),
+        DecoyItem("decoy_bowl", Offset(0.48f, 0.58f), R.drawable.ic_decoy_bowl),
+        DecoyItem("decoy_ring", Offset(0.68f, 0.58f), R.drawable.ic_decoy_ring),
+        DecoyItem("decoy_necklace", Offset(0.88f, 0.58f), R.drawable.ic_decoy_necklace),
+        DecoyItem("decoy_scroll", Offset(0.08f, 0.85f), R.drawable.ic_decoy_scroll),
+        DecoyItem("decoy_oil_lamp", Offset(0.28f, 0.85f), R.drawable.ic_decoy_oil_lamp),
+        DecoyItem("decoy_rug", Offset(0.48f, 0.88f), R.drawable.ic_decoy_rug),
+        DecoyItem("decoy_hairpin", Offset(0.68f, 0.85f), R.drawable.ic_decoy_hairpin),
+        DecoyItem("decoy_hairbrush", Offset(0.88f, 0.85f), R.drawable.ic_decoy_hairbrush),
+    )
+
     val dangerContextLines: List<Int> = listOf(
         R.string.esther_secret_plot_danger_context_line_1,
         R.string.esther_secret_plot_danger_context_line_2,
@@ -84,18 +116,26 @@ object EstherContent {
     )
 
     /**
-     * One guard alternates standing watch at the two side cells of the
-     * courtyard's open middle row — hand-authored, deterministic, and
-     * verified solvable by tracing every move by hand (same discipline as
-     * every other map in this app). The guard's watched cell is exactly
-     * where it's standing, not a projected cone, so the pattern is easy for
-     * a child to observe and predict.
+     * One guard walks back and forth across the courtyard's open middle
+     * row — left, middle, right, middle, left, ... — hand-authored,
+     * deterministic, and verified solvable by tracing every move by hand
+     * (same discipline as every other map in this app). Includes the
+     * middle cell on *both* legs of the patrol (not just left->right) so
+     * the cycle is a genuine back-and-forth walk rather than a left/right
+     * teleport that skips over the middle — [StealthGame.onDirectionPressed]
+     * advances one patrol step per player move via `patrol[turnIndex %
+     * patrol.size]`, so a 2-step list would otherwise jump straight from
+     * the right cell back to the left one with nothing in between. The
+     * guard's watched cell is exactly where it's standing, not a projected
+     * cone, so the pattern is easy for a child to observe and predict.
      */
     val courtyardGuards: List<GuardDef> = listOf(
         GuardDef(
             patrol = listOf(
                 GuardPatrolStep(position = GridPosition(2, 0), watchedCells = setOf(GridPosition(2, 0))),
+                GuardPatrolStep(position = GridPosition(2, 1), watchedCells = setOf(GridPosition(2, 1))),
                 GuardPatrolStep(position = GridPosition(2, 2), watchedCells = setOf(GridPosition(2, 2))),
+                GuardPatrolStep(position = GridPosition(2, 1), watchedCells = setOf(GridPosition(2, 1))),
             ),
         ),
     )
