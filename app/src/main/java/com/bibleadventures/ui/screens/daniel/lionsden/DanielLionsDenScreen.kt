@@ -172,7 +172,7 @@ private fun DanielLionsDenContent(
                 Text(
                     text = problemText,
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(top = 12.dp),
+                    modifier = Modifier.padding(top = 12.dp).testTag("lions_den_problem"),
                 )
 
                 Row(

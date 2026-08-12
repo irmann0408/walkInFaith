@@ -107,14 +107,34 @@ class DanielViewModel(
         _uiState.update { it.copy(selectedChoiceId = choiceId) }
     }
 
+    /**
+     * A wrong tap just re-prompts the same problem, up to a point: after
+     * [DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP] wrong taps, the last
+     * remaining choice would be a guaranteed-correct guess by elimination,
+     * so a fresh problem replaces it instead (same id, so the screen's
+     * `problems.first { it.id == step.id }` lookup keeps working unchanged).
+     */
     fun onLionsDenAnswerTapped(choiceValue: Int) {
         _uiState.update { current ->
-            val next = DecisionPathGame.onOptionTapped(current.lionsDenState, choiceValue.toString())
-            when (next.lastOutcome) {
+            val afterTap = DecisionPathGame.onOptionTapped(current.lionsDenState, choiceValue.toString())
+            when (afterTap.lastOutcome) {
                 DecisionOutcome.CORRECT, DecisionOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
                 else -> Unit
             }
-            current.copy(lionsDenState = next)
+            if (afterTap.wrongAttemptsOnCurrentStep >= DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP) {
+                val newProblem = newLionsDenProblem(problemNumber = afterTap.currentStepIndex + 1)
+                val newStep = DecisionStep(
+                    id = newProblem.id,
+                    correctOptionId = newProblem.correctValue.toString(),
+                    optionIds = newProblem.choiceValues.map { it.toString() },
+                )
+                current.copy(
+                    lionsDenState = DecisionPathGame.replaceCurrentStep(afterTap, newStep),
+                    lionsDenProblems = current.lionsDenProblems.map { if (it.id == newProblem.id) newProblem else it },
+                )
+            } else {
+                current.copy(lionsDenState = afterTap)
+            }
         }
     }
 
@@ -177,40 +197,43 @@ class DanielViewModel(
     /**
      * Randomly generated fresh every playthrough (confirmed with the user —
      * rounding operands to multiples of 10 would make this too easy for a
-     * 7+ audience). Subtraction always draws the larger operand first so the
-     * result is never negative; the two distractor choices are near-misses
-     * (a small and a larger offset from the true answer) so the correct one
-     * isn't obvious by magnitude alone.
+     * 7+ audience). Operands are 1-99 (confirmed with the user — was
+     * previously up to 3 digits, e.g. "812 + 947", tuned down to keep it a
+     * two-digit-or-less problem like "19 + 7"). Subtraction always draws the
+     * larger operand first so the result is never negative; the two
+     * distractor choices are near-misses (a small and a larger offset from
+     * the true answer) so the correct one isn't obvious by magnitude alone.
      */
-    private fun newLionsDenProblems(random: Random = Random.Default): List<MathProblem> {
-        return (1..DanielContent.LIONS_DEN_PROBLEM_COUNT).map { index ->
-            val operator = if (random.nextBoolean()) MathOperator.ADD else MathOperator.SUBTRACT
-            val (operandA, operandB) = if (operator == MathOperator.SUBTRACT) {
-                // a in [2, 999], b in [1, a-1] — guarantees 1 <= a-b <= 998, never negative or zero.
-                val a = random.nextInt(2, 1000)
-                val b = random.nextInt(1, a)
-                a to b
-            } else {
-                random.nextInt(1, 1000) to random.nextInt(1, 1000)
-            }
-            val correctValue = if (operator == MathOperator.ADD) operandA + operandB else operandA - operandB
+    private fun newLionsDenProblems(random: Random = Random.Default): List<MathProblem> =
+        (1..DanielContent.LIONS_DEN_PROBLEM_COUNT).map { problemNumber -> newLionsDenProblem(problemNumber, random) }
 
-            val distractors = mutableSetOf<Int>()
-            while (distractors.size < 2) {
-                val offset = listOf(-1, 1).random(random) * (if (distractors.isEmpty()) random.nextInt(1, 21) else random.nextInt(20, 151))
-                val candidate = correctValue + offset
-                if (candidate >= 0 && candidate != correctValue && candidate !in distractors) {
-                    distractors += candidate
-                }
-            }
-
-            MathProblem(
-                id = "problem_$index",
-                operandA = operandA,
-                operandB = operandB,
-                operator = operator,
-                choiceValues = (distractors + correctValue).shuffled(random),
-            )
+    private fun newLionsDenProblem(problemNumber: Int, random: Random = Random.Default): MathProblem {
+        val operator = if (random.nextBoolean()) MathOperator.ADD else MathOperator.SUBTRACT
+        val (operandA, operandB) = if (operator == MathOperator.SUBTRACT) {
+            // a in [2, 99], b in [1, a-1] — guarantees 1 <= a-b <= 98, never negative or zero.
+            val a = random.nextInt(2, 100)
+            val b = random.nextInt(1, a)
+            a to b
+        } else {
+            random.nextInt(1, 100) to random.nextInt(1, 100)
         }
+        val correctValue = if (operator == MathOperator.ADD) operandA + operandB else operandA - operandB
+
+        val distractors = mutableSetOf<Int>()
+        while (distractors.size < 2) {
+            val offset = listOf(-1, 1).random(random) * (if (distractors.isEmpty()) random.nextInt(1, 21) else random.nextInt(20, 151))
+            val candidate = correctValue + offset
+            if (candidate >= 0 && candidate != correctValue && candidate !in distractors) {
+                distractors += candidate
+            }
+        }
+
+        return MathProblem(
+            id = "problem_$problemNumber",
+            operandA = operandA,
+            operandB = operandB,
+            operator = operator,
+            choiceValues = (distractors + correctValue).shuffled(random),
+        )
     }
 }

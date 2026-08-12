@@ -52,6 +52,21 @@ private class FakePlayerProfileRepository(
             )
         }
     }
+
+    override suspend fun resetProgress() {
+        state.value = state.value.copy(
+            unlockedChapters = PlayerProfile.DEFAULT.unlockedChapters,
+            completedChapters = emptySet(),
+            progressByChapter = emptyMap(),
+            stars = 0,
+            badges = emptySet(),
+            scriptureCards = emptySet(),
+        )
+    }
+
+    override suspend fun addPlayTime(durationMillis: Long) {
+        state.value = state.value.copy(totalPlayTimeMillis = state.value.totalPlayTimeMillis + durationMillis)
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -18,6 +18,7 @@ data class PlayerProfile(
     val badges: Set<String> = emptySet(),
     val scriptureCards: Set<String> = emptySet(),
     val audioSettings: AudioSettings = AudioSettings(),
+    val totalPlayTimeMillis: Long = 0L,
 ) {
     companion object {
         val DEFAULT = PlayerProfile()

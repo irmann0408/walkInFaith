@@ -49,4 +49,21 @@ class PlayerProfileRepositoryImpl(
             )
         }
     }
+
+    override suspend fun resetProgress() {
+        localDataSource.update {
+            it.copy(
+                unlockedChapters = PlayerProfile.DEFAULT.unlockedChapters,
+                completedChapters = emptySet(),
+                progressByChapter = emptyMap(),
+                stars = 0,
+                badges = emptySet(),
+                scriptureCards = emptySet(),
+            )
+        }
+    }
+
+    override suspend fun addPlayTime(durationMillis: Long) {
+        localDataSource.update { it.copy(totalPlayTimeMillis = it.totalPlayTimeMillis + durationMillis) }
+    }
 }

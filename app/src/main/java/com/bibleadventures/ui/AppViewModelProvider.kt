@@ -16,6 +16,7 @@ import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.screens.mainmenu.MainMenuViewModel
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
+import com.bibleadventures.ui.screens.parentarea.ParentAreaViewModel
 import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsViewModel
 import com.bibleadventures.ui.screens.settings.SettingsViewModel
 import com.bibleadventures.ui.screens.worldmap.WorldMapViewModel
@@ -84,6 +85,9 @@ object AppViewModelProvider {
         }
         initializer {
             SettingsViewModel(bibleAdventuresApplication().container.playerProfileRepository)
+        }
+        initializer {
+            ParentAreaViewModel(bibleAdventuresApplication().container.playerProfileRepository)
         }
     }
 }

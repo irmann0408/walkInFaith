@@ -138,7 +138,7 @@ private fun Feeding5000MiracleMultiplicationContent(
                 Text(
                     text = stringResource(R.string.feeding_5000_miracle_multiplication_problem, currentProblem.operandA, currentProblem.operandB),
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(top = 4.dp).testTag("miracle_problem"),
                 )
 
                 Row(

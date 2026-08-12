@@ -2,6 +2,7 @@ package com.bibleadventures.data.repository
 
 import com.bibleadventures.data.local.PlayerProfileLocalDataSource
 import com.bibleadventures.domain.model.Appearance
+import com.bibleadventures.domain.model.AudioSettings
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.model.PlayerProfile
@@ -91,5 +92,47 @@ class PlayerProfileRepositoryImplTest {
         repository.completeChapter(ChapterId.DAVID_GOLIATH, stars = 2, badgeId = "BRAVE_HEART", scriptureCardIds = listOf("SAMUEL_17_45"))
 
         assertEquals(5, localDataSource.current().stars)
+    }
+
+    @Test
+    fun `resetProgress clears progress fields but leaves character, audio settings and play time untouched`() = runTest {
+        val customCharacter = CharacterCustomization(appearance = Appearance.GIRL)
+        val customAudio = AudioSettings(musicEnabled = false)
+        val seeded = PlayerProfile.DEFAULT.copy(
+            character = customCharacter,
+            audioSettings = customAudio,
+            totalPlayTimeMillis = 60_000L,
+            unlockedChapters = setOf(ChapterId.NOAHS_ARK, ChapterId.DAVID_GOLIATH),
+            completedChapters = setOf(ChapterId.NOAHS_ARK),
+            stars = 3,
+            badges = setOf("ARK_BUILDER"),
+            scriptureCards = setOf("GENESIS_6_22"),
+        )
+        val localDataSource = FakePlayerProfileLocalDataSource(seeded)
+        val repository = PlayerProfileRepositoryImpl(localDataSource)
+
+        repository.resetProgress()
+
+        val profile = localDataSource.current()
+        assertEquals(PlayerProfile.DEFAULT.unlockedChapters, profile.unlockedChapters)
+        assertTrue(profile.completedChapters.isEmpty())
+        assertTrue(profile.progressByChapter.isEmpty())
+        assertEquals(0, profile.stars)
+        assertTrue(profile.badges.isEmpty())
+        assertTrue(profile.scriptureCards.isEmpty())
+        assertEquals(customCharacter, profile.character)
+        assertEquals(customAudio, profile.audioSettings)
+        assertEquals(60_000L, profile.totalPlayTimeMillis)
+    }
+
+    @Test
+    fun `addPlayTime accumulates across multiple calls`() = runTest {
+        val localDataSource = FakePlayerProfileLocalDataSource()
+        val repository = PlayerProfileRepositoryImpl(localDataSource)
+
+        repository.addPlayTime(30_000L)
+        repository.addPlayTime(15_000L)
+
+        assertEquals(45_000L, localDataSource.current().totalPlayTimeMillis)
     }
 }

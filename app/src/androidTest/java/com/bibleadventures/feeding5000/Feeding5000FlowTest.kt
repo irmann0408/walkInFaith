@@ -2,6 +2,7 @@ package com.bibleadventures.feeding5000
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -331,18 +332,12 @@ class Feeding5000FlowTest {
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Into the Lions' Den context
 
-        // The Angel's Shield — 5 random math problems; a wrong guess is free
-        // (no failure state), so just try each of the 3 positionally-tagged
-        // choices until the light count advances.
-        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) { problemIndex ->
-            val targetLabel = activity.getString(R.string.daniel_lions_den_progress_label, problemIndex + 1, DanielContent.LIONS_DEN_PROBLEM_COUNT)
-            var solved = false
-            var choiceIndex = 0
-            while (!solved && choiceIndex < 3) {
-                composeTestRule.onNodeWithTag("lions_den_choice_$choiceIndex").performClick()
-                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
-                choiceIndex++
-            }
+        // The Angel's Shield — 5 random math problems. Two wrong answers in a
+        // row now replace the problem instead of leaving the last choice a
+        // guaranteed-correct guess, so compute the real answer instead of
+        // trying all 3 choices blind.
+        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) {
+            solveLionsDenProblem()
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -602,29 +597,24 @@ class Feeding5000FlowTest {
     }
 
     /**
-     * Problems are randomly generated (multiplication), so this can't
-     * compute the answer itself — it doesn't need to, since a wrong guess
-     * is free (no failure state): for each of the 5 problems, try
-     * `miracle_choice_0`/`_1`/`_2` in turn and stop once the "X of 5"
-     * progress label advances. Same discipline as completeBlowShofar and
-     * Daniel's Angel's Shield.
+     * Reads the displayed "%d × %d = ?" problem, computes the real answer,
+     * and taps the matching choice by its content description. Two wrong
+     * answers in a row now replace the problem instead of leaving the last
+     * choice a guaranteed-correct guess (see
+     * `DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP`), so the old "try
+     * each of the 3 choices" trick no longer reliably solves it.
      */
     private fun completeMiracleMultiplication() {
-        val activity = composeTestRule.activity
-        repeat(Feeding5000Content.MIRACLE_PROBLEM_COUNT) { problemIndex ->
-            val targetLabel = activity.getString(
-                R.string.feeding_5000_miracle_multiplication_progress_label,
-                problemIndex + 1,
-                Feeding5000Content.MIRACLE_PROBLEM_COUNT,
-            )
-            var solved = false
-            var choiceIndex = 0
-            while (!solved && choiceIndex < 3) {
-                composeTestRule.onNodeWithTag("miracle_choice_$choiceIndex").performClick()
-                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
-                choiceIndex++
-            }
+        repeat(Feeding5000Content.MIRACLE_PROBLEM_COUNT) {
+            solveMiracleProblem()
         }
+    }
+
+    private fun solveMiracleProblem() {
+        val problemText = composeTestRule.onNodeWithTag("miracle_problem").fetchSemanticsNode()
+            .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
+        val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
+        composeTestRule.onNodeWithContentDescription((operands[0] * operands[1]).toString()).performClick()
     }
 
     /**
@@ -911,25 +901,34 @@ class Feeding5000FlowTest {
     }
 
     /**
-     * Problems are randomly generated (multiplication/division), so this
-     * can't compute the answer itself — it doesn't need to, since a wrong
-     * guess is free (no failure state): for each of the 5 problems, try
-     * `shofar_choice_0`/`_1`/`_2` in turn and stop once the "X of 5 notes
-     * sounded" progress label advances. Same discipline as [completeMarch]
-     * and Daniel's Angel's Shield fix.
+     * Reads the displayed "%d × %d = ?" / "%d ÷ %d = ?" problem, computes
+     * the real answer, and taps the matching choice by its content
+     * description. Two wrong answers in a row now replace the problem
+     * instead of leaving the last choice a guaranteed-correct guess (see
+     * `DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP`), so the old "try
+     * each of the 3 choices" trick no longer reliably solves it.
      */
     private fun completeBlowShofar() {
-        val activity = composeTestRule.activity
-        repeat(JerichoContent.shofarNoteIds.size) { problemIndex ->
-            val targetLabel = activity.getString(R.string.jericho_blow_shofar_progress_label, problemIndex + 1, JerichoContent.shofarNoteIds.size)
-            var solved = false
-            var choiceIndex = 0
-            while (!solved && choiceIndex < 3) {
-                composeTestRule.onNodeWithTag("shofar_choice_$choiceIndex").performClick()
-                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
-                choiceIndex++
-            }
+        repeat(JerichoContent.shofarNoteIds.size) {
+            solveShofarProblem()
         }
+    }
+
+    private fun solveShofarProblem() {
+        val problemText = composeTestRule.onNodeWithTag("shofar_problem").fetchSemanticsNode()
+            .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
+        val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
+        val correctValue = if ("÷" in problemText) operands[0] / operands[1] else operands[0] * operands[1]
+        composeTestRule.onNodeWithContentDescription(correctValue.toString()).performClick()
+    }
+
+    /** Same technique as [solveShofarProblem], for Daniel's Angel's Shield "%d + %d = ?" / "%d − %d = ?" problems. */
+    private fun solveLionsDenProblem() {
+        val problemText = composeTestRule.onNodeWithTag("lions_den_problem").fetchSemanticsNode()
+            .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
+        val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
+        val correctValue = if ("−" in problemText) operands[0] - operands[1] else operands[0] + operands[1]
+        composeTestRule.onNodeWithContentDescription(correctValue.toString()).performClick()
     }
 
     /**

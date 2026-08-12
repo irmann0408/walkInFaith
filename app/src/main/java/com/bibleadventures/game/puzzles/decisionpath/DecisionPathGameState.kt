@@ -17,6 +17,8 @@ data class DecisionPathGameState(
     val steps: List<DecisionStep>,
     val currentStepIndex: Int = 0,
     val lastOutcome: DecisionOutcome = DecisionOutcome.NONE,
+    /** Wrong taps on the current step only — reset to 0 by any advance or by [DecisionPathGame.replaceCurrentStep]. */
+    val wrongAttemptsOnCurrentStep: Int = 0,
 ) {
     val isComplete: Boolean get() = currentStepIndex >= steps.size
     val currentStep: DecisionStep? get() = steps.getOrNull(currentStepIndex)

@@ -188,6 +188,46 @@ class Feeding5000ViewModelTest {
     }
 
     @Test
+    fun `two wrong answers on the same problem replace it with a fresh one, still not advanced`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
+        val step = viewModel.uiState.value.miracleState.currentStep!!
+        val originalProblem = viewModel.uiState.value.miracleProblems.first { it.id == step.id }
+        val wrongValue = step.optionIds.map { it.toInt() }.first { it.toString() != step.correctOptionId }
+
+        viewModel.onMiracleAnswerTapped(wrongValue) // 1st wrong: same problem, just re-prompts
+        assertEquals(0, viewModel.uiState.value.miracleState.currentStepIndex)
+        assertEquals(originalProblem, viewModel.uiState.value.miracleProblems.first { it.id == originalProblem.id })
+
+        viewModel.onMiracleAnswerTapped(wrongValue) // 2nd wrong: replaced with a fresh problem
+        val afterSecondWrong = viewModel.uiState.value
+        assertEquals(0, afterSecondWrong.miracleState.currentStepIndex)
+        assertTrue(audioController.playedEffects.isEmpty())
+
+        val newProblem = afterSecondWrong.miracleProblems.first { it.id == originalProblem.id }
+        assertTrue("expected a different problem after 2 wrong answers", newProblem != originalProblem)
+        assertEquals(
+            newProblem.choiceValues.map { it.toString() }.toSet(),
+            afterSecondWrong.miracleState.currentStep!!.optionIds.toSet(),
+        )
+    }
+
+    @Test
+    fun `after a problem is replaced, its new correct answer still advances the step`() {
+        val viewModel = createViewModel()
+        val step = viewModel.uiState.value.miracleState.currentStep!!
+        val wrongValue = step.optionIds.map { it.toInt() }.first { it.toString() != step.correctOptionId }
+
+        viewModel.onMiracleAnswerTapped(wrongValue)
+        viewModel.onMiracleAnswerTapped(wrongValue) // replaces the problem
+
+        val newCorrectValue = viewModel.uiState.value.miracleState.currentStep!!.correctOptionId.toInt()
+        viewModel.onMiracleAnswerTapped(newCorrectValue)
+
+        assertEquals(1, viewModel.uiState.value.miracleState.currentStepIndex)
+    }
+
+    @Test
     fun `answering every miracle problem correctly completes it`() {
         val viewModel = createViewModel()
 

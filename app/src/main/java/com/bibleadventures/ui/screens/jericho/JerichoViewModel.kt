@@ -153,14 +153,34 @@ class JerichoViewModel(
         _uiState.update { current -> current.copy(fastMarchState = RhythmLaneGame.onTimeAdvanced(current.fastMarchState, nowMs)) }
     }
 
+    /**
+     * A wrong tap just re-prompts the same problem, up to a point: after
+     * [DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP] wrong taps, the last
+     * remaining choice would be a guaranteed-correct guess by elimination,
+     * so a fresh problem replaces it instead (same id, so the screen's
+     * `problems.first { it.id == step.id }` lookup keeps working unchanged).
+     */
     fun onShofarAnswerTapped(choiceValue: Int) {
         _uiState.update { current ->
-            val next = DecisionPathGame.onOptionTapped(current.shofarState, choiceValue.toString())
-            when (next.lastOutcome) {
+            val afterTap = DecisionPathGame.onOptionTapped(current.shofarState, choiceValue.toString())
+            when (afterTap.lastOutcome) {
                 DecisionOutcome.CORRECT, DecisionOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
                 else -> Unit
             }
-            current.copy(shofarState = next)
+            if (afterTap.wrongAttemptsOnCurrentStep >= DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP) {
+                val newProblem = newShofarProblem(problemNumber = afterTap.currentStepIndex + 1)
+                val newStep = DecisionStep(
+                    id = newProblem.id,
+                    correctOptionId = newProblem.correctValue.toString(),
+                    optionIds = newProblem.choiceValues.map { it.toString() },
+                )
+                current.copy(
+                    shofarState = DecisionPathGame.replaceCurrentStep(afterTap, newStep),
+                    shofarProblems = current.shofarProblems.map { if (it.id == newProblem.id) newProblem else it },
+                )
+            } else {
+                current.copy(shofarState = afterTap)
+            }
         }
     }
 
@@ -231,35 +251,36 @@ class JerichoViewModel(
      * result is always a clean whole number, with the quotient capped so
      * the dividend (divisor * quotient) stays within 1-99.
      */
-    private fun newShofarProblems(random: Random = Random.Default): List<MathProblem> {
-        return JerichoContent.shofarNoteIds.indices.map { index ->
-            val operator = if (random.nextBoolean()) MathOperator.MULTIPLY else MathOperator.DIVIDE
-            val (operandA, operandB) = if (operator == MathOperator.DIVIDE) {
-                val divisor = random.nextInt(1, 10)
-                val maxQuotient = 99 / divisor
-                val quotient = random.nextInt(1, maxQuotient + 1)
-                (divisor * quotient) to divisor
-            } else {
-                random.nextInt(1, 100) to random.nextInt(1, 10)
-            }
-            val correctValue = if (operator == MathOperator.MULTIPLY) operandA * operandB else operandA / operandB
+    private fun newShofarProblems(random: Random = Random.Default): List<MathProblem> =
+        JerichoContent.shofarNoteIds.indices.map { index -> newShofarProblem(problemNumber = index + 1, random) }
 
-            val distractors = mutableSetOf<Int>()
-            while (distractors.size < 2) {
-                val offset = listOf(-1, 1).random(random) * (if (distractors.isEmpty()) random.nextInt(1, 21) else random.nextInt(20, 151))
-                val candidate = correctValue + offset
-                if (candidate >= 0 && candidate != correctValue && candidate !in distractors) {
-                    distractors += candidate
-                }
-            }
-
-            MathProblem(
-                id = "problem_${index + 1}",
-                operandA = operandA,
-                operandB = operandB,
-                operator = operator,
-                choiceValues = (distractors + correctValue).shuffled(random),
-            )
+    private fun newShofarProblem(problemNumber: Int, random: Random = Random.Default): MathProblem {
+        val operator = if (random.nextBoolean()) MathOperator.MULTIPLY else MathOperator.DIVIDE
+        val (operandA, operandB) = if (operator == MathOperator.DIVIDE) {
+            val divisor = random.nextInt(1, 10)
+            val maxQuotient = 99 / divisor
+            val quotient = random.nextInt(1, maxQuotient + 1)
+            (divisor * quotient) to divisor
+        } else {
+            random.nextInt(1, 100) to random.nextInt(1, 10)
         }
+        val correctValue = if (operator == MathOperator.MULTIPLY) operandA * operandB else operandA / operandB
+
+        val distractors = mutableSetOf<Int>()
+        while (distractors.size < 2) {
+            val offset = listOf(-1, 1).random(random) * (if (distractors.isEmpty()) random.nextInt(1, 21) else random.nextInt(20, 151))
+            val candidate = correctValue + offset
+            if (candidate >= 0 && candidate != correctValue && candidate !in distractors) {
+                distractors += candidate
+            }
+        }
+
+        return MathProblem(
+            id = "problem_$problemNumber",
+            operandA = operandA,
+            operandB = operandB,
+            operator = operator,
+            choiceValues = (distractors + correctValue).shuffled(random),
+        )
     }
 }

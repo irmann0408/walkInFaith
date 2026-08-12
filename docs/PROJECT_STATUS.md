@@ -56,16 +56,16 @@ Settings also complete)
 
 ## Current milestone
 
-**Chapter 8 — Jesus Calms the Storm: COMPLETE.** The last chapter in the
-chain now has real gameplay — 4 mini-puzzles (Loading the Boat, Bailing
-the Boat, Reaching Jesus, Peace Be Still), built entirely from existing
-`game/puzzles` engines with **zero new engines**, per an explicit
-"no easy puzzle" request from the user rejecting their own draft plan's
-weaker custom-built mechanics. See "Chapter 8 — Jesus Calms the Storm"
-further down. Full chain, all now with real gameplay: Noah's Ark → David &
-Goliath → Good Samaritan → Daniel → Esther's Rescue of Her People →
-Jericho → Feeding the 5,000 → Jesus Calms the Storm. No chapter-content
-gaps remain — see Next tasks for what's left (Milestone 6, Parent Area).
+**Milestone 6 — Parent Area: COMPLETE.** All 8 chapters already had real
+gameplay (Chapter 8 — Jesus Calms the Storm — shipped the prior session);
+this milestone adds the last planned piece of spec section 17: a gated
+Parent Area with a progress summary (chapters/stars/badges/scripture
+cards/time played), a Settings shortcut, a privacy-information dialog, and
+Reset Progress. See "Milestone 6 — Parent Area" further down. Full chain,
+all now with real gameplay: Noah's Ark → David & Goliath → Good Samaritan
+→ Daniel → Esther's Rescue of Her People → Jericho → Feeding the 5,000 →
+Jesus Calms the Storm. No chapter-content gaps and no planned milestones
+remain — see Next tasks.
 
 ## Completed features
 
@@ -504,24 +504,40 @@ correctness.
   save — this app's single save file persists real progress across test
   classes within one suite run (no `pm clear` between classes), so if a
   flow test that completes chapters happens to run first, this test's
-  assumption breaks. Reproduced consistently (same single failure, twice
-  back-to-back) while verifying this session's changes; confirmed
-  unrelated to those changes (the assertion and failure have nothing to do
-  with any of the 4 redesigned mechanics). Not fixed here — would need
-  either per-class data isolation (a custom test orchestrator / `pm clear`
-  hook) or reordering this test to run first, a test-infrastructure change
-  bigger than this session's scope.
+  assumption breaks. Reproduced consistently (same single failure) again
+  this session while verifying Parent Area; confirmed unrelated (the
+  assertion has nothing to do with Parent Area). Not fixed here — would
+  need either per-class data isolation (a custom test orchestrator or a
+  `pm clear` hook) or reordering this test to run first, a
+  test-infrastructure change bigger than any one session's scope.
+  **Also confirmed this session**: `adb shell pm clear com.bibleadventures`
+  and `adb uninstall` both fail on the primary dev device with a bare
+  `Failed`/`DELETE_FAILED_INTERNAL_ERROR` (a `pm list packages` run in the
+  same shell session surfaced `SecurityException: Shell does not have
+  permission to access user 150`, a Secure Folder/Knox work-profile ID on
+  that device) — so a real per-class `pm clear` between test classes isn't
+  even available as a quick manual workaround on this hardware today.
+  `ParentAreaFlowTest` was written to tolerate this (asserts "at least 1"
+  earned stat rather than an exact count before Reset Progress, since the
+  deterministic "back to exactly 0" assertions after a real reset don't
+  depend on a clean starting save).
 
 - Launcher icon is a placeholder vector shape, not final art.
 - minSdk 24 devices fall back to a non-adaptive icon; no legacy PNG mipmap was
   generated (only the `mipmap-anydpi-v26` adaptive icon exists). Cosmetic only.
-- `settings/` (audio toggles only) now exists — see "Audio, Narration & Settings"
-  below. The rest of Milestone 6 (parental gate, progress reset) is still deferred.
-- Jesus Calms the Storm still exists only as a `ChapterCatalog` entry with no
-  gameplay — expected per spec section 7, lands in its own future milestone.
 - All Noah's Ark art (animals, supplies, badge, backgrounds) is simple placeholder
   vector shapes, not final art (spec section 25) — code reads them by drawable
   resource id, so swapping in real art later doesn't touch game logic.
+- "Time played" is tracked via `MainActivity`'s own `onStart`/`onStop`
+  (see "Milestone 6 — Parent Area" below) — a hard process kill, or an
+  Activity teardown where `onDestroy` follows `onStop` quickly enough to
+  cancel `lifecycleScope` before the async DataStore write lands (this is
+  exactly what happens between separate instrumented test classes, each of
+  which gets its own short-lived `MainActivity` via `createAndroidComposeRule`),
+  loses that session's unflushed time. Real on-device backgrounding (Home
+  button, app switcher, screen off) is unaffected — the Activity is
+  merely stopped, not destroyed, so the write completes normally. Accepted
+  trade-off, not fixed — see the architectural-decisions-log entry below.
 
 ### Milestone 5 — Progression
 Closed out the three items left after Noah's Ark: "Continue Adventure" wiring,
@@ -1091,9 +1107,10 @@ user's explicit request, specifically so Jericho's trumpets could actually
 be heard. This environment has no audio-recording capability and no way to
 license real music/instrument/voice samples — confirmed by checking: no
 `ffmpeg`/`sox` available, only Python 3 stdlib (`wave`/`struct`/`math`,
-no external deps). Scope is deliberately just the 3 audio toggles + real
-playback + narration — the rest of Milestone 6 (parental gate, progress
-reset) stays deferred.
+no external deps). Scope was deliberately just the 3 audio toggles + real
+playback + narration at the time — the rest of Milestone 6 (parental gate,
+progress reset) landed in its own later session, see "Milestone 6 — Parent
+Area" below.
 - **Big existing-architecture win, confirmed by reading the current code**:
   `AudioController.playSfx(...)` was already called throughout every
   shipped chapter's ViewModel — only `NoOpAudioController` was ever wired
@@ -2637,14 +2654,176 @@ Lesson → Reward.
     pure no-op, consistent with every other engine's "never punish, just
     don't advance" rule.
 
+### Milestone 6 — Parent Area
+
+`MenuItemId.PARENT_AREA` graduated out of `ComingSoonScreen` (the last
+Main Menu item to do so — every `MenuItemId` now routes to a real screen)
+with a gated screen satisfying spec section 17: a progress summary
+(chapters completed, stars, badges, scripture cards, time played), a
+Settings shortcut, "View Privacy Information," and Reset Progress.
+
+- **Parental gate**: a simple two-number addition question ("What is X +
+  Y?", `Random.nextInt(2, 10)` per operand), built inline in
+  `ParentAreaScreen.kt` rather than as a shared `ui/components/`
+  abstraction — only one consumer exists today (this app's standing "no
+  shared abstraction ahead of a second real need" rule). A wrong answer
+  regenerates a fresh question and shows non-punishing "try again"
+  feedback, same tone as every mini-game's wrong-attempt handling — never
+  a failure state. `var gateUnlocked by rememberSaveable { ... }`
+  intentionally resets on every fresh entry to the screen (survives
+  rotation via `rememberSaveable`, but not leaving and re-entering) — a
+  gate that "stays unlocked" across visits would defeat its own purpose.
+  Round-tripping to a screen *pushed on top* of Parent Area (e.g. the
+  Settings shortcut) does not re-lock it, since that's the same composable
+  instance still on the back stack, not a fresh entry.
+- **Reset Progress scope — confirmed with the user up front**: resets
+  `unlockedChapters`/`completedChapters`/`progressByChapter`/`stars`/
+  `badges`/`scriptureCards` back to `PlayerProfile.DEFAULT`'s values, but
+  leaves `character`, `audioSettings`, and the new `totalPlayTimeMillis`
+  untouched. The spec lists "Configure sound" as an action separate from
+  "Reset progress," and a lifetime play-time counter isn't "progress" —
+  new `PlayerProfileRepository.resetProgress()`, real coverage in
+  `PlayerProfileRepositoryImplTest` and `ParentAreaViewModelTest`. Guarded
+  by a confirmation `AlertDialog` (Cancel/Reset) — this app's **first**
+  `AlertDialog` usage anywhere (confirmed via grep no dialog pattern
+  existed yet); the privacy-info panel reuses the same primitive.
+- **Time played**: zero existing infrastructure before this (confirmed via
+  a full grep for timestamp/duration tracking — nothing). Added
+  `PlayerProfile.totalPlayTimeMillis: Long = 0L` (additive, safe for
+  existing saves) plus `PlayerProfileRepository.addPlayTime(durationMillis)`,
+  driven by `MainActivity.onStart()`/`onStop()` recording a
+  `SystemClock.elapsedRealtime()` delta — the app is single-`Activity`, so
+  this mirrors process-level foreground tracking without pulling in the
+  otherwise-unused `lifecycle-process` dependency. See the "Known issues"
+  entry above for the one accepted gap (an `onDestroy` that follows
+  `onStop` fast enough cancels the in-flight `lifecycleScope` write).
+- **Progress summary derivation** mirrors `BadgesViewModel`/
+  `ScriptureCardsViewModel`'s `.map { profile -> ... }.stateIn(...)` shape
+  exactly — `ParentAreaUiState`'s totals come from `ChapterCatalog.all.size`
+  / `RewardCatalog.badges.size` / `RewardCatalog.scriptureCards.size`, no
+  new catalog needed.
+- **Privacy information** is a static `AlertDialog`, not a new nav
+  destination — it's one paragraph of copy, authored from scratch (no
+  draft existed anywhere in the spec or code) per section 16's "do not
+  claim legal compliance automatically": plainly states what isn't
+  collected (name/email/phone/location/contacts/camera/microphone, no
+  account/sign-in) and that the single save file never leaves the device.
+- Main Menu's standalone "Settings" item was deliberately left as its own
+  ungated shortcut — audio/narration toggles aren't sensitive child data,
+  so routing them behind the parent math-challenge would only add friction
+  for a child adjusting volume, with no privacy/safety upside. Parent Area
+  simply also links to the same `SettingsScreen`, matching spec 17 listing
+  Settings as one of the things Parent Area surfaces.
+- Tests: `ParentAreaViewModelTest.kt` (initial totals, earned counts from a
+  seeded profile, `onResetProgressConfirmed` clearing progress but not
+  character/audio/play-time), two new `PlayerProfileRepositoryImplTest`
+  cases (`resetProgress`, `addPlayTime`), and a new instrumented
+  `ParentAreaFlowTest.kt` (gate wrong-then-right answer via a `testTag`'d
+  question read through `SemanticsProperties.Text` + regex, since a
+  free-text numeric gate can't be brute-forced like this app's existing
+  3-choice math puzzles — especially since a wrong answer here
+  intentionally regenerates the question; progress summary via
+  `testTag`'d stat rows read the same way; Settings/privacy round trips;
+  Reset Progress cancel-then-confirm; World Map re-locks David & Goliath
+  after a real reset). `MainMenuNavigationTest`'s
+  `tappingAMenuItem_navigatesForwardAndBackNavigationReturnsToTheMenu` —
+  previously the one test exercising the generic `ComingSoonScreen`
+  fallback via Parent Area — was updated to assert the real screen instead,
+  since no `MenuItemId` falls back to `ComingSoonScreen` anymore.
+- Full `./gradlew build` green; full JVM unit suite green;
+  `ParentAreaFlowTest` passed on-device individually twice back-to-back,
+  then as part of the full 22-class instrumented suite (21/22 — the sole
+  failure was the pre-existing, already-documented `WorldMapNavigationTest`
+  ordering flakiness, confirmed unrelated); manually verified on-device via
+  `uiautomator dump`-driven taps that the gate, the real progress numbers,
+  and the post-background "time played" figure all render correctly.
+
+### Math-quiz puzzles: no more solving by elimination, tighter Angel's Shield operands
+
+Follow-up to user feedback on the 3 `decisionpath`-based math quizzes —
+Daniel's Angel's Shield, Jericho's Blow the Shofar, Feeding the 5,000's The
+Miracle Multiplication. Two changes:
+
+- **Angel's Shield operands are now 1-99** (e.g. "19 + 7"), down from up to
+  3 digits (e.g. "812 + 947") — `DanielViewModel.newLionsDenProblem`'s
+  operand draws changed from `random.nextInt(1, 1000)` to
+  `random.nextInt(1, 100)` (and the subtraction branch's `a` from
+  `nextInt(2, 1000)` to `nextInt(2, 100)`). Distractor-offset spacing
+  (`±[1,20]` then `±[20,150]`) was left as-is — only asked to change the
+  operand range, not the near-miss spacing.
+- **Two wrong answers on the same problem now replace it with a fresh
+  one**, across all 3 quizzes. Previously a wrong tap only ever set
+  `DecisionOutcome.INCORRECT` with no memory of how many times — with a
+  fixed 3-choice question, a second wrong tap left exactly one untried
+  choice, which was then a guaranteed-correct guess by elimination, no
+  math required. Fixed in the shared engine, not per-chapter, since all 3
+  quizzes are `game/puzzles/decisionpath`'s only consumers (confirmed via
+  grep before touching it):
+  - `DecisionPathGameState` gained `wrongAttemptsOnCurrentStep: Int = 0`.
+  - `DecisionPathGame.onOptionTapped` now increments it on a wrong tap and
+    resets it to 0 on any advance.
+  - New `DecisionPathGame.replaceCurrentStep(state, newStep)` swaps just
+    the current step and clears the counter — the engine has no content of
+    its own to generate a replacement from (by design, content lives in
+    each chapter's `game/stories` object), so the caller supplies the new
+    step.
+  - Each ViewModel's `on*AnswerTapped` now checks
+    `wrongAttemptsOnCurrentStep >= DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP`
+    (a constant, `2`) after every tap; on the 2nd wrong answer it generates
+    one fresh `MathProblem` **reusing the same step id** (`"problem_N"`)
+    and swaps both the engine step and the matching entry in
+    `*Problems`/`*ProblemsList` — reusing the id means the screens'
+    existing `problems.first { it.id == step.id }` lookup keeps working
+    completely unchanged, no screen-level code needed touching beyond a
+    new `testTag` on each problem-statement `Text` (see below). Each
+    `new*Problems(random)` list-generator was split into itself plus a
+    `new*Problem(problemNumber, random)` single-problem generator so the
+    same generation logic serves both initial generation and mid-puzzle
+    regeneration.
+  - `lastOutcome` is deliberately left as `INCORRECT` across a
+    regeneration (not reset to `NONE`) — the existing "Try another one!"
+    feedback text already reads correctly for "here's a new one to try,"
+    so no new string resource was needed.
+- **Instrumented flow-test fallout**: all 4 flow-test files that solve
+  these puzzles (`DanielFlowTest`, `JerichoFlowTest`,
+  `Feeding5000FlowTest`, `EstherFlowTest` — Daniel is a prerequisite for
+  Esther/Jericho/Feeding5000, each duplicating its own copy per this
+  project's per-file-helper convention — plus `JesusCalmsStormFlowTest`,
+  which duplicates all three) previously exploited exactly the elimination
+  trick just fixed: "try choice 0, 1, 2 in turn until the progress label
+  advances." That no longer reliably works once a 2nd wrong tap can swap
+  the problem out from under a 3rd blind guess. Replaced with a
+  deterministic solver in each file: read the problem's displayed text via
+  a new `testTag` (`"lions_den_problem"` / `"shofar_problem"` /
+  `"miracle_problem"`) and `SemanticsProperties.Text`, regex-extract the
+  two operands, detect the operator from which symbol is present in the
+  text (Daniel's `"+"` vs the Unicode minus sign `"−"` U+2212 — confirmed
+  the exact codepoint via a Python check rather than assuming; Jericho's
+  `"×"` U+00D7 vs `"÷"` U+00F7), compute the real answer, and tap the
+  choice whose content description equals it (`AnswerChoice` already
+  exposes its value as its own content description, so no further tagging
+  was needed there). Net effect: these solvers got *simpler*, not more
+  complex — no more retry loop or progress-label polling at all, since a
+  correct-by-construction answer always advances on the first tap.
+- New unit coverage: `DecisionPathGameTest` (wrong-attempt counting,
+  `replaceCurrentStep` swaps only the current step and clears the counter,
+  a no-op on an already-complete path) and two new tests per ViewModel
+  (`DanielViewModelTest`, `JerichoViewModelTest`, `Feeding5000ViewModelTest`)
+  confirming a 2nd wrong answer swaps in a different problem with no sound
+  played, and that the new problem's own correct answer still advances
+  normally afterward.
+- Full `./gradlew build` green; the 5 affected flow tests passed on-device
+  twice back-to-back (exercising different random problems each run), then
+  the full 22-class instrumented suite (21/22 — sole failure the
+  pre-existing, already-documented `WorldMapNavigationTest` flakiness).
+
 ## Next tasks
 
-All 8 chapters in `ChapterCatalog`'s chain now have real gameplay — Jesus
-Calms the Storm (the last chapter) shipped this session. The natural next
-step is **Milestone 6 — Parent Area**: a parental gate, progress summary,
-and reset-progress functionality (spec section 17) — the audio/narration
-toggles portion of Settings is already built (see "Audio, Narration &
-Settings" above). No further chapter-content gaps remain.
+All 8 chapters have real gameplay and Milestone 6 — Parent Area (the last
+planned milestone) is complete. No chapter-content gaps and no scoped
+work remain; future work would be net-new scope (e.g. Milestone 7 polish
+items already tracked individually under "Known issues," or replacing
+placeholder art) rather than anything already planned.
 
 ## Architectural decisions log
 
@@ -2977,3 +3156,35 @@ Settings" above). No further chapter-content gaps remain.
   28) on the first attempt, instead of iterating by hand toward a target
   difficulty. Worth reaching for again whenever a maze's difficulty is the
   actual design goal, not just its theme.
+- **Time played is tracked via `MainActivity.onStart()`/`onStop()`
+  deltas (`SystemClock.elapsedRealtime()`), not a new `lifecycle-process`
+  dependency.** This app is single-`Activity` (Compose Navigation owns all
+  in-app screen transitions), so the one Activity's own stop/start already
+  is process-level foreground tracking — pulling in `ProcessLifecycleOwner`
+  would duplicate that for no behavioral difference. Accepted trade-off:
+  an `onDestroy` that follows `onStop` fast enough cancels the in-flight
+  `lifecycleScope` write before it lands (true of a hard process kill, and
+  also of each instrumented test class's short-lived `MainActivity` via
+  `createAndroidComposeRule`) — normal on-device backgrounding (Home,
+  app switcher, screen off) only stops the Activity, so it's unaffected.
+- **Reset Progress resets progress, not the whole profile.** Confirmed
+  with the user rather than assumed: `resetProgress()` clears
+  `unlockedChapters`/`completedChapters`/`progressByChapter`/`stars`/
+  `badges`/`scriptureCards` but leaves `character`, `audioSettings`, and
+  `totalPlayTimeMillis` alone. The spec lists "Reset progress" and
+  "Configure sound/narration" as separate parent actions, which only makes
+  sense if resetting progress doesn't also blow away sound settings a
+  parent already configured — and a lifetime play-time counter reads more
+  like a stat than "progress" a child could lose. A full-wipe option was
+  considered and rejected as the default; nothing currently exposes it.
+- **A shared engine used by 3 chapters is still safe to evolve in place,
+  as long as it's actually confirmed to have no other consumers.** Fixing
+  the 3-choice-math-quiz elimination exploit meant changing
+  `DecisionPathGame`'s core transition function's signature-adjacent
+  behavior (a new state field, new counting logic) — normally a reason to
+  hesitate before touching a "pure, chapter-agnostic" engine shared across
+  chapters. Grepping for every usage of `DecisionPathGame`/
+  `DecisionPathGameState` first (confirmed: Daniel, Jericho, and Feeding
+  the 5,000's math quizzes, and nothing else) made it safe to change the
+  engine itself rather than working around it per-chapter, keeping the fix
+  in one place instead of three near-identical patches.

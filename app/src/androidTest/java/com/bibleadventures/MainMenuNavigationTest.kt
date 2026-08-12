@@ -22,16 +22,16 @@ class MainMenuNavigationTest {
 
     @Test
     fun tappingAMenuItem_navigatesForwardAndBackNavigationReturnsToTheMenu() {
-        // "Parent Area" has no real screen yet (Adventures/My Badges/Scripture Cards/
-        // Settings all now route to real screens — see WorldMapNavigationTest/
-        // BadgesNavigationTest/ScriptureCardsNavigationTest/SettingsNavigationTest), so
-        // it still exercises the generic placeholder flow.
+        // Every MenuItemId now routes to a real screen (Parent Area was the last
+        // holdout — see ParentAreaFlowTest for its gated flow). This just confirms
+        // forward navigation and back both work; the screen's title shows
+        // regardless of the parental gate's lock state, so no need to solve it here.
         val parentAreaLabel = composeTestRule.activity.getString(R.string.menu_parent_area)
-        val comingSoonTitle = composeTestRule.activity.getString(R.string.coming_soon_title)
+        val parentAreaTitle = composeTestRule.activity.getString(R.string.parent_area_screen_title)
         val appName = composeTestRule.activity.getString(R.string.app_name)
 
         composeTestRule.onNodeWithText(parentAreaLabel).performClick()
-        composeTestRule.onNodeWithText(comingSoonTitle).assertExists()
+        composeTestRule.onNodeWithText(parentAreaTitle).assertExists()
 
         composeTestRule.onNodeWithContentDescription(
             composeTestRule.activity.getString(R.string.action_back),

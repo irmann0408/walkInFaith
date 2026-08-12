@@ -42,6 +42,10 @@ private class FakePlayerProfileRepository(
         badgeId: String,
         scriptureCardIds: List<String>,
     ) = Unit
+
+    override suspend fun resetProgress() = Unit
+
+    override suspend fun addPlayTime(durationMillis: Long) = Unit
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

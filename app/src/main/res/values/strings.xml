@@ -18,6 +18,32 @@
     <string name="settings_sound_effects_label">Sound Effects</string>
     <string name="settings_narration_label">Narration</string>
 
+    <string name="parent_area_screen_title">Parent Area</string>
+    <string name="parent_area_gate_title">Just for Grown-Ups</string>
+    <string name="parent_area_gate_instructions">Please solve this to continue.</string>
+    <string name="parent_area_gate_question">What is %1$d + %2$d?</string>
+    <string name="parent_area_gate_answer_label">Your answer</string>
+    <string name="parent_area_gate_submit">Continue</string>
+    <string name="parent_area_gate_wrong_answer">Not quite — try the new question below.</string>
+    <string name="parent_area_chapters_completed_label">Chapters completed</string>
+    <string name="parent_area_stars_label">Stars earned</string>
+    <string name="parent_area_badges_label">Badges earned</string>
+    <string name="parent_area_scripture_cards_label">Scripture cards earned</string>
+    <string name="parent_area_time_played_label">Time played</string>
+    <string name="parent_area_time_played_hours_minutes">%1$dh %2$dm</string>
+    <string name="parent_area_time_played_minutes">%1$dm</string>
+    <string name="parent_area_time_played_less_than_a_minute">Less than a minute</string>
+    <string name="parent_area_open_settings_label">Sound &amp; Narration Settings</string>
+    <string name="parent_area_view_privacy_label">View Privacy Information</string>
+    <string name="parent_area_reset_progress_label">Reset Progress</string>
+    <string name="parent_area_reset_confirm_title">Reset all progress?</string>
+    <string name="parent_area_reset_confirm_body">This clears every completed chapter, star, badge, and scripture card, and starts back at Noah\'s Ark. This can\'t be undone. Your child\'s character and sound settings will stay the same.</string>
+    <string name="parent_area_reset_confirm_action">Reset</string>
+    <string name="parent_area_reset_cancel_action">Cancel</string>
+    <string name="parent_area_privacy_title">Privacy Information</string>
+    <string name="parent_area_privacy_body">Bible Adventures does not collect any personal information. We never ask for your child\'s name, email address, phone number, or location, and the app never requests access to contacts, the camera, or the microphone.\n\nThere is no account or sign-in of any kind. All progress is saved in one file on this device only — nothing is sent anywhere else.\n\nThe app works fully offline and contains no ads, no in-app purchases, and no chat or messaging with other people.</string>
+    <string name="parent_area_privacy_close">Close</string>
+
     <string name="character_screen_title">Choose Your Character</string>
     <string name="character_preview_content_description">Your character</string>
     <string name="character_section_appearance">Appearance</string>

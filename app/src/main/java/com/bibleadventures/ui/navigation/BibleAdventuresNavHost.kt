@@ -3,7 +3,6 @@ package com.bibleadventures.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -100,15 +99,14 @@ import com.bibleadventures.ui.screens.noahsark.matching.NoahsArkMatchingScreen
 import com.bibleadventures.ui.screens.noahsark.missingitems.NoahsArkMissingItemsScreen
 import com.bibleadventures.ui.screens.noahsark.organizeark.NoahsArkOrganizeArkScreen
 import com.bibleadventures.ui.screens.noahsark.reward.NoahsArkRewardScreen
+import com.bibleadventures.ui.screens.parentarea.ParentAreaScreen
 import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsScreen
 import com.bibleadventures.ui.screens.settings.SettingsScreen
 import com.bibleadventures.ui.screens.worldmap.WorldMapScreen
 
 @Composable
 fun BibleAdventuresNavHost(navController: NavHostController = rememberNavController()) {
-    val comingSoonTitles = mapOf(
-        MenuItemId.PARENT_AREA to stringResource(R.string.menu_parent_area),
-    )
+    val comingSoonTitles = emptyMap<MenuItemId, String>()
 
     NavHost(navController = navController, startDestination = Destination.MainMenu.route) {
         composable(Destination.MainMenu.route) {
@@ -123,6 +121,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                         MenuItemId.BADGES -> navController.navigate(Destination.Badges.route)
                         MenuItemId.SCRIPTURE_CARDS -> navController.navigate(Destination.ScriptureCards.route)
                         MenuItemId.SETTINGS -> navController.navigate(Destination.Settings.route)
+                        MenuItemId.PARENT_AREA -> navController.navigate(Destination.ParentArea.route)
                         else -> {
                             // No real destination exists yet for these; every other menu
                             // item routes to the placeholder until its owning milestone lands.
@@ -138,6 +137,12 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         }
         composable(Destination.Settings.route) {
             SettingsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Destination.ParentArea.route) {
+            ParentAreaScreen(
+                onBack = { navController.popBackStack() },
+                onOpenSettings = { navController.navigate(Destination.Settings.route) },
+            )
         }
         composable(Destination.WorldMap.route) {
             WorldMapScreen(

@@ -21,4 +21,9 @@ interface PlayerProfileRepository {
         badgeId: String,
         scriptureCardIds: List<String>,
     )
+
+    /** Progress-only reset (Parent Area) — leaves `character`/`audioSettings`/`totalPlayTimeMillis` untouched. */
+    suspend fun resetProgress()
+
+    suspend fun addPlayTime(durationMillis: Long)
 }

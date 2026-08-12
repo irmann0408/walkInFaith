@@ -75,4 +75,46 @@ class DecisionPathGameTest {
 
         assertEquals(afterComplete, state)
     }
+
+    @Test
+    fun `wrongAttemptsOnCurrentStep increments per wrong tap and resets on advance`() {
+        var state = DecisionPathGameState(steps)
+        state = DecisionPathGame.onOptionTapped(state, optionId = "attack_gate") // wrong
+        assertEquals(1, state.wrongAttemptsOnCurrentStep)
+
+        state = DecisionPathGame.onOptionTapped(state, optionId = "attack_gate") // wrong again
+        assertEquals(2, state.wrongAttemptsOnCurrentStep)
+
+        state = DecisionPathGame.onOptionTapped(state, optionId = "march_quietly") // correct
+        assertEquals(0, state.wrongAttemptsOnCurrentStep)
+    }
+
+    @Test
+    fun `replaceCurrentStep swaps only the current step and clears the wrong-attempt count`() {
+        var state = DecisionPathGameState(steps)
+        state = DecisionPathGame.onOptionTapped(state, optionId = "attack_gate")
+        state = DecisionPathGame.onOptionTapped(state, optionId = "attack_gate")
+        assertEquals(2, state.wrongAttemptsOnCurrentStep)
+
+        val newStep = DecisionStep("step_1_retry", correctOptionId = "hide_quietly", optionIds = listOf("hide_quietly", "run_away"))
+        state = DecisionPathGame.replaceCurrentStep(state, newStep)
+
+        assertEquals(newStep, state.currentStep)
+        assertEquals(0, state.wrongAttemptsOnCurrentStep)
+        assertEquals(0, state.currentStepIndex)
+        assertEquals(steps[1], state.steps[1]) // untouched
+        assertEquals(steps[2], state.steps[2]) // untouched
+    }
+
+    @Test
+    fun `replaceCurrentStep on a completed path is a no-op`() {
+        var state = DecisionPathGameState(listOf(DecisionStep("only", "yes", listOf("yes", "no"))))
+        state = DecisionPathGame.onOptionTapped(state, optionId = "yes")
+        assertTrue(state.isComplete)
+
+        val afterComplete = state
+        state = DecisionPathGame.replaceCurrentStep(state, DecisionStep("other", "no", listOf("yes", "no")))
+
+        assertEquals(afterComplete, state)
+    }
 }

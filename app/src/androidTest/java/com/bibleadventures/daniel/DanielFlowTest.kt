@@ -2,6 +2,7 @@ package com.bibleadventures.daniel
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -84,18 +85,13 @@ class DanielFlowTest {
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
         // Scene 4: The Angel's Shield — 5 random math problems, one per
-        // light. A wrong guess is free (no failure state), so there's no
-        // need to compute the answer: just try each of the 3 positionally-
-        // tagged choices until the light count advances.
-        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) { problemIndex ->
-            val targetLabel = activity.getString(R.string.daniel_lions_den_progress_label, problemIndex + 1, DanielContent.LIONS_DEN_PROBLEM_COUNT)
-            var solved = false
-            var choiceIndex = 0
-            while (!solved && choiceIndex < 3) {
-                composeTestRule.onNodeWithTag("lions_den_choice_$choiceIndex").performClick()
-                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
-                choiceIndex++
-            }
+        // light. Two wrong answers in a row now replace the problem instead
+        // of leaving the last choice a guaranteed-correct guess (see
+        // DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP), so the old
+        // "just try each of the 3 choices" trick no longer reliably solves
+        // it — compute the real answer from the displayed problem instead.
+        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) {
+            solveLionsDenProblem()
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -428,5 +424,21 @@ class DanielFlowTest {
         itemNode.performTouchInput {
             swipe(start = center, end = localEnd, durationMillis = 200)
         }
+    }
+
+    /**
+     * Reads the displayed "%d + %d = ?" / "%d − %d = ?" problem, computes
+     * the real answer, and taps the matching choice by its content
+     * description (each `AnswerChoice` exposes its own value as its content
+     * description). Deterministic by construction, so it also stays correct
+     * once wrong answers can replace the problem mid-attempt — unlike a
+     * blind "try all 3 choices" trial, this never taps a wrong answer at all.
+     */
+    private fun solveLionsDenProblem() {
+        val problemText = composeTestRule.onNodeWithTag("lions_den_problem").fetchSemanticsNode()
+            .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
+        val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
+        val correctValue = if ("−" in problemText) operands[0] - operands[1] else operands[0] + operands[1]
+        composeTestRule.onNodeWithContentDescription(correctValue.toString()).performClick()
     }
 }

@@ -147,7 +147,7 @@ private fun JerichoBlowShofarContent(
                 Text(
                     text = problemText,
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(top = 12.dp),
+                    modifier = Modifier.padding(top = 12.dp).testTag("shofar_problem"),
                 )
 
                 Row(

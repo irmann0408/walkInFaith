@@ -2,6 +2,7 @@ package com.bibleadventures.jesuscalmsstorm
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.hasText
@@ -317,18 +318,12 @@ class JesusCalmsStormFlowTest {
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Into the Lions' Den context
 
-        // The Angel's Shield — 5 random math problems; a wrong guess is free
-        // (no failure state), so just try each of the 3 positionally-tagged
-        // choices until the light count advances.
-        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) { problemIndex ->
-            val targetLabel = activity.getString(R.string.daniel_lions_den_progress_label, problemIndex + 1, DanielContent.LIONS_DEN_PROBLEM_COUNT)
-            var solved = false
-            var choiceIndex = 0
-            while (!solved && choiceIndex < 3) {
-                composeTestRule.onNodeWithTag("lions_den_choice_$choiceIndex").performClick()
-                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
-                choiceIndex++
-            }
+        // The Angel's Shield — 5 random math problems. Two wrong answers in a
+        // row now replace the problem instead of leaving the last choice a
+        // guaranteed-correct guess, so compute the real answer instead of
+        // trying all 3 choices blind.
+        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) {
+            solveLionsDenProblem()
         }
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -616,22 +611,25 @@ class JesusCalmsStormFlowTest {
         repeat(2) { index -> composeTestRule.onAllNodesWithContentDescription(fishLabel)[index].performClick() }
     }
 
+    private fun solveLionsDenProblem() {
+        val problemText = composeTestRule.onNodeWithTag("lions_den_problem").fetchSemanticsNode()
+            .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
+        val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
+        val correctValue = if ("−" in problemText) operands[0] - operands[1] else operands[0] + operands[1]
+        composeTestRule.onNodeWithContentDescription(correctValue.toString()).performClick()
+    }
+
     private fun completeMiracleMultiplication() {
-        val activity = composeTestRule.activity
-        repeat(Feeding5000Content.MIRACLE_PROBLEM_COUNT) { problemIndex ->
-            val targetLabel = activity.getString(
-                R.string.feeding_5000_miracle_multiplication_progress_label,
-                problemIndex + 1,
-                Feeding5000Content.MIRACLE_PROBLEM_COUNT,
-            )
-            var solved = false
-            var choiceIndex = 0
-            while (!solved && choiceIndex < 3) {
-                composeTestRule.onNodeWithTag("miracle_choice_$choiceIndex").performClick()
-                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
-                choiceIndex++
-            }
+        repeat(Feeding5000Content.MIRACLE_PROBLEM_COUNT) {
+            solveMiracleProblem()
         }
+    }
+
+    private fun solveMiracleProblem() {
+        val problemText = composeTestRule.onNodeWithTag("miracle_problem").fetchSemanticsNode()
+            .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
+        val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
+        composeTestRule.onNodeWithContentDescription((operands[0] * operands[1]).toString()).performClick()
     }
 
     private fun completeCorridorRhythmLane() {
@@ -847,17 +845,17 @@ class JesusCalmsStormFlowTest {
     }
 
     private fun completeBlowShofar() {
-        val activity = composeTestRule.activity
-        repeat(JerichoContent.shofarNoteIds.size) { problemIndex ->
-            val targetLabel = activity.getString(R.string.jericho_blow_shofar_progress_label, problemIndex + 1, JerichoContent.shofarNoteIds.size)
-            var solved = false
-            var choiceIndex = 0
-            while (!solved && choiceIndex < 3) {
-                composeTestRule.onNodeWithTag("shofar_choice_$choiceIndex").performClick()
-                solved = composeTestRule.onAllNodesWithText(targetLabel).fetchSemanticsNodes().isNotEmpty()
-                choiceIndex++
-            }
+        repeat(JerichoContent.shofarNoteIds.size) {
+            solveShofarProblem()
         }
+    }
+
+    private fun solveShofarProblem() {
+        val problemText = composeTestRule.onNodeWithTag("shofar_problem").fetchSemanticsNode()
+            .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
+        val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
+        val correctValue = if ("÷" in problemText) operands[0] / operands[1] else operands[0] * operands[1]
+        composeTestRule.onNodeWithContentDescription(correctValue.toString()).performClick()
     }
 
     /**

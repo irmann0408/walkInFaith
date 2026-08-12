@@ -152,14 +152,34 @@ class Feeding5000ViewModel(
         }
     }
 
+    /**
+     * A wrong tap just re-prompts the same problem, up to a point: after
+     * [DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP] wrong taps, the last
+     * remaining choice would be a guaranteed-correct guess by elimination,
+     * so a fresh problem replaces it instead (same id, so the screen's
+     * `problems.first { it.id == step.id }` lookup keeps working unchanged).
+     */
     fun onMiracleAnswerTapped(choiceValue: Int) {
         _uiState.update { current ->
-            val next = DecisionPathGame.onOptionTapped(current.miracleState, choiceValue.toString())
-            when (next.lastOutcome) {
+            val afterTap = DecisionPathGame.onOptionTapped(current.miracleState, choiceValue.toString())
+            when (afterTap.lastOutcome) {
                 DecisionOutcome.CORRECT, DecisionOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
                 else -> Unit
             }
-            current.copy(miracleState = next)
+            if (afterTap.wrongAttemptsOnCurrentStep >= DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP) {
+                val newProblem = newMiracleProblem(problemNumber = afterTap.currentStepIndex + 1)
+                val newStep = DecisionStep(
+                    id = newProblem.id,
+                    correctOptionId = newProblem.correctValue.toString(),
+                    optionIds = newProblem.choiceValues.map { it.toString() },
+                )
+                current.copy(
+                    miracleState = DecisionPathGame.replaceCurrentStep(afterTap, newStep),
+                    miracleProblems = current.miracleProblems.map { if (it.id == newProblem.id) newProblem else it },
+                )
+            } else {
+                current.copy(miracleState = afterTap)
+            }
         }
     }
 
@@ -342,29 +362,30 @@ class Feeding5000ViewModel(
      * lesson Jericho's Blow the Shofar needed a playtest pass to learn,
      * applied here from the start.
      */
-    private fun newMiracleProblems(random: Random = Random.Default): List<MathProblem> {
-        return (1..Feeding5000Content.MIRACLE_PROBLEM_COUNT).map { index ->
-            val multiplicand = Feeding5000Content.miracleMultiplicandPool.random(random)
-            val multiplier = random.nextInt(1, 10)
-            val correctValue = multiplicand * multiplier
+    private fun newMiracleProblems(random: Random = Random.Default): List<MathProblem> =
+        (1..Feeding5000Content.MIRACLE_PROBLEM_COUNT).map { problemNumber -> newMiracleProblem(problemNumber, random) }
 
-            val distractors = mutableSetOf<Int>()
-            while (distractors.size < 2) {
-                val offset = listOf(-1, 1).random(random) * (if (distractors.isEmpty()) random.nextInt(1, 21) else random.nextInt(20, 151))
-                val candidate = correctValue + offset
-                if (candidate >= 0 && candidate != correctValue && candidate !in distractors) {
-                    distractors += candidate
-                }
+    private fun newMiracleProblem(problemNumber: Int, random: Random = Random.Default): MathProblem {
+        val multiplicand = Feeding5000Content.miracleMultiplicandPool.random(random)
+        val multiplier = random.nextInt(1, 10)
+        val correctValue = multiplicand * multiplier
+
+        val distractors = mutableSetOf<Int>()
+        while (distractors.size < 2) {
+            val offset = listOf(-1, 1).random(random) * (if (distractors.isEmpty()) random.nextInt(1, 21) else random.nextInt(20, 151))
+            val candidate = correctValue + offset
+            if (candidate >= 0 && candidate != correctValue && candidate !in distractors) {
+                distractors += candidate
             }
-
-            MathProblem(
-                id = "problem_$index",
-                operandA = multiplicand,
-                operandB = multiplier,
-                operator = MathOperator.MULTIPLY,
-                choiceValues = (distractors + correctValue).shuffled(random),
-            )
         }
+
+        return MathProblem(
+            id = "problem_$problemNumber",
+            operandA = multiplicand,
+            operandB = multiplier,
+            operator = MathOperator.MULTIPLY,
+            choiceValues = (distractors + correctValue).shuffled(random),
+        )
     }
 
     companion object {
