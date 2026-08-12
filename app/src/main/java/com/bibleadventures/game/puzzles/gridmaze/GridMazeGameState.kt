@@ -16,7 +16,11 @@ enum class GridMazeOutcome { NONE, MOVED, BLOCKED, COLLECTED, CHECKPOINT_NEEDS_C
  * Generic across chapters: a map with no [GridTileType.CHECKPOINT] tile at
  * all just needs the goal reached (e.g. a simple "hurry there" maze); a map
  * that does have one gates completion on it being activated first (e.g.
- * "collect an item, then reach the checkpoint, then the goal").
+ * "collect an item, then reach the checkpoint, then the goal"). A map with
+ * no [GridTileType.GOAL] tile at all completes once every
+ * [GridTileType.COLLECTIBLE] tile has been visited instead (e.g. "reach
+ * every one of these, in any order, no single finish line") — CHECKPOINT is
+ * meaningless without a GOAL to gate, so this mode ignores it.
  */
 data class GridMazeState(
     val grid: List<List<GridTileType>>,
@@ -28,8 +32,14 @@ data class GridMazeState(
     val hasCollectible: Boolean get() = collectedPositions.isNotEmpty()
 
     private val hasCheckpointTile: Boolean get() = grid.any { row -> row.any { it == GridTileType.CHECKPOINT } }
+    private val hasGoalTile: Boolean get() = grid.any { row -> row.any { it == GridTileType.GOAL } }
+    private val totalCollectibleCount: Int get() = grid.sumOf { row -> row.count { it == GridTileType.COLLECTIBLE } }
 
     val isComplete: Boolean
-        get() = (checkpointActivated || !hasCheckpointTile) &&
-            grid[playerPosition.row][playerPosition.col] == GridTileType.GOAL
+        get() = if (hasGoalTile) {
+            (checkpointActivated || !hasCheckpointTile) &&
+                grid[playerPosition.row][playerPosition.col] == GridTileType.GOAL
+        } else {
+            totalCollectibleCount > 0 && collectedPositions.size >= totalCollectibleCount
+        }
 }

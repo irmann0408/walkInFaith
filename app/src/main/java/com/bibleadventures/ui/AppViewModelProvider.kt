@@ -10,6 +10,7 @@ import com.bibleadventures.ui.screens.character.CharacterViewModel
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.esther.EstherViewModel
+import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.screens.mainmenu.MainMenuViewModel
@@ -65,6 +66,10 @@ object AppViewModelProvider {
         initializer {
             val container = bibleAdventuresApplication().container
             JerichoViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
+        }
+        initializer {
+            val container = bibleAdventuresApplication().container
+            Feeding5000ViewModel(container.progressionService, container.playerProfileRepository, container.audioController)
         }
         initializer {
             BadgesViewModel(bibleAdventuresApplication().container.playerProfileRepository)

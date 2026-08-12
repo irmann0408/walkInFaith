@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="300dp"
+    android:viewportWidth="300"
+    android:viewportHeight="300">
+    <!-- Sky -->
+    <path android:fillColor="#FFBEE3F5" android:pathData="M0,0 L300,0 L300,180 L0,180 Z" />
+    <!-- Grassy hillside -->
+    <path android:fillColor="#FF8FBC6A" android:pathData="M0,150 C80,120 220,120 300,150 L300,300 L0,300 Z" />
+    <path android:fillColor="#FF7CAA57" android:pathData="M0,190 C90,170 210,170 300,190 L300,300 L0,300 Z" />
+</vector>

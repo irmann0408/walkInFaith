@@ -96,6 +96,41 @@ class GridMazeGameTest {
     }
 
     @Test
+    fun `a map with no goal tile completes once every collectible is gathered, in any order`() {
+        // C . C
+        // . # .
+        // C . .
+        val goalFreeGrid = listOf(
+            listOf(GridTileType.COLLECTIBLE, GridTileType.PATH, GridTileType.COLLECTIBLE),
+            listOf(GridTileType.PATH, GridTileType.WALL, GridTileType.PATH),
+            listOf(GridTileType.COLLECTIBLE, GridTileType.PATH, GridTileType.PATH),
+        )
+        var state = GridMazeState(grid = goalFreeGrid, playerPosition = GridPosition(1, 0))
+        assertFalse(state.isComplete)
+
+        state = GridMazeGame.onDirectionPressed(state, Direction.UP) // (0,0) collectible
+        assertEquals(GridMazeOutcome.COLLECTED, state.lastOutcome)
+        assertFalse(state.isComplete)
+
+        state = GridMazeGame.onDirectionPressed(state, Direction.DOWN) // back to (1,0)
+        state = GridMazeGame.onDirectionPressed(state, Direction.DOWN) // (2,0) collectible
+        assertFalse(state.isComplete)
+
+        state = GridMazeGame.onDirectionPressed(state, Direction.RIGHT) // (2,1)
+        state = GridMazeGame.onDirectionPressed(state, Direction.UP) // (1,1) is a wall, blocked
+        assertEquals(GridMazeOutcome.BLOCKED, state.lastOutcome)
+        assertEquals(GridPosition(2, 1), state.playerPosition)
+
+        state = GridMazeGame.onDirectionPressed(state, Direction.RIGHT) // (2,2)
+        state = GridMazeGame.onDirectionPressed(state, Direction.UP) // (1,2)
+        state = GridMazeGame.onDirectionPressed(state, Direction.UP) // (0,2) collectible — the last one
+
+        assertEquals(GridMazeOutcome.COLLECTED, state.lastOutcome)
+        assertEquals(3, state.collectedPositions.size)
+        assertTrue(state.isComplete)
+    }
+
+    @Test
     fun `once complete, further presses are a no-op`() {
         val completeState = GridMazeState(
             grid = testGrid,

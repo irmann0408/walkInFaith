@@ -18,6 +18,7 @@ import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.EstherContent
+import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.game.stories.NoahsArkContent
@@ -53,6 +54,17 @@ import com.bibleadventures.ui.screens.esther.lesson.EstherLessonScreen
 import com.bibleadventures.ui.screens.esther.messengersudoku.EstherMessengerSudokuScreen
 import com.bibleadventures.ui.screens.esther.reward.EstherRewardScreen
 import com.bibleadventures.ui.screens.esther.royalattire.EstherRoyalAttireScreen
+import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
+import com.bibleadventures.ui.screens.feeding5000.boysgift.Feeding5000BoysGiftScreen
+import com.bibleadventures.ui.screens.feeding5000.catching.Feeding5000CatchingScreen
+import com.bibleadventures.ui.screens.feeding5000.choice.Feeding5000ChoiceScreen
+import com.bibleadventures.ui.screens.feeding5000.gatheringcrowd.Feeding5000GatheringCrowdScreen
+import com.bibleadventures.ui.screens.feeding5000.intro.Feeding5000IntroScreen
+import com.bibleadventures.ui.screens.feeding5000.lesson.Feeding5000LessonScreen
+import com.bibleadventures.ui.screens.feeding5000.miraclemultiplication.Feeding5000MiracleMultiplicationScreen
+import com.bibleadventures.ui.screens.feeding5000.reward.Feeding5000RewardScreen
+import com.bibleadventures.ui.screens.feeding5000.searchingforfood.Feeding5000SearchingForFoodScreen
+import com.bibleadventures.ui.screens.feeding5000.serving.Feeding5000ServingScreen
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.explore.GoodSamaritanExploreScreen
 import com.bibleadventures.ui.screens.goodsamaritan.intro.GoodSamaritanIntroScreen
@@ -134,6 +146,8 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                         navController.navigate(Destination.Esther.Intro.route)
                     } else if (chapterId == ChapterId.JERICHO) {
                         navController.navigate(Destination.Jericho.Intro.route)
+                    } else if (chapterId == ChapterId.FEEDING_5000) {
+                        navController.navigate(Destination.Feeding5000.Intro.route)
                     }
                 },
             )
@@ -150,6 +164,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         danielGraph(navController)
         estherGraph(navController)
         jerichoGraph(navController)
+        feeding5000Graph(navController)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
                 backStackEntry.arguments?.getString(Destination.ComingSoon.ARG_FEATURE_TITLE).orEmpty()
@@ -927,5 +942,168 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
 @Composable
 private fun NavHostController.jerichoViewModel(entry: NavBackStackEntry): JerichoViewModel {
     val parentEntry = remember(entry) { getBackStackEntry(Destination.Jericho.GRAPH_ROUTE) }
+    return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
+}
+
+private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
+    navigation(
+        startDestination = Destination.Feeding5000.Intro.route,
+        route = Destination.Feeding5000.GRAPH_ROUTE,
+    ) {
+        composable(Destination.Feeding5000.Intro.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            Feeding5000IntroScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("intro")
+                    navController.navigate(Destination.Feeding5000.CrowdContext.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.CrowdContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.feeding_5000_crowd_context_title,
+                lineRes = Feeding5000Content.crowdContextLines,
+                onContinue = { navController.navigate(Destination.Feeding5000.GatheringCrowd.route) },
+            )
+        }
+        composable(Destination.Feeding5000.GatheringCrowd.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            Feeding5000GatheringCrowdScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "gathering_crowd" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("gathering_crowd")
+                    navController.navigate(Destination.Feeding5000.SearchingContext.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.SearchingContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.feeding_5000_searching_context_title,
+                lineRes = Feeding5000Content.searchingContextLines,
+                onContinue = { navController.navigate(Destination.Feeding5000.SearchingForFood.route) },
+            )
+        }
+        composable(Destination.Feeding5000.SearchingForFood.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            Feeding5000SearchingForFoodScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "searching_for_food" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("searching_for_food")
+                    navController.navigate(Destination.Feeding5000.BoysGiftContext.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.BoysGiftContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.feeding_5000_boys_gift_context_title,
+                lineRes = Feeding5000Content.boysGiftContextLines,
+                onContinue = { navController.navigate(Destination.Feeding5000.BoysGift.route) },
+            )
+        }
+        composable(Destination.Feeding5000.BoysGift.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            Feeding5000BoysGiftScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "boys_gift" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("boys_gift")
+                    navController.navigate(Destination.Feeding5000.Choice.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.Choice.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            Feeding5000ChoiceScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("choice")
+                    navController.navigate(Destination.Feeding5000.MiracleContext.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.MiracleContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.feeding_5000_miracle_context_title,
+                lineRes = Feeding5000Content.miracleContextLines,
+                onContinue = { navController.navigate(Destination.Feeding5000.MiracleMultiplication.route) },
+            )
+        }
+        composable(Destination.Feeding5000.MiracleMultiplication.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            Feeding5000MiracleMultiplicationScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "miracle_multiplication" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("miracle_multiplication")
+                    navController.navigate(Destination.Feeding5000.FeastContext.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.FeastContext.route) {
+            StoryBeatScreen(
+                titleRes = R.string.feeding_5000_feast_context_title,
+                lineRes = Feeding5000Content.feastContextLines,
+                onContinue = { navController.navigate(Destination.Feeding5000.Serving.route) },
+            )
+        }
+        composable(Destination.Feeding5000.Serving.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            Feeding5000ServingScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "serving" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("serving")
+                    navController.navigate(Destination.Feeding5000.Catching.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.Catching.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            Feeding5000CatchingScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "catching" in previouslyCompletedSceneIds,
+                onContinue = {
+                    viewModel.onSceneCompleted("catching")
+                    navController.navigate(Destination.Feeding5000.Lesson.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.Lesson.route) { entry ->
+            val viewModel = navController.feeding5000ViewModel(entry)
+            Feeding5000LessonScreen(
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson")
+                    navController.navigate(Destination.Feeding5000.Reward.route)
+                },
+            )
+        }
+        composable(Destination.Feeding5000.Reward.route) { entry ->
+            Feeding5000RewardScreen(
+                viewModel = navController.feeding5000ViewModel(entry),
+                onReturnToMap = {
+                    // Clears the whole Feeding5000 back stack so Back from the map can't
+                    // re-enter a finished run or re-trigger onChapterFinished().
+                    navController.navigate(Destination.WorldMap.route) {
+                        popUpTo(Destination.WorldMap.route)
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavHostController.feeding5000ViewModel(entry: NavBackStackEntry): Feeding5000ViewModel {
+    val parentEntry = remember(entry) { getBackStackEntry(Destination.Feeding5000.GRAPH_ROUTE) }
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }

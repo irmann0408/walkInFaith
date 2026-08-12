@@ -1,6 +1,15 @@
 # Project Status
 
-Last updated: 2026-08-12 (Setting Up Camp: the snap-into-place animation
+Last updated: 2026-08-12 (Feeding the 5,000 built as a full new chapter — 6
+real mini-puzzles: Gathering the Crowd (new `groupfill` engine, drag
+families into seating circles summing exactly to Mark 6:40's fifties/
+hundreds), Searching for Food and The Boy's Gift (`hiddenobject` reused
+twice, the second time with never-clickable decoys), The Miracle
+Multiplication (`decisionpath` reused a 3rd time, real multiplication
+problems replacing an external blueprint's "tap to multiply" gimmick), and
+a two-phase Grand Feast finale (`rhythmlane` reused a 5th/6th time — Serving
+the Crowd, then Gathering the Leftovers at 12 exact baskets, John 6:13).
+Setting Up Camp: the snap-into-place animation
 sped up (was noticeably slow to settle), and the puzzle now requires
 stacking the 12 randomly-valued (1-99, distinct) stones in ascending order
 rather than any order — a real `stackbuild` engine redesign, not just
@@ -30,15 +39,16 @@ Settings also complete)
 
 ## Current milestone
 
-**Battle of Jericho rebuild: COMPLETE.** The chapter's one puzzle — 4
-flashcard rounds of picking the obviously-right option — was too easy.
-Rebuilt with 4 real mini-puzzles mapped onto Joshua 2, 4, and 6: the spies'
-rope escape (a sliding-tile puzzle), setting up camp (12 memorial stones),
-the six-day silent march, and the seventh-day fast march/shofar/shout
-finale. See "The Battle of Jericho rebuilt with 4 real mini-puzzles"
-further down. Chain is unchanged: Noah's Ark → David & Goliath → Good
-Samaritan → Daniel → Esther's Rescue of Her People → Jericho → Feeding the
-5,000 → Jesus Calms the Storm.
+**Chapter 7 — Feeding the 5,000: COMPLETE.** A user-supplied blueprint for
+this chapter proposed weaker mechanics than this codebase now builds (a
+"tap the basket to multiply" clicker, and a "patience timer" that would
+have been this app's first real failure state) — rejected and rebuilt with
+6 real mini-puzzles instead: Gathering the Crowd, Searching for Food, The
+Boy's Gift, The Miracle Multiplication, Serving the Crowd, and Gathering
+the Leftovers. See "Chapter 7 — Feeding the 5,000" further down. Chain is
+unchanged: Noah's Ark → David & Goliath → Good Samaritan → Daniel →
+Esther's Rescue of Her People → Jericho → Feeding the 5,000 → Jesus Calms
+the Storm (the last chapter, still gameplay-free — see Next tasks).
 
 ## Completed features
 
@@ -372,9 +382,8 @@ time the chapter is (re)started, same mechanism the Matching shuffle already rel
   generated (only the `mipmap-anydpi-v26` adaptive icon exists). Cosmetic only.
 - `settings/` (audio toggles only) now exists — see "Audio, Narration & Settings"
   below. The rest of Milestone 6 (parental gate, progress reset) is still deferred.
-- Feeding the 5,000 and Jesus Calms the Storm still exist only as `ChapterCatalog`
-  entries with no gameplay — expected per spec section 7, each lands in its own future
-  milestone.
+- Jesus Calms the Storm still exists only as a `ChapterCatalog` entry with no
+  gameplay — expected per spec section 7, lands in its own future milestone.
 - All Noah's Ark art (animals, supplies, badge, backgrounds) is simple placeholder
   vector shapes, not final art (spec section 25) — code reads them by drawable
   resource id, so swapping in real art later doesn't touch game logic.
@@ -1936,15 +1945,366 @@ Two follow-up requests on the drag-and-stack puzzle, same day.
   the ascending-order rework is exactly the kind of real-time drag-gesture
   change this project always double-checks on a physical device.
 
+### Chapter 7 — Feeding the 5,000
+
+The seventh full chapter, unlocked automatically once The Battle of Jericho
+is completed. The user supplied an external AI-generated blueprint for this
+chapter up front and explicitly asked for something *better*, not simpler,
+citing this session's own established bar — real math via `decisionpath`,
+real ordered/quota logic instead of blind taps, and engine reuse at a new
+parameterization instead of inventing engines by default. Two of the
+blueprint's own mechanics were rejected outright before design started: "tap
+the basket to multiply the food" is the same bare-tap shape already rebuilt
+away four times this session (old Corridor, old Setting Up Camp, old
+Angel's Shield, old March and the Shout); a "patience timer" turning happy
+faces into hungry ones is this app's first real failure-state shape, which
+the spec prohibits outright (CLAUDE.md, non-negotiable). Scene flow: Intro
+→ So Many People context → **Gathering the Crowd** → Not Enough context →
+**Searching for Food** → A Boy's Lunch context → **The Boy's Gift** →
+Choice → Jesus Gives Thanks context → **The Miracle Multiplication** →
+Enough For Everyone context → **Serving the Crowd** → **Gathering the
+Leftovers** → Lesson → Reward.
+
+- **New engine: `game/puzzles/groupfill/{GroupFillGameState,GroupFillGame}.kt`**,
+  for **Gathering the Crowd** (Mark 6:39-40's "ranks of hundreds and
+  fifties"). No existing engine modeled "add items to a bin until an exact
+  numeric target is reached, reject anything that would overshoot" —
+  `dragsort` is static category-matching (no running sum), `stackbuild`
+  enforces strict order, neither has a sum concept. `GroupFillGameState`
+  holds `families: List<FamilyGroup>` (id + headcount) and
+  `circleTargets: List<Int>` (`[50, 50, 100]`); `GroupFillGame.onFamilyDropped`
+  rejects an over-target drop as `REJECTED_OVERSHOOT` (never a failure —
+  same "wrong attempt just re-prompts" shape as every other engine) rather
+  than placing it. `Feeding5000ViewModel.newGroupFillFamilies` builds each
+  circle's family set via a `randomPartition(target, minParts=3,
+  maxParts=5, random)` helper (positive integers summing exactly to
+  target, solvable-by-construction — same principle as
+  `SlidingPuzzleGame.newShuffled`), pools all circles' families, and
+  shuffles once for tray display order — generator lives in the ViewModel,
+  never in `Feeding5000Content.kt`, per this codebase's static-content-only
+  rule for `*Content.kt` files.
+- **`Feeding5000GatheringCrowdScreen.kt` generalizes Setting Up Camp's exact
+  drag-and-snap idiom from one drop zone to three**, adding nearest-circle-
+  by-distance resolution (`circleCenters.indices.minByOrNull { (released -
+  circleCenters[it]).getDistance() }`) on top of the existing
+  `detectDragGestures` + `Animatable`-driven snap. Re-keyed
+  `pointerInput(familyId, circleCenters, circleSums)` on every live-read
+  value, directly applying the pointerInput-keying lesson from Setting Up
+  Camp's own bug (see Architectural decisions log) rather than repeating it
+  at the new multi-zone shape.
+- **Searching for Food and The Boy's Gift both reuse `hiddenobject`** — the
+  first unchanged (single target, a boy in a crowd scene), the second at a
+  new parameterization: find exactly 5 barley loaves and 2 small fish among
+  decoys (3 stone-lookalikes, 2 frogs). **Decoys are a screen-level-only
+  safety mechanism, not an engine-level one** — `DecoyTarget` in
+  `Feeding5000BoysGiftScreen.kt` is a bare `Image` with no click modifier at
+  all, so a tap on one can never reach `onItemTapped`. This was deliberate:
+  re-reading `HiddenObjectGame.onItemTapped` during design confirmed it does
+  **not** validate that a tapped id exists in `items` — passing an unknown
+  decoy id would silently corrupt `foundIds`/`isComplete`. No unit test
+  asserts "tapping a decoy is a no-op" for this reason (that assertion would
+  be false against the raw engine); the safety is structural, at the screen
+  layer, and documented as such in both the ViewModel's and the screen's
+  KDoc.
+- **The Miracle Multiplication reuses `decisionpath` a 3rd time** (after
+  Daniel's Angel's Shield and Jericho's Blow the Shofar), replacing the
+  blueprint's "tap to multiply" gimmick with 5 real multiplication problems
+  drawn from `MathOperator.MULTIPLY` (now a 3rd consumer of the shared
+  `MathOperator`/`MathProblem` shape). A correct/complete answer triggers a
+  small decorative burst (`Animatable` scale pulse on the loaf/fish icons)
+  — the arithmetic is the mechanic, the burst is the reward for solving it,
+  not a substitute. Answer buttons get `testTag("miracle_choice_0/1/2")`,
+  same positional-tag technique as `lions_den_choice_*`/`shofar_choice_*`.
+- **Serving the Crowd and Gathering the Leftovers both reuse `rhythmlane`**
+  (a 5th and 6th parameterization, after Esther's Corridor and Jericho's two
+  march scenes) — confirmed with the user via an explicit choice between
+  this reuse and building new free-form catch physics for the leftovers
+  phase; the lower-risk, already-proven-testable option was picked
+  deliberately over closer-to-blueprint free-form collision. Gathering the
+  Leftovers requires exactly 12 hits (John 6:13/Mark 6:43's twelve baskets,
+  not a rounded/invented number), and is a faster-paced re-skin of the same
+  3-lane engine, not new gameplay code.
+- **Badge/scripture card**: "Generous Heart" + John 6:11 (already the
+  chapter's anchor verse in `ChapterCatalog`), added to `RewardCatalog`. The
+  scripture text — plus Mark 6:39-40's crowd-organizing detail and John
+  6:13's twelve-baskets count — was fetched directly from the actual World
+  English Bible (WEB) text rather than assumed from memory, same standard
+  as every prior chapter's verse.
+- Tests: `GroupFillGameTest.kt` (unit — fitting/overshoot/exact-completion/
+  already-placed/once-complete cases); `Feeding5000ViewModelTest.kt` (unit —
+  one test group per mechanic, including 100-random-draw generator-invariant
+  checks for both `newGroupFillFamilies` and `newMiracleProblems`, mirroring
+  `SlidingPuzzleGameTest`'s seeded-shuffle discipline); new instrumented
+  `Feeding5000FlowTest.kt`, which completes all 6 prerequisite chapters
+  itself (same "device save data persists across runs" pattern as every
+  other `*FlowTest`) then solves Gathering the Crowd live: since family
+  headcounts and each circle's target sum are randomly generated every run,
+  the test reads the full remaining headcount multiset and each circle's
+  remaining capacity straight off the screen, solves a real exact-bin-fill
+  assignment with backtracking (`solveGroupFillAssignment`), then executes
+  it — the same "read live state, run a real solver" discipline as
+  `solveSpiesEscapePuzzle`'s BFS over the sliding puzzle.
+- Full `./gradlew build` green. `Feeding5000FlowTest` passed on a real
+  device twice back-to-back (23.7s then clean on a scoped re-run) — this
+  chapter introduces more real-time mechanics at once than any prior single
+  change (2 more `rhythmlane` parameterizations, 1 more multi-zone
+  `Animatable`-driven drag puzzle), so both runs mattered. The full
+  `connectedDebugAndroidTest` suite's only failure was the same known
+  pre-existing `WorldMapNavigationTest` flakiness from real accumulated save
+  data on this device (asserts a fresh-install lock state; this device's
+  save file already has chapters completed from earlier sessions) — not a
+  regression from this chapter.
+
+### Searching for Food: a crowd to actually search through
+
+Per the user's direct feedback: the boy was the only figure anywhere on
+screen, so he was trivially spottable rather than something to search for
+— the scene wasn't really a hidden-object search yet.
+
+- Added 20 non-interactive crowd figures (`Feeding5000Content.searchingForFoodDecoys`,
+  new `ic_crowd_person.xml` — same head+robe silhouette shape as the boy's
+  icon but a different robe color and no basket, reused 20 times at
+  hand-placed positions across the hillside, same "one shared icon, many
+  positions" pattern as the frog/stone decoys in The Boy's Gift). Purely
+  screen-level decoys — never registered as a `HiddenItem`, no click
+  modifier at all (`CrowdDecoyTarget`), same zero-risk pattern documented
+  for The Boy's Gift's decoys; no engine change needed.
+- **The basket is now the only thing that identifies the boy** — instructions
+  text updated ("Search the crowd for the boy carrying a basket") since with
+  20 other people on screen, his position alone no longer gives him away.
+- No test changes needed: decoys have `contentDescription = null`, so the
+  existing `onNodeWithContentDescription(boy_content_description)` lookup in
+  `Feeding5000FlowTest` stays unambiguous. A purely visual/content change
+  (no new real-time mechanic, no engine change), so this only needed a
+  single instrumented pass rather than the usual twice-back-to-back —
+  confirmed passing on-device.
+
+**Follow-up same day**, two more direct fixes: all 20 crowd figures shared
+one drawable, so they read as identical brown clones — `ic_crowd_person.xml`
+split into 5 robe-color variants (`ic_crowd_person_1`..`_5`: brown, muted
+green, dusty rose, slate teal, mustard gold; same head/skin tone, cycled 4
+of each across the 20 positions). Separately, several of the original
+positions had `y` fractions in `bg_feeding_hillside.xml`'s sky band (that
+background's grass only starts around y≈0.4-0.6 of its square viewport,
+curving), so a handful of people visibly floated above the horizon instead
+of standing on the ground — every position was moved into `y >= 0.58`,
+comfortably inside the grass. Positions are still hand-placed (not
+generated), same as every other decoy list in this codebase. No test or
+engine changes; confirmed on-device.
+
+**Follow-up same day**: The Boy's Gift basket also felt sparse (5 decoys +
+7 real items on an otherwise-empty cloth backdrop), per the user's direct
+request to fill the frame. `boysGiftDecoys` grew from 5 to 25 — a new 4th
+decoy shape (`ic_decoy_leaf.xml`, an olive leaf) joins the existing
+`ic_stone_smooth`/`ic_decoy_rock`/`ic_decoy_frog`, hand-placed across the
+whole frame (`bg_feeding_basket.xml` has no sky/ground split like the
+hillside background, so no "floating" concern here — decoys can sit
+anywhere) while staying clear of the 7 real items' positions. No screen or
+engine changes needed — `Feeding5000BoysGiftScreen.kt` already renders
+whatever `Feeding5000Content.boysGiftDecoys` holds generically. Confirmed
+on-device; the 5 loaves and 2 fish are still findable among the denser
+clutter.
+
+**Follow-up same day**: Gathering the Leftovers redesigned per the user's
+direct request. Previously it reused Serving's exact shape — 3 independently
+tappable lanes, each with its own always-present basket. The user asked for
+something closer to a real catching mechanic instead: **one** basket that
+slides between the 3 lanes, moved one lane at a time via left/right
+controls.
+- **Still zero new engine code.** `RhythmLaneGame` is completely unchanged.
+  The catch is now judged automatically — every frame, purely from
+  whichever lane `Feeding5000UiState.catchingBasketLane` currently holds —
+  by calling the *exact same* `RhythmLaneGame.onLaneTapped` the old 3-lane
+  version called from an explicit tap, just triggered from
+  `onCatchingTimeAdvanced`'s existing per-frame tick instead of a click
+  handler. It's already idempotent per note via `judgedNoteKeys`, so calling
+  it every frame while the basket sits in the right lane is safe — it only
+  ever registers once.
+- **Movement uses the same left/right button D-pad idiom as Good
+  Samaritan's and Daniel's grid mazes** (`FilledTonalIconButton`-style,
+  56dp), the natural 1D extension of this codebase's existing "grid-based
+  movement always uses buttons, never tap-on-tile" rule — chosen over
+  letting the player drag the basket directly to a lane, since a button can
+  only ever move exactly one lane per tap by construction, while a drag
+  would need extra clamping logic to enforce the same "one lane at a time"
+  constraint the user asked for.
+- `Feeding5000UiState.catchingBasketLane` (default 1, centered) is new,
+  plain ViewModel state — not a new pure-Kotlin engine, since it's a single
+  clamped `Int` with no rules complex enough to warrant one, same judgment
+  call as `selectedChoiceId` on the same state class.
+- **A real layout bug, caught on-device, not in unit tests**: the first
+  version put the single basket track as a sibling of the falling-notes
+  `Row(Modifier.weight(1f, fill = true))` — a `weight(1f, fill = true)`
+  child alone claims *all* remaining space in a `Column`, so the basket
+  track and move buttons after it were left with zero height, invisible
+  and unfindable by content description, even though nothing crashed and
+  the rest of the screen rendered fine. Fixed by nesting: an outer
+  `Column(Modifier.weight(1f, fill = true))` holds the falling-lanes Row
+  (itself `weight(1f, fill = true)`, so it still claims the *lion's share*
+  of the outer Column's space) followed by the fixed-height basket track
+  and controls as ordinary non-weighted siblings — Compose measures
+  non-weighted children at their natural size first, then divides what's
+  left among weighted ones, so this ordering guarantees the fixed-size
+  pieces always get room.
+- **A genuinely new instrumented-testing problem, not just a bug**: every
+  other `rhythmlane` scene's test helper (`completeMarch`) schedules exact
+  `mainClock.advanceTimeBy(...)` jumps to each note's precise timestamp,
+  assuming the clock starts at elapsedMs≈0 when the screen first appears.
+  That assumption breaks here specifically *because* catching is now
+  auto-judged with no explicit tap gating it: Compose's implicit idle-sync
+  (which runs as an ordinary part of any `performClick()`, including under
+  `mainClock.autoAdvance = false`) pumps this screen's infinite
+  `withFrameNanos` loop forward by an unpredictable amount before test code
+  regains control — on a screen where *reaching the note's time window
+  while parked in its lane* is itself a hit, that stray pumping silently
+  auto-catches whatever the basket's starting lane happens to line up with,
+  for free, before the test ever gets to steer it. Freezing the clock
+  earlier (even *before* the navigating Continue tap) didn't fix this and
+  introduced its own flakiness (the click intermittently couldn't find its
+  target at all — likely an in-flight recomposition from the *previous*
+  screen's own completion getting preempted by the freeze). The fix that
+  actually held up over three consecutive on-device runs: stopped trying to
+  predict the exact starting elapsedMs at all. `completeCatching` now
+  parks the basket in each of the 3 lanes in turn and advances the clock by
+  one full `chart.loopDurationMs` per lane — since every note recurs
+  exactly once per loop, a full-loop dwell is guaranteed to catch every
+  note in that lane regardless of what the clock's real starting offset
+  turns out to be — and reads progress live off the on-screen text after
+  every sweep rather than trusting a locally-incremented counter, so it's
+  also correct if some hits already happened for free before the helper
+  even started.
+- New strings: `feeding_5000_catching_basket_content_description` ("Basket,
+  lane %1$d" — also read live by the test to know where the basket
+  currently is, same scanning-a-candidate-range idiom as
+  `completeSettingUpCamp`'s smallest-remaining-stone scan),
+  `feeding_5000_catching_move_left_content_description`/`_move_right_...`.
+  `feeding_5000_catching_lane_content_description` (the old per-lane
+  description) is gone — nothing renders 3 independently-tappable lanes
+  anymore.
+- Tests: `Feeding5000ViewModelTest.kt`'s `onCatchingTapped` cases replaced
+  with `onCatchingBasketMoved` clamping, "moved into position before the
+  beat auto-catches," and — the case that actually proves the new mechanic,
+  not just its plumbing — "advancing time to a beat while the basket is in
+  the wrong lane does not register a catch." `Feeding5000FlowTest.kt`'s
+  `completeCatching` replaces its call into the shared `completeMarch`
+  helper (still used for every other `rhythmlane` scene, whose 3
+  independently-tappable-lane shape is unaffected). Full `./gradlew build`
+  green; `Feeding5000FlowTest` passed on-device three consecutive times
+  after the fix (this mechanic's real-time-timing-sensitivity earned the
+  extra run beyond the usual twice-back-to-back).
+
+**Follow-up same day**, two more direct requests:
+- **Slower bread drop.** `catchingChart` was still using its original
+  tap-each-lane-shape pacing (`loopDurationMs = 2300`, notes 500ms apart)
+  even though the mechanic itself had already changed to steer-and-position
+  — a good fit for a quick reaction tap, too rushed for anticipating and
+  moving a basket, especially the one gap that needs a full 2-lane jump
+  (lane 2 -> lane 0). Retuned to `loopDurationMs = 4000` with even
+  1000ms gaps between all 4 notes (matching Serving's cadence), and the
+  screen's `TRAVEL_DURATION_MS`/`NOTE_GRACE_MS` (900/200 -> 1800/300) to
+  match — more visual lead time before each drop reaches the bottom. Total
+  time to reach 12 hits went from ~7s to ~12s. `Feeding5000FlowTest`'s
+  `completeCatching` needed no changes at all — it already reads
+  `chart.loopDurationMs` from the content object rather than a hardcoded
+  value, exactly the payoff the sweep-by-full-loop technique was designed
+  for.
+- **Randomized boy position.** Searching for Food's boy was still at a
+  fixed `Offset(0.55f, 0.62f)` — findable in the same spot every
+  playthrough once a player had seen the scene before, undermining the
+  actual search. `Feeding5000ViewModel.newBoyPosition` (new, follows this
+  codebase's "randomization lives in the ViewModel, `*Content.kt` stays
+  static" rule) rejection-samples within the same grass-safe bounds already
+  used for the 20 crowd decoys, retried (bounded at 200 attempts, a
+  defensive cap never actually needed) until the candidate lands at least
+  0.05 away from every decoy so he can't spawn stacked directly on one.
+  `Feeding5000FlowTest`'s existing single tap
+  (`onNodeWithContentDescription(boy_content_description)`) needed no
+  changes — it finds the boy by content description, not position, so it's
+  naturally unaffected by where he lands. Added a 100-construction
+  invariant test (bounds + minimum decoy distance), same discipline as
+  every other random generator in this chapter.
+- Full `./gradlew build` green; `Feeding5000FlowTest` passed on-device
+  twice back-to-back (the chart retiming is a real-time-mechanic change,
+  even though it's pacing-only).
+
+**Follow-up same day**, two more direct requests:
+- **Gathering the Crowd's "Circle N" label moved outside the circle.**
+  Previously the full "Circle N: X of Y" string sat inside the circular
+  drop zone, cluttering the shape. Split into two separate strings —
+  `feeding_5000_gathering_crowd_sum_label` ("X of Y", stays inside, next to
+  the completion checkmark — the number a player actually watches while
+  dragging) and `feeding_5000_gathering_crowd_circle_label` ("Circle N", now
+  a caption below the circle). `CircleDropZone` gained an outer `Column`
+  wrapping the circle `Box` and the new caption `Text`; the circle's own
+  drag-target-center tracking (`onGloballyPositioned`, read by
+  `DraggableFamily`'s nearest-circle snap distance check) had to stay on the
+  `Box` itself, not the wrapping `Column` — attaching it to the outer
+  wrapper would have shifted the tracked "center" down by the caption's own
+  height, throwing off the drop math. Reworked as an explicit
+  `onCenterChanged: (Offset) -> Unit` callback parameter instead of folding
+  `onGloballyPositioned` into the passed-in `modifier`, so the call site
+  can't accidentally apply it to the wrong element.
+- **Serving the Crowd rebuilt as a `gridmaze` walk, replacing its
+  `rhythmlane` version.** Per direct feedback: standing still while bread
+  fell into a basket read as the disciple *receiving* food, not
+  distributing it — the opposite of what "serving" should look like.
+  Reused Good Samaritan's/Daniel's D-pad grid-walk engine instead of
+  inventing new movement code, mirroring `GoodSamaritanExploreScreen`'s
+  structure but without a checkpoint (simpler, closer to Daniel's Darius
+  maze). The disciple now walks an 8x8 map to reach all 7 groups of people
+  (deliberately sparse — 8 wall tiles total, ~12% of cells, well under Good
+  Samaritan's much denser 10x10 terrain, per the user's explicit "fewer
+  obstacles" request), split across two wall flavors — `#` (boulder,
+  reusing the existing `ic_wall_rock.xml`) and `B` (bush, new
+  `ic_wall_bush.xml`) — mechanically identical `WALL` tiles, same
+  rock/bandit-is-only-a-rendering-choice trick Good Samaritan's own map
+  already established. New `ic_crowd_group.xml` (3 overlapping simplified
+  person shapes, reusing the crowd's established robe-color palette) is the
+  collectible icon for each group.
+  - **A real engine generalization, not just new content**: `GridMazeState`
+    previously only knew "reach the GOAL tile" as its completion condition
+    (optionally gated by a CHECKPOINT). Serving all 7 groups has no single
+    finish line — any order works, there's no "last" group — which doesn't
+    fit that shape. Generalized `isComplete` in place: a map with **no**
+    GOAL tile at all now completes once every COLLECTIBLE tile has been
+    gathered (`collectedPositions.size >= totalCollectibleCount`), while
+    every existing map (Good Samaritan's, Daniel's — both of which *do*
+    have a GOAL tile) is completely unaffected, since that branch is
+    unreachable for them. Same "generalize the shared engine in place
+    rather than build a second one" precedent as when Daniel's Darius maze
+    first needed a GOAL-only (no checkpoint) mode.
+  - Hand-verified by BFS (all 7 collectibles reachable in one connected
+    component from the start) and a 27-move solution path, same discipline
+    as every other hand-authored maze in this app — confirmed correct by
+    the new `Feeding5000ViewModelTest` cases actually passing on the first
+    try (they replay the path and assert 7 sounds/full completion), not
+    just by eyeballing the map.
+  - Tests: `GridMazeGameTest.kt` gained a case for the new "no goal tile"
+    completion mode (gather 3 collectibles around a wall, in a
+    non-sequential order, confirming `isComplete` only flips true once the
+    last one is gathered); `Feeding5000ViewModelTest.kt`'s `onServingTapped`
+    tests replaced with grid-parsing/sound/full-path-completion cases,
+    mirroring `GoodSamaritanViewModelTest`'s style (assert directly against
+    `Feeding5000Content.servingMapLayout`'s own tile coordinates, no
+    separate fake grid); `Feeding5000FlowTest.kt` gained `completeServing()`
+    (replays `servingSolutionPath` via D-pad content-description taps,
+    same technique as `GoodSamaritanFlowTest`'s Explore scene, simpler
+    since there's no mid-walk overlay to dismiss), replacing its old
+    `completeMarch(servingChart, ...)` call.
+- Full `./gradlew build` green; `Feeding5000FlowTest` passed on-device
+  twice back-to-back (a first attempt failed at 11.6s with no captured
+  stack trace or logcat crash signature — consistent with a transient
+  device hiccup rather than a real bug, since two immediate re-runs both
+  passed cleanly with no code changes in between).
+
 ## Next tasks
 
-The natural next step per the current order is either **Chapter 7 —
-Feeding the 5,000** (now unlocked once The Battle of Jericho is completed)
-or the rest of
-**Milestone 6 — Parent Area**: a parental gate, progress summary, and
-reset-progress functionality (spec section 17) — the audio/narration
-toggles portion of Settings is already built (see "Audio, Narration &
-Settings" above).
+The natural next step per the current order is **Milestone 6 — Parent
+Area**: a parental gate, progress summary, and reset-progress functionality
+(spec section 17) — the audio/narration toggles portion of Settings is
+already built (see "Audio, Narration & Settings" above). The one remaining
+content gap is **Chapter 8 — Jesus Calms the Storm**, the last chapter in
+`ChapterCatalog`'s chain, still gameplay-free.
 
 ## Architectural decisions log
 
@@ -2106,3 +2466,102 @@ Settings" above).
   drop, a small isolated `createAndroidComposeRule` test mounting just that
   screen's content composable with local state (no full nav chain) is a
   much faster iteration loop than re-running the whole flow test.
+- **A puzzle engine can be reused across totally unrelated chapters by
+  generalizing its *screen-level* drag idiom to more drop zones, not just
+  reusing the engine unchanged.** Setting Up Camp's single-drop-zone
+  `detectDragGestures` + `Animatable`-snap idiom became Feeding the 5,000's
+  three-drop-zone Gathering the Crowd screen by adding nearest-by-distance
+  resolution across multiple zone centers — the underlying drag/snap
+  mechanics didn't change, only which zone a release resolves against. The
+  pointerInput-keying lesson (below) was re-applied proactively at the new
+  shape rather than rediscovered by a second bug.
+- **Decoy safety in `hiddenobject`-based scenes is a screen-level
+  guarantee, not an engine-level one, and should be documented as such
+  wherever decoys are used.** `HiddenObjectGame.onItemTapped` does not
+  validate that a tapped id exists in `items` — it would silently corrupt
+  `foundIds`/`isComplete` if ever called with an unregistered id. Every
+  decoy-bearing screen (Noah's Ark's, David & Goliath's, Feeding the
+  5,000's Boy's Gift) relies on decoys simply never being wired to a click
+  handler at all, not on the engine defending against a bad id. Don't write
+  a unit test asserting "tapping a decoy is a no-op" for this reason — that
+  assertion is false against the raw engine and would misrepresent where
+  the safety actually lives.
+- **A chapter's own instrumented flow test can solve a randomly-generated
+  puzzle it has no advance knowledge of by reading live semantics-tree
+  state and running a real solver, not just brute-forcing positional
+  choices.** Established by `solveSpiesEscapePuzzle`'s BFS over
+  `SlidingPuzzleGame`'s transition function; extended by Feeding the
+  5,000's `Feeding5000FlowTest.completeGatheringCrowd`, which reads the
+  full remaining family-headcount multiset and each circle's remaining
+  capacity straight off the screen (cheap semantics queries, not gestures)
+  and runs a real exact-bin-fill backtracking search to find a valid
+  assignment before executing it. Reserve the cheaper "try each of 3
+  positionally-tagged choices" technique (Daniel's lights, Jericho's
+  shofar/miracle multiplication) for genuinely small, discrete choice sets;
+  reach for a real solver once the state space is too large to brute-force
+  blindly, same threshold `JerichoFlowTest`'s Setting Up Camp helper already
+  drew (scanning 1-99 candidates instead of brute-forcing up to 78 wrong
+  drags).
+- **A `rhythmlane` scene can be re-skinned into a "steer a single object
+  into position" mechanic, not just a re-timed/re-themed set of
+  independently-tappable lanes, with zero engine changes** — Gathering the
+  Leftovers judges a catch by calling the *same* `RhythmLaneGame.onLaneTapped`
+  every other `rhythmlane` scene calls from an explicit tap, just triggered
+  automatically from the screen's existing per-frame time-advance tick using
+  whichever lane a movable object currently occupies. Safe specifically
+  *because* `onLaneTapped` was already idempotent per note (via
+  `judgedNoteKeys`) — reusing an engine this way silently depends on that
+  idempotency; don't repeat this pattern with an engine function that isn't
+  provably safe to call repeatedly with the same inputs.
+- **Auto-judging a real-time mechanic purely from an object's *position* at
+  the moment time reaches a target window — with no explicit confirming tap
+  — breaks the exact-timestamp `mainClock.advanceTimeBy(...)` scheduling
+  technique every other frozen-clock test helper in this codebase relies
+  on.** That technique assumes the clock reads ≈0 elapsed when the screen
+  first appears; but Compose's implicit idle-sync (which runs as an
+  ordinary part of `performClick()`, even under `mainClock.autoAdvance =
+  false`) can pump such a screen's infinite `withFrameNanos` loop forward by
+  an unpredictable amount before test code regains control, and because
+  *reaching* a note's window while positioned correctly **is** the hit here
+  (unlike every prior `rhythmlane` use, where a hit needs both correct
+  position *and* an explicit tap), that stray pumping silently registers
+  real progress before the test ever takes control. Freezing the clock
+  *before* the navigating click that leads onto such a screen does not
+  reliably fix this and adds its own flakiness (observed: the click
+  intermittently failed to find its own target at all, likely from
+  preempting the *previous* screen's own pending completion recomposition)
+  — don't reach for that. The fix that held up over three consecutive
+  on-device runs: stop assuming a starting timestamp entirely. For a chart
+  that loops, parking the controlled object in one lane and advancing the
+  clock by one full `chart.loopDurationMs` is guaranteed to pass through
+  every note assigned to that lane exactly once, regardless of the clock's
+  real (unknowable) starting offset — and read progress live off on-screen
+  state after every such sweep rather than trusting a locally-incremented
+  counter, so the helper is also correct if some hits already happened for
+  free before it got control. Any future "steer into position, auto-judge"
+  mechanic built on a looping chart should use this sweep-by-full-loop
+  technique from the start, not the precise-timestamp one.
+- **`gridmaze`'s completion model generalizes by *tile-type presence*, not
+  by chapter identity.** Originally "reach the GOAL tile, optionally gated
+  by a CHECKPOINT." Feeding the 5,000's Serving the Crowd needed a third
+  shape — visit every COLLECTIBLE, in any order, no single finish line —
+  which doesn't fit "reach one specific tile" at all. Added a map-with-no-
+  GOAL-tile branch (`collectedPositions.size >= totalCollectibleCount`)
+  rather than a chapter flag or a second engine: every existing map (Good
+  Samaritan's, Daniel's) keeps its old behavior unconditionally, since both
+  already have a GOAL tile and never touch the new branch. The same
+  branch-on-what-tiles-exist-in-the-map pattern that already generalized
+  "no checkpoint tile -> skip that gate" now covers "no goal tile -> gate on
+  collectibles instead" — extend this engine the same way a third time
+  before ever considering a second grid-maze engine.
+- **A mechanic that inverts its own narrative direction is worth rebuilding
+  even after it already shipped and passed review.** Serving the Crowd's
+  original `rhythmlane` version had the disciple stationary while bread fell
+  toward him — mechanically sound, reused a proven engine, passed every
+  test — but it read as *receiving* food, not distributing it, which is
+  backwards for a scene called "Serving the Crowd." Correctness of
+  implementation doesn't substitute for the mechanic actually depicting the
+  story beat it's named after; when a chapter's own framing and its
+  mechanic's physical direction point opposite ways, that's a real defect
+  worth a full engine swap (here, `rhythmlane` -> `gridmaze`), not a
+  polish-later note.

@@ -140,6 +140,11 @@
     <string name="scripture_joshua_6_20_title">The Walls of Jericho</string>
     <string name="scripture_joshua_6_20_text">"So the people shouted and the priests blew the trumpets. When the people heard the sound of the trumpet, the people shouted with a great shout, and the wall fell down flat, so that the people went up into the city, every man straight in front of him, and they took the city."</string>
 
+    <string name="badge_generous_heart_title">Generous Heart</string>
+    <string name="badge_generous_heart_description">Shared what little he had, and watched it become more than enough for everyone, just like the boy with the loaves and fish.</string>
+    <string name="scripture_john_6_11_title">Jesus Gives Thanks</string>
+    <string name="scripture_john_6_11_text">"Jesus took the loaves, and having given thanks, he distributed to the disciples, and the disciples to those who were sitting down."</string>
+
     <string name="action_continue">Continue</string>
     <string name="action_replay_narration">Read this aloud again</string>
     <string name="action_return_to_map">Return to Map</string>
@@ -567,6 +572,80 @@
 
     <string name="jericho_lesson_title">Obedience Over Force</string>
     <string name="jericho_lesson_text">The people didn\'t fight to bring down the walls — they marched and trusted God\'s plan, even when it seemed strange. When we obey God, He can do things no strength of ours ever could.</string>
+
+    <string name="feeding_5000_intro_line_1">A great crowd had followed Jesus into the hills to hear him teach and to be healed.</string>
+    <string name="feeding_5000_intro_line_2">As the day grew late, the disciples realized there was no food anywhere nearby — and thousands of people were hungry.</string>
+
+    <string name="feeding_5000_crowd_context_title">So Many People</string>
+    <string name="feeding_5000_crowd_context_line_1">Jesus told his disciples to have everyone sit down in groups on the green grass.</string>
+    <string name="feeding_5000_crowd_context_line_2">So the crowd sat down in neat rows — some in groups of fifty, some in groups of a hundred.</string>
+
+    <string name="feeding_5000_gathering_crowd_title">Gathering the Crowd</string>
+    <string name="feeding_5000_gathering_crowd_instructions">Drag each family into a seating circle — but only if it fits exactly. Some families belong in a different circle.</string>
+    <string name="feeding_5000_gathering_crowd_circle_label">Circle %1$d</string>
+    <string name="feeding_5000_gathering_crowd_sum_label">%1$d of %2$d</string>
+    <string name="feeding_5000_gathering_crowd_circle_content_description">Seating circle %1$d</string>
+    <string name="feeding_5000_gathering_crowd_family_content_description">Family of %1$d</string>
+
+    <string name="feeding_5000_searching_context_title">Not Enough</string>
+    <string name="feeding_5000_searching_context_line_1">Jesus asked Philip, "Where can we buy bread for all these people to eat?"</string>
+    <string name="feeding_5000_searching_context_line_2">Philip did the math out loud — even two hundred silver coins wouldn\'t buy enough. Andrew went to look through the crowd for anything at all.</string>
+
+    <string name="feeding_5000_searching_for_food_title">Searching for Food</string>
+    <string name="feeding_5000_searching_for_food_instructions">Search the crowd for the boy carrying a basket — he might have something to share.</string>
+    <string name="feeding_5000_searching_for_food_boy_content_description">A boy with a basket</string>
+
+    <string name="feeding_5000_boys_gift_context_title">A Boy\'s Lunch</string>
+    <string name="feeding_5000_boys_gift_context_line_1">Andrew found a boy in the crowd — and the boy was willing to share exactly what he\'d brought.</string>
+    <string name="feeding_5000_boys_gift_context_line_2">"There is a boy here who has five barley loaves and two small fish," Andrew said, "but what good are they for so many?"</string>
+
+    <string name="feeding_5000_boys_gift_title">The Boy\'s Gift</string>
+    <string name="feeding_5000_boys_gift_instructions">Find exactly 5 barley loaves and 2 small fish in the basket — some things in here aren\'t food at all.</string>
+    <string name="feeding_5000_boys_gift_progress_label">%1$d of 5 loaves, %2$d of 2 fish</string>
+    <string name="feeding_5000_boys_gift_loaf_content_description">Barley loaf</string>
+    <string name="feeding_5000_boys_gift_fish_content_description">Small fish</string>
+
+    <string name="feeding_5000_choice_title">What Would You Do?</string>
+    <string name="feeding_5000_choice_instructions">The boy has so little, and the crowd is so big. What would you do with your own lunch?</string>
+    <string name="feeding_5000_choice_option_1">Give everything, even though it\'s not much</string>
+    <string name="feeding_5000_choice_option_2">Keep a little back, just in case</string>
+    <string name="feeding_5000_choice_option_3">Ask Jesus what to do</string>
+    <string name="feeding_5000_choice_reaction_1">The boy gave everything he had — and trusted Jesus with the rest.</string>
+    <string name="feeding_5000_choice_reaction_2">It\'s natural to want to hold something back — and Jesus still welcomes what we\'re able to give.</string>
+    <string name="feeding_5000_choice_reaction_3">Asking Jesus first is always a good instinct — he already knew exactly what he was going to do.</string>
+
+    <string name="feeding_5000_miracle_context_title">Jesus Gives Thanks</string>
+    <string name="feeding_5000_miracle_context_line_1">Jesus took the boy\'s five loaves and two fish in his hands.</string>
+    <string name="feeding_5000_miracle_context_line_2">He looked up to heaven, gave thanks, broke the bread, and gave it to his disciples to hand out to everyone.</string>
+
+    <string name="feeding_5000_miracle_multiplication_title">The Miracle Multiplication</string>
+    <string name="feeding_5000_miracle_multiplication_instructions">Solve each problem and pick the right answer to watch the food multiply.</string>
+    <string name="feeding_5000_miracle_multiplication_progress_label">%1$d of %2$d</string>
+    <string name="feeding_5000_miracle_multiplication_problem">%1$d × %2$d = ?</string>
+
+    <string name="feeding_5000_feast_context_title">Enough For Everyone</string>
+    <string name="feeding_5000_feast_context_line_1">The disciples carried the food out to the crowd — and it just kept coming.</string>
+    <string name="feeding_5000_feast_context_line_2">Everyone ate, and everyone was full. There was more than enough.</string>
+
+    <string name="feeding_5000_serving_title">Serving the Crowd</string>
+    <string name="feeding_5000_serving_instructions">Walk out and serve every group of people their share of the bread and fish.</string>
+    <string name="feeding_5000_serving_progress_label">Served %1$d of %2$d groups</string>
+    <string name="feeding_5000_serving_direction_up">Up</string>
+    <string name="feeding_5000_serving_direction_down">Down</string>
+    <string name="feeding_5000_serving_direction_left">Left</string>
+    <string name="feeding_5000_serving_direction_right">Right</string>
+    <string name="feeding_5000_serving_player_content_description">Disciple carrying food</string>
+    <string name="feeding_5000_serving_group_content_description">Group of people waiting to be served</string>
+
+    <string name="feeding_5000_catching_title">Gathering the Leftovers</string>
+    <string name="feeding_5000_catching_instructions">Use the arrows to move the basket into the right lane before each leftover lands — gather exactly twelve baskets full.</string>
+    <string name="feeding_5000_catching_basket_content_description">Basket, lane %1$d</string>
+    <string name="feeding_5000_catching_move_left_content_description">Move basket left</string>
+    <string name="feeding_5000_catching_move_right_content_description">Move basket right</string>
+    <string name="feeding_5000_catching_progress_label">%1$d of %2$d baskets</string>
+
+    <string name="feeding_5000_lesson_title">A Little Becomes Enough</string>
+    <string name="feeding_5000_lesson_text">The boy didn\'t have much — just a small lunch. But he gave it anyway, and Jesus made it more than enough for thousands. When we share what we have, even if it seems small, God can do more with it than we ever could alone.</string>
 
     <string name="reward_title">Adventure Complete!</string>
     <string name="reward_stars_content_description">%1$d out of %2$d stars earned</string>

@@ -144,6 +144,37 @@ sealed class Destination(val route: String) {
         }
     }
 
+    /**
+     * Nested graph — every scene shares one graph-scoped `Feeding5000ViewModel`.
+     * Five real mini-puzzles mapped onto John 6:1-14 / Mark 6:35-44: gathering
+     * the crowd into seating groups (`groupfill`), searching for the boy with
+     * the loaves and fish (`hiddenobject`), finding exactly what's in his
+     * basket among decoys (`hiddenobject`), the miracle of multiplication as
+     * real arithmetic (`decisionpath`), and a two-phase serve-then-gather
+     * finale (`rhythmlane` reused twice more).
+     */
+    sealed class Feeding5000(route: String) : Destination(route) {
+        data object Intro : Feeding5000("feeding_5000/intro")
+        data object CrowdContext : Feeding5000("feeding_5000/crowd_context")
+        data object GatheringCrowd : Feeding5000("feeding_5000/gathering_crowd")
+        data object SearchingContext : Feeding5000("feeding_5000/searching_context")
+        data object SearchingForFood : Feeding5000("feeding_5000/searching_for_food")
+        data object BoysGiftContext : Feeding5000("feeding_5000/boys_gift_context")
+        data object BoysGift : Feeding5000("feeding_5000/boys_gift")
+        data object Choice : Feeding5000("feeding_5000/choice")
+        data object MiracleContext : Feeding5000("feeding_5000/miracle_context")
+        data object MiracleMultiplication : Feeding5000("feeding_5000/miracle_multiplication")
+        data object FeastContext : Feeding5000("feeding_5000/feast_context")
+        data object Serving : Feeding5000("feeding_5000/serving")
+        data object Catching : Feeding5000("feeding_5000/catching")
+        data object Lesson : Feeding5000("feeding_5000/lesson")
+        data object Reward : Feeding5000("feeding_5000/reward")
+
+        companion object {
+            const val GRAPH_ROUTE = "feeding_5000"
+        }
+    }
+
     /** Temporary landing spot for menu items not yet implemented. */
     data class ComingSoon(val featureTitle: String) : Destination("coming_soon") {
         companion object {
