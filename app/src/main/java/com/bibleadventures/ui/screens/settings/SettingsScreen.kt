@@ -42,10 +42,12 @@ fun SettingsScreen(
 
     SettingsContent(
         audioSettings = uiState.audioSettings,
+        reducedMotionEnabled = uiState.reducedMotionEnabled,
         onBack = onBack,
         onMusicToggled = viewModel::onMusicToggled,
         onSoundEffectsToggled = viewModel::onSoundEffectsToggled,
         onNarrationToggled = viewModel::onNarrationToggled,
+        onReducedMotionToggled = viewModel::onReducedMotionToggled,
         modifier = modifier,
     )
 }
@@ -54,10 +56,12 @@ fun SettingsScreen(
 @Composable
 private fun SettingsContent(
     audioSettings: AudioSettings,
+    reducedMotionEnabled: Boolean,
     onBack: () -> Unit,
     onMusicToggled: (Boolean) -> Unit,
     onSoundEffectsToggled: (Boolean) -> Unit,
     onNarrationToggled: (Boolean) -> Unit,
+    onReducedMotionToggled: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -98,6 +102,11 @@ private fun SettingsContent(
                 checked = audioSettings.narrationEnabled,
                 onCheckedChange = onNarrationToggled,
             )
+            SettingsToggleRow(
+                label = stringResource(R.string.settings_reduced_motion_label),
+                checked = reducedMotionEnabled,
+                onCheckedChange = onReducedMotionToggled,
+            )
         }
     }
 }
@@ -129,10 +138,12 @@ private fun SettingsScreenPreview() {
     BibleAdventuresTheme {
         SettingsContent(
             audioSettings = AudioSettings(),
+            reducedMotionEnabled = false,
             onBack = {},
             onMusicToggled = {},
             onSoundEffectsToggled = {},
             onNarrationToggled = {},
+            onReducedMotionToggled = {},
         )
     }
 }

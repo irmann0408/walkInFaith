@@ -27,6 +27,10 @@ class FakePlayerProfileRepository(
         state.value = state.value.copy(audioSettings = audioSettings)
     }
 
+    override suspend fun updateReducedMotion(enabled: Boolean) {
+        state.value = state.value.copy(reducedMotionEnabled = enabled)
+    }
+
     override suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String) {
         state.value = state.value.let { current ->
             val progress = (current.progressByChapter[chapterId] ?: AdventureProgress(chapterId = chapterId))

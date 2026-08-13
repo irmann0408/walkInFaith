@@ -8,11 +8,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.bibleadventures.ui.LocalAudioController
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.navigation.BibleAdventuresNavHost
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -30,8 +34,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val audioController = (application as BibleAdventuresApplication).container.audioController
+        val playerProfileRepository = (application as BibleAdventuresApplication).container.playerProfileRepository
+        val reducedMotionFlow = playerProfileRepository.profile.map { it.reducedMotionEnabled }
         setContent {
-            CompositionLocalProvider(LocalAudioController provides audioController) {
+            val reducedMotion by reducedMotionFlow.collectAsState(initial = false)
+            CompositionLocalProvider(
+                LocalAudioController provides audioController,
+                LocalReducedMotion provides reducedMotion,
+            ) {
                 BibleAdventuresTheme {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         BibleAdventuresNavHost()

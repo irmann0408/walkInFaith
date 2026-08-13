@@ -1,6 +1,8 @@
 package com.bibleadventures.ui.screens.jesuscalmsstorm.bailingtheboat
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -50,6 +53,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.NoteJudgment
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.JesusCalmsStormContent
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.components.CharacterPreview
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
@@ -178,6 +182,7 @@ private fun JesusCalmsStormBailingTheBoatContent(
                         Image(
                             painter = painterResource(R.drawable.bg_jesus_calms_storm_storm),
                             contentDescription = null,
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize(),
                         )
                         Column(modifier = Modifier.fillMaxSize()) {
@@ -236,14 +241,13 @@ private fun FallingWaveLane(
     elapsedMs: Long,
     modifier: Modifier = Modifier,
 ) {
-    val waveDescription = stringResource(R.string.jesus_calms_storm_bailing_wave_content_description)
     BoxWithConstraints(modifier = modifier) {
         val trackHeight = maxHeight
         visibleNotes(chart, lane, judgedNoteKeys, elapsedMs).forEach { msUntilHit ->
             val fraction = (1f - msUntilHit.toFloat() / TRAVEL_DURATION_MS).coerceIn(0f, 1f)
             Image(
                 painter = painterResource(R.drawable.ic_wave_splash),
-                contentDescription = waveDescription,
+                contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .offset(y = (trackHeight - WAVE_SIZE) * fraction)
@@ -258,10 +262,12 @@ private fun FallingWaveLane(
 private fun SingleCharacterTrack(characterLane: Int, character: CharacterCustomization, modifier: Modifier = Modifier) {
     val characterDescription = stringResource(R.string.jesus_calms_storm_bailing_character_content_description, characterLane + 1)
 
+    val reducedMotion = LocalReducedMotion.current
     BoxWithConstraints(modifier = modifier.height(96.dp)) {
         val laneWidth = maxWidth / LANE_COUNT
         val characterOffsetX by animateDpAsState(
             targetValue = laneWidth * characterLane + (laneWidth - CHARACTER_SIZE) / 2,
+            animationSpec = if (reducedMotion) snap() else spring(),
             label = "bailingCharacterOffsetX",
         )
         Box(

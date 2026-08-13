@@ -76,9 +76,12 @@ private fun DrawScope.headCenter() = Offset(size.width * 0.5f, size.height * Hea
 private fun DrawScope.headRadius() = size.width * HeadRadiusFraction
 private fun DrawScope.outlineWidth() = size.width * 0.02f
 
+private fun DrawScope.legTop() = size.height * 0.80f
+private fun DrawScope.legWidth() = size.width * 0.13f
+
 private fun DrawScope.drawLegs(color: Color) {
-    val legWidth = size.width * 0.13f
-    val legTop = size.height * 0.80f
+    val legWidth = legWidth()
+    val legTop = legTop()
     val legHeight = size.height * 0.16f
     val strokeWidth = outlineWidth()
     val cornerRadius = CornerRadius(legWidth / 2f)
@@ -106,16 +109,34 @@ private fun DrawScope.drawArms(color: Color) {
     }
 }
 
-/** A soft, rounded tunic/dress silhouette — curved sides via quadratic beziers instead of the old straight-edged rectangle/trapezoid, with a gentle flare at the hem (wider for the girl's dress). */
+/**
+ * Boy wears a shirt + separate shorts over the bare legs; girl wears a
+ * single flowing dress over them. Split rather than shared, since a
+ * dress and a shirt+shorts aren't the same silhouette at any flare
+ * width — narrowing a dress's hem was never going to stop it reading as
+ * a dress.
+ */
 private fun DrawScope.drawBody(color: Color, appearance: Appearance) {
+    when (appearance) {
+        Appearance.GIRL -> drawDress(color)
+        Appearance.BOY -> {
+            // Shorts first, shirt on top: the shirt's solid hem paints over
+            // the shorts' rounded top corners, so the seam reads as one
+            // clean flat line instead of the rounded corners peeking out a
+            // gap below the hem.
+            drawShorts(color)
+            drawShirt(color)
+        }
+    }
+}
+
+/** A soft, rounded dress silhouette — curved sides via quadratic beziers, flaring wide at the hem, extending down over most of the legs. */
+private fun DrawScope.drawDress(color: Color) {
     val bodyTop = size.height * 0.58f
     val bodyBottom = size.height * 0.86f
     val bodyMidY = bodyTop + (bodyBottom - bodyTop) * 0.5f
     val topHalfWidth = size.width * 0.17f
-    val bottomHalfWidth = when (appearance) {
-        Appearance.BOY -> size.width * 0.20f
-        Appearance.GIRL -> size.width * 0.27f
-    }
+    val bottomHalfWidth = size.width * 0.27f
     val centerX = size.width * 0.5f
     val strokeWidth = outlineWidth()
 
@@ -131,6 +152,51 @@ private fun DrawScope.drawBody(color: Color, appearance: Appearance) {
     drawPath(path, color = OutlineColor, style = Stroke(strokeWidth))
 }
 
+/** A short, only-slightly-flared shirt silhouette — same curved-side style as the dress, but ending at hip height so the shorts below have room to be a separate, visible shape. */
+private fun DrawScope.drawShirt(color: Color) {
+    val bodyTop = size.height * 0.58f
+    val shirtBottom = size.height * 0.70f
+    val bodyMidY = bodyTop + (shirtBottom - bodyTop) * 0.5f
+    val topHalfWidth = size.width * 0.17f
+    val bottomHalfWidth = size.width * 0.19f
+    val centerX = size.width * 0.5f
+    val strokeWidth = outlineWidth()
+
+    val path = Path().apply {
+        moveTo(centerX - topHalfWidth, bodyTop)
+        lineTo(centerX + topHalfWidth, bodyTop)
+        quadraticBezierTo(centerX + bottomHalfWidth, bodyMidY, centerX + bottomHalfWidth, shirtBottom)
+        lineTo(centerX - bottomHalfWidth, shirtBottom)
+        quadraticBezierTo(centerX - bottomHalfWidth, bodyMidY, centerX - topHalfWidth, bodyTop)
+        close()
+    }
+    drawPath(path, color = color)
+    drawPath(path, color = OutlineColor, style = Stroke(strokeWidth))
+}
+
+/**
+ * Two separate rounded-rect shorts legs, one per bare leg, wider than the
+ * leg beneath so the shorts silhouette reads distinctly — the gap between
+ * them is the inseam. Starts above the shirt's own hem (0.70) so the
+ * shirt, drawn after this, paints over the shorts' rounded top corners —
+ * only the flat shirt hem is visible as the seam, and only the shorts'
+ * bottom corners (a shorts-leg-opening shape) show below it.
+ */
+private fun DrawScope.drawShorts(color: Color) {
+    val shortsTop = size.height * 0.65f
+    val shortsBottom = legTop()
+    val shortsWidth = legWidth() * 1.6f
+    val strokeWidth = outlineWidth()
+    val cornerRadius = CornerRadius(shortsWidth * 0.2f)
+
+    listOf(-0.11f, 0.11f).forEach { xFraction ->
+        val topLeft = Offset(size.width * (0.5f + xFraction) - shortsWidth / 2f, shortsTop)
+        val shortsSize = Size(shortsWidth, shortsBottom - shortsTop)
+        drawRoundRect(color = color, topLeft = topLeft, size = shortsSize, cornerRadius = cornerRadius)
+        drawRoundRect(color = OutlineColor, topLeft = topLeft, size = shortsSize, cornerRadius = cornerRadius, style = Stroke(strokeWidth))
+    }
+}
+
 private fun DrawScope.drawHead(color: Color) {
     drawCircle(color = color, radius = headRadius(), center = headCenter())
     drawCircle(color = OutlineColor, radius = headRadius(), center = headCenter(), style = Stroke(outlineWidth()))
@@ -140,14 +206,20 @@ private fun DrawScope.drawFace() {
     val center = headCenter()
     val radius = headRadius()
 
+    // SHORT/BRAIDED/PONYTAIL all draw a half-circle hair cap (drawHair's
+    // drawCap()) whose flat bottom edge sits right at the head's own
+    // vertical center — shift the whole face down by this much so the
+    // eyes clear that edge instead of sitting under it.
+    val faceOffsetY = radius * 0.20f
+
     val eyeRadius = radius * 0.10f
-    val eyeY = center.y - radius * 0.05f
+    val eyeY = center.y - radius * 0.05f + faceOffsetY
     listOf(-0.34f, 0.34f).forEach { xFraction ->
         drawCircle(color = EyeColor, radius = eyeRadius, center = Offset(center.x + radius * xFraction, eyeY))
     }
 
     val blushRadius = radius * 0.18f
-    val blushY = center.y + radius * 0.20f
+    val blushY = center.y + radius * 0.20f + faceOffsetY
     listOf(-0.55f, 0.55f).forEach { xFraction ->
         drawCircle(
             color = BlushColor.copy(alpha = 0.45f),
@@ -164,7 +236,7 @@ private fun DrawScope.drawFace() {
         startAngle = 20f,
         sweepAngle = 140f,
         useCenter = false,
-        topLeft = Offset(center.x - mouthWidth / 2f, center.y + radius * 0.18f),
+        topLeft = Offset(center.x - mouthWidth / 2f, center.y + radius * 0.18f + faceOffsetY),
         size = Size(mouthWidth, mouthHeight),
         style = Stroke(width = radius * 0.07f, cap = StrokeCap.Round),
     )

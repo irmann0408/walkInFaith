@@ -136,6 +136,11 @@ private fun EstherCorridorContent(
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 8.dp),
             )
+            Text(
+                text = stringResource(R.string.esther_brave_approach_corridor_progress_label, rhythmLaneState.hits, rhythmLaneState.requiredHits),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+            )
 
             Box(modifier = Modifier.height(28.dp).padding(top = 4.dp)) {
                 Text(text = feedback, style = MaterialTheme.typography.titleMedium)

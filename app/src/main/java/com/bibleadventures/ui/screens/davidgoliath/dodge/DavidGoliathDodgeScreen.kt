@@ -1,8 +1,11 @@
 package com.bibleadventures.ui.screens.davidgoliath.dodge
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +53,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.NoteJudgment
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.DavidGoliathContent
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.components.CharacterPreview
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
@@ -154,6 +158,22 @@ private fun DavidGoliathDodgeContent(
                 Text(text = feedback, style = MaterialTheme.typography.titleMedium)
             }
 
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+                    .height(20.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(crossingValleyState.progressFraction)
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.primary),
+                )
+            }
+
             if (!isComplete) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -243,10 +263,12 @@ private fun FallingRockLane(
 private fun SingleCharacterTrack(characterLane: Int, character: CharacterCustomization, modifier: Modifier = Modifier) {
     val characterDescription = stringResource(R.string.david_goliath_dodge_character_content_description, characterLane + 1)
 
+    val reducedMotion = LocalReducedMotion.current
     BoxWithConstraints(modifier = modifier.height(96.dp)) {
         val laneWidth = maxWidth / LANE_COUNT
         val characterOffsetX by animateDpAsState(
             targetValue = laneWidth * characterLane + (laneWidth - CHARACTER_SIZE) / 2,
+            animationSpec = if (reducedMotion) snap() else spring(),
             label = "crossingValleyCharacterOffsetX",
         )
         Box(

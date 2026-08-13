@@ -1,5 +1,10 @@
 package com.bibleadventures.ui.screens.daniel.lionsden
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,10 +26,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -43,6 +51,7 @@ import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.MathOperator
 import com.bibleadventures.game.stories.MathProblem
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -86,6 +95,22 @@ private fun DanielLionsDenContent(
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    // Celebration pulse on a correct answer — brings this screen in line with
+    // Feeding 5,000's Miracle Multiplication (same decisionpath math-quiz
+    // mechanic), which already had this and made Feeding 5,000 the only one
+    // of the 3 math-quiz screens with any reward polish beyond the static
+    // light/note fill-in.
+    val burstScale = remember { Animatable(1f) }
+    val reducedMotion = LocalReducedMotion.current
+    LaunchedEffect(lionsDenState.lastOutcome) {
+        if (lionsDenState.lastOutcome == DecisionOutcome.CORRECT || lionsDenState.lastOutcome == DecisionOutcome.COMPLETE) {
+            val burstSpec: AnimationSpec<Float> = if (reducedMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+            burstScale.snapTo(1f)
+            burstScale.animateTo(1.1f, animationSpec = burstSpec)
+            burstScale.animateTo(1f, animationSpec = burstSpec)
+        }
+    }
+
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
@@ -121,7 +146,8 @@ private fun DanielLionsDenContent(
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f),
+                    .aspectRatio(1f)
+                    .scale(burstScale.value),
             ) {
                 Image(
                     painter = painterResource(R.drawable.bg_daniel_den),

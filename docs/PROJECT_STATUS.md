@@ -1,6 +1,20 @@
 # Project Status
 
-Last updated: 2026-08-12 (Follow-up redesign of 4 shipped mini-games: David
+Last updated: 2026-08-13 (Milestone 7's full backlog closed out: a Reduced
+Motion setting (spec section 13) gated by a new `LocalReducedMotion`
+CompositionLocal, applied at the 9 purely-decorative animation call sites
+identified in a prior session (all 11 gameplay-timing `withFrameNanos`
+loops explicitly untouched); a UI consistency audit across the app's ~16
+mini-game screens found and fixed 7 concrete player-visible
+inconsistencies — a real accessibility bug (a wave image's noisy
+`contentDescription`), a real visual bug (a missing `ContentScale.Crop`),
+2 missing progress bars, 2 missing progress labels, a dormant
+stack-overflow regression risk ported-and-fixed from an earlier session's
+Jericho fix, and a missing correct-answer celebration animation on 2 of 3
+math-quiz screens — the last of which doubled as this pass's "general
+animation polish" deliverable. See "Milestone 7 — Polish, second pass"
+further down. Not yet committed — pending the user's go-ahead. Before
+that: follow-up redesign of 4 shipped mini-games: David
 & Goliath's Crossing the Valley and Daniel's Hurrying to Pray both moved off
 the old 2-lane tap-the-safe-side `dodge` engine onto a new `RhythmLaneGame.onLaneAvoided`
 — the inverse of Gathering the Leftovers' catch semantics — steering a single
@@ -56,18 +70,17 @@ Settings also complete)
 
 ## Current milestone
 
-**Milestone 7 — Polish: first pass COMPLETE.** All 8 chapters and
-Milestone 6 (Parent Area) were already done. This pass covers 3 concrete
-items chosen out of Milestone 7's broad "Improve: Animations, Transitions,
+**Milestone 7 — Polish: COMPLETE, both passes.** All 8 chapters and
+Milestone 6 (Parent Area) were already done. The first pass covered 3
+items out of Milestone 7's broad "Improve: Animations, Transitions,
 Accessibility, Error states, Empty states, Audio architecture, UI
 consistency" scope: fixed the long-standing `WorldMapNavigationTest`
 flakiness, audited empty states (found no gap), and added grid-maze
-accessibility announcements. See "Milestone 7 — Polish" further down. UI
-consistency, general animation polish, and a Reduced Motion setting were
-explicitly deferred — Reduced Motion specifically to the bottom of the
-backlog with its design already researched, the other two to a later pass
-once there's been a chance to actually play through the app and find
-concrete rough edges. Full chain, all now with real gameplay: Noah's Ark
+accessibility announcements. The second pass closed out the remaining 3
+backlog items together: a Reduced Motion setting, a UI consistency audit
+(7 fixes), and general animation polish (absorbed into the audit's own
+findings). See "Milestone 7 — Polish" and "Milestone 7 — Polish, second
+pass" further down. Full chain, all now with real gameplay: Noah's Ark
 → David & Goliath → Good Samaritan → Daniel → Esther's Rescue of Her
 People → Jericho → Feeding the 5,000 → Jesus Calms the Storm.
 
@@ -3005,18 +3018,127 @@ approach the file's own doc comment already anticipated —
   `character_preview_content_description`'s semantics text, which is
   unchanged.
 
+### Milestone 7 — Polish, second pass: Reduced Motion + UI consistency audit
+
+Closed out all 3 remaining Milestone 7 backlog items in one pass, per the
+user's explicit choice to do all three together: the Reduced Motion
+setting (design pre-researched, see the first-pass section above), a UI
+consistency audit across the app's near-identical mini-game screen
+families, and general animation/transition polish — the latter turned out
+to be fully absorbed by one of the audit's own findings (below), needing
+no separate blind playtesting pass to find targets.
+
+**Reduced Motion setting**, built exactly per the pre-researched design:
+- `PlayerProfile.reducedMotionEnabled: Boolean = false` (new sibling
+  field, not nested in `AudioSettings`), `PlayerProfileRepository`/
+  `PlayerProfileRepositoryImpl.updateReducedMotion(enabled)` mirroring
+  `updateAudioSettings` exactly, a 4th `SettingsToggleRow` ("Reduced
+  Motion") in `SettingsScreen.kt`/`SettingsViewModel.kt`, ungated like
+  Music/SFX/Narration.
+- New `ui/LocalReducedMotion.kt` (`staticCompositionLocalOf { false }`),
+  the app's first raw-settings-value CompositionLocal (as opposed to
+  `LocalAudioController`'s service-locator pattern) — provided in
+  `MainActivity.kt`'s `setContent` alongside `LocalAudioController`, fed
+  from `playerProfileRepository.profile.map { it.reducedMotionEnabled }`.
+  That `.map {}` had to be built as a `val` in `onCreate` *before*
+  `setContent`, not inline inside the composable body — calling a Flow
+  operator directly inside `setContent {}` trips the
+  `FlowOperatorInvokedInComposition` lint check (a new Flow every
+  recomposition resets `collectAsState()`), caught by `./gradlew build`'s
+  lint task.
+- Applied at exactly the 9 pre-identified purely-decorative call sites
+  (all 11 `withFrameNanos` gameplay-timing loops untouched, per the
+  scope boundary re-verified against current code before starting): the 4
+  lane-slide `animateDpAsState` sites, the found-item alpha fade, the 3
+  drag-snap-and-scale-pulse pairs, and the 1 correct-answer burst-scale
+  pulse. Each reads `LocalReducedMotion.current` and substitutes
+  `snap()` for its spring/tween when on. Two structural nuances specific
+  to this app's existing idioms: the drag-snap-and-scale-pulse sites'
+  `animateTo` calls run inside `detectDragGestures`'s `onDragEnd ->
+  scope.launch { }`, a suspend coroutine outside composable scope, so
+  `.current` has to be read once above (next to the existing
+  `rememberCoroutineScope()`) and captured into the closure, not read
+  fresh inside `launch`; same for the burst-scale pulse's
+  `LaunchedEffect`. Extracting the conditional spec into an intermediate
+  `val` (`val pulseSpec = if (reducedMotion) snap() else spring(...)`)
+  failed to compile ("not enough information to infer type variable T")
+  without an explicit `AnimationSpec<Float>` type annotation — Kotlin
+  can infer `T` fine when the `if/else` is inline as a single expression
+  argument, but not through an untyped intermediate `val`.
+- Tests: `PlayerProfileRepositoryImplTest` (`updateReducedMotion`
+  persists), `SettingsViewModelTest` (`onReducedMotionToggled`). No tests
+  apply to the 9 call sites themselves (pure animation-spec swaps, no
+  state/logic change).
+
+**UI consistency audit**: grouped the app's ~16 mini-game screens into 6
+families of near-identical siblings (built via chapter-content
+copy-paste, per this app's own settled "no shared abstraction until a
+real second need" rule) and diffed each family for player-visible drift.
+7 concrete findings were fixed; internal-only drift (4-8dp padding
+deltas, variable naming, a harmless missing `.weight()`) was explicitly
+left alone:
+1. **Accessibility bug**: `JesusCalmsStormBailingTheBoatScreen.kt`'s
+   falling-wave `Image` had a real `contentDescription` ("Water pouring
+   in") on every rendered wave, unlike its 3 sibling falling-hazard lanes
+   (all `null`) — risked TalkBack repeatedly announcing across 3 lanes'
+   worth of waves. Fixed to `null`; removed the now-unused
+   `waveDescription` val and the now-fully-unused
+   `jesus_calms_storm_bailing_wave_content_description` string.
+2. **Visual bug**: same file's storm background `Image` had no
+   `contentScale` (defaulting to `Fit`), unlike its 2 siblings (both
+   `ContentScale.Crop`) — would visibly letterbox differently. Fixed to
+   match.
+3. **Missing progress bar**: `DanielStealthScreen.kt` and
+   `DavidGoliathDodgeScreen.kt` (the "avoid" lane screens) had no linear
+   progress-fill bar, unlike their 2 "catch" siblings. Ported the
+   existing `RhythmLaneGameState.progressFraction`-driven fill-bar
+   `Box`-in-`Box` into both.
+4. **Dormant regression risk**: `JesusCalmsStormLoadingTheBoatScreen.kt`
+   had silently reintroduced the exact stack-overflow-clipping shape
+   Jericho's Setting Up Camp already hit and fixed earlier this
+   session — an unconditional `STACK_LEVEL_RISE` offset and a hardcoded
+   drop-zone size, instead of a `stackLevelRise` computed from item count
+   and named `DROP_ZONE_WIDTH`/`DROP_ZONE_HEIGHT` constants. Currently
+   harmless at 6 items, but the identical latent trap. Ported Jericho's
+   fix verbatim.
+5. **Missing progress label**: `EstherCorridorScreen.kt` had no numeric
+   "X of Y" readout, unlike every sibling in its rhythm-lane family.
+   Added a `Text` using `rhythmLaneState.hits`/`.requiredHits` and a new
+   string `esther_brave_approach_corridor_progress_label`.
+6. **Missing progress label**: `Feeding5000GatheringCrowdScreen.kt`
+   likewise had none, unlike its 2 `groupfill`-family siblings. Added one,
+   deriving the completed-circle count inline (`GroupFillGameState` had
+   no ready-made count) and a new
+   `feeding_5000_gathering_crowd_progress_label` string.
+7. **Reward-polish gap — this is the concrete "general animation polish"
+   deliverable**: only `Feeding5000MiracleMultiplicationScreen.kt` (of
+   the 3 `decisionpath` math-quiz screens) had a correct-answer
+   celebration (`Animatable` scale-burst, bouncy `spring`). Daniel's
+   Lions' Den and Jericho's Blow the Shofar had none. Ported the same
+   `burstScale`/`LaunchedEffect(state.lastOutcome)` idiom into both,
+   `.scale()`-applied to each screen's whole scene `BoxWithConstraints`
+   (peak `1.1f`, not the original `1.3f`, since it now scales an entire
+   scene rather than a small icon row) — both new sites also respect
+   Reduced Motion from the start.
+
+Verification: full `./gradlew build` green (compile + unit tests + lint)
+after every step; full 22-class instrumented suite green both after Part
+1 (Reduced Motion alone) and again after Part 2 (all UI consistency
+fixes); manual on-device spot-checks confirmed the Settings toggle
+renders/persists and several of the UI fixes render as expected. Not
+committed yet — pending the user's go-ahead, per this project's standing
+workflow.
+
 ## Next tasks
 
 All 8 chapters have real gameplay, Milestone 6 (Parent Area) is complete,
-and Milestone 7's first pass closed out 3 concrete polish items. Explicitly
-deferred, not yet scheduled: a UI-consistency audit across the ~15+
-near-identical mini-game/tray screens, general animation/transition
-polish (needs actual playtesting to find concrete targets first), and a
-Reduced Motion setting (spec section 13 — design already researched and
-kept at the bottom of this file's Milestone 7 section for whenever it's
-picked up: 9 decorative animation call sites identified across the whole
-app, the 11 `withFrameNanos` gameplay-timing loops explicitly excluded).
-Replacing placeholder art remains open-ended future work, not scoped.
+and **Milestone 7's full backlog is now closed out** — both polish passes
+above cover everything originally scoped (WorldMapNavigationTest fix,
+empty-states audit, grid-maze accessibility, Reduced Motion, UI
+consistency audit, animation polish). Replacing placeholder art remains
+open-ended future work, not scoped. No other concrete backlog items are
+currently open; next work should come from a fresh round of playtesting
+or a new milestone/feature request.
 
 ## Architectural decisions log
 

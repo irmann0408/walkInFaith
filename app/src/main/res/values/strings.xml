@@ -17,6 +17,7 @@
     <string name="settings_music_label">Music</string>
     <string name="settings_sound_effects_label">Sound Effects</string>
     <string name="settings_narration_label">Narration</string>
+    <string name="settings_reduced_motion_label">Reduced Motion</string>
 
     <string name="parent_area_screen_title">Parent Area</string>
     <string name="parent_area_gate_title">Just for Grown-Ups</string>
@@ -484,6 +485,7 @@
 
     <string name="esther_brave_approach_corridor_title">The Long Corridor</string>
     <string name="esther_brave_approach_corridor_instructions">Tap each lane in rhythm as the markers arrive, to help Esther find her courage as she walks.</string>
+    <string name="esther_brave_approach_corridor_progress_label">%1$d of %2$d beats</string>
     <string name="esther_brave_approach_corridor_lane_content_description">Beat lane %1$d</string>
     <string name="esther_brave_approach_corridor_great_rhythm">Great rhythm!</string>
     <string name="esther_brave_approach_corridor_keep_going">Keep going!</string>
@@ -624,6 +626,7 @@
 
     <string name="feeding_5000_gathering_crowd_title">Gathering the Crowd</string>
     <string name="feeding_5000_gathering_crowd_instructions">Drag each family into a seating circle — but only if it fits exactly. Some families belong in a different circle.</string>
+    <string name="feeding_5000_gathering_crowd_progress_label">%1$d of %2$d circles filled</string>
     <string name="feeding_5000_gathering_crowd_circle_label">Circle %1$d</string>
     <string name="feeding_5000_gathering_crowd_sum_label">%1$d of %2$d</string>
     <string name="feeding_5000_gathering_crowd_circle_content_description">Seating circle %1$d</string>
@@ -718,7 +721,6 @@
     <string name="jesus_calms_storm_bailing_character_content_description">Disciple, spot %1$d</string>
     <string name="jesus_calms_storm_bailing_move_left_content_description">Move left</string>
     <string name="jesus_calms_storm_bailing_move_right_content_description">Move right</string>
-    <string name="jesus_calms_storm_bailing_wave_content_description">Water pouring in</string>
 
     <string name="jesus_calms_storm_choice_title">What Would You Do?</string>
     <string name="jesus_calms_storm_choice_instructions">The storm is fierce and the boat is filling with water. What would you do first?</string>

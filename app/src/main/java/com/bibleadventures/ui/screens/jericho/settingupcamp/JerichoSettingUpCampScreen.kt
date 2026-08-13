@@ -1,8 +1,10 @@
 package com.bibleadventures.ui.screens.jericho.settingupcamp
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -54,6 +56,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
 import com.bibleadventures.game.stories.JerichoContent
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -259,6 +262,7 @@ private fun DraggableStone(
     var itemSize by remember { mutableStateOf(IntSize.Zero) }
     val name = stringResource(R.string.jericho_camp_stone_content_description, value)
     val scope = rememberCoroutineScope()
+    val reducedMotion = LocalReducedMotion.current
 
     Box(
         modifier = Modifier
@@ -278,12 +282,16 @@ private fun DraggableStone(
                         if (distance <= snapRadiusPx && isNextExpected) {
                             val target = dropZoneCenter - releasedCenter
                             scope.launch {
-                                snapOffset.animateTo(target, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
+                                snapOffset.animateTo(
+                                    target,
+                                    animationSpec = if (reducedMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+                                )
                                 onSnapped(stoneId)
                             }
                             scope.launch {
-                                scaleAnim.animateTo(1.15f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                scaleAnim.animateTo(1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                                val pulseSpec: AnimationSpec<Float> = if (reducedMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                                scaleAnim.animateTo(1.15f, animationSpec = pulseSpec)
+                                scaleAnim.animateTo(1f, animationSpec = pulseSpec)
                             }
                         } else {
                             // Either outside the snap radius, or the right spot but the wrong

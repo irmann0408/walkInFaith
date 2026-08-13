@@ -58,4 +58,22 @@ class SettingsViewModelTest {
 
         job.cancel()
     }
+
+    @Test
+    fun `onReducedMotionToggled updates uiState and persists through the repository`() = runTest {
+        val repository = FakePlayerProfileRepository()
+        val viewModel = SettingsViewModel(repository)
+        val job = launch { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.reducedMotionEnabled)
+
+        viewModel.onReducedMotionToggled(true)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.reducedMotionEnabled)
+        assertTrue(repository.current().reducedMotionEnabled)
+
+        job.cancel()
+    }
 }

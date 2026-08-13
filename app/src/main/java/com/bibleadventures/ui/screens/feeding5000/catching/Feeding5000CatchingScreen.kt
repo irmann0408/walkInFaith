@@ -1,6 +1,8 @@
 package com.bibleadventures.ui.screens.feeding5000.catching
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,6 +50,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.NoteJudgment
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.Feeding5000Content
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -251,10 +254,12 @@ private fun FallingLaneTrack(
 private fun SingleBasketTrack(basketLane: Int, modifier: Modifier = Modifier) {
     val basketDescription = stringResource(R.string.feeding_5000_catching_basket_content_description, basketLane + 1)
 
+    val reducedMotion = LocalReducedMotion.current
     BoxWithConstraints(modifier = modifier.height(64.dp)) {
         val laneWidth = maxWidth / LANE_COUNT
         val basketOffsetX by animateDpAsState(
             targetValue = laneWidth * basketLane + (laneWidth - BASKET_SIZE) / 2,
+            animationSpec = if (reducedMotion) snap() else spring(),
             label = "catchingBasketOffsetX",
         )
         Box(

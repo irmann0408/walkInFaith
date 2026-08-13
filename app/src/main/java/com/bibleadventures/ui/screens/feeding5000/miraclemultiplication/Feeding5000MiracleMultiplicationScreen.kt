@@ -1,7 +1,9 @@
 package com.bibleadventures.ui.screens.feeding5000.miraclemultiplication
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,6 +43,7 @@ import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
 import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
 import com.bibleadventures.game.stories.MathOperator
 import com.bibleadventures.game.stories.MathProblem
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -84,11 +87,13 @@ private fun Feeding5000MiracleMultiplicationContent(
     modifier: Modifier = Modifier,
 ) {
     val burstScale = remember { Animatable(1f) }
+    val reducedMotion = LocalReducedMotion.current
     LaunchedEffect(miracleState.lastOutcome) {
         if (miracleState.lastOutcome == DecisionOutcome.CORRECT || miracleState.lastOutcome == DecisionOutcome.COMPLETE) {
+            val burstSpec: AnimationSpec<Float> = if (reducedMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
             burstScale.snapTo(1f)
-            burstScale.animateTo(1.3f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
-            burstScale.animateTo(1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
+            burstScale.animateTo(1.3f, animationSpec = burstSpec)
+            burstScale.animateTo(1f, animationSpec = burstSpec)
         }
     }
 

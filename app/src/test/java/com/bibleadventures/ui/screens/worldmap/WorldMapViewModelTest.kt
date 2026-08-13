@@ -33,6 +33,10 @@ private class FakePlayerProfileRepository(
         state.value = state.value.copy(audioSettings = audioSettings)
     }
 
+    override suspend fun updateReducedMotion(enabled: Boolean) {
+        state.value = state.value.copy(reducedMotionEnabled = enabled)
+    }
+
     override suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String) = Unit
 
     override suspend fun completeChapter(

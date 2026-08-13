@@ -1,8 +1,10 @@
 package com.bibleadventures.ui.screens.feeding5000.gatheringcrowd
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,6 +56,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.groupfill.FamilyGroup
 import com.bibleadventures.game.puzzles.groupfill.GroupFillGameState
 import com.bibleadventures.game.puzzles.groupfill.GroupFillOutcome
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -120,6 +123,15 @@ private fun Feeding5000GatheringCrowdContent(
                 text = stringResource(R.string.feeding_5000_gathering_crowd_instructions),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 8.dp),
+            )
+            Text(
+                text = stringResource(
+                    R.string.feeding_5000_gathering_crowd_progress_label,
+                    groupFillState.circleTargets.indices.count { groupFillState.isCircleComplete(it) },
+                    groupFillState.circleTargets.size,
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
             )
 
             val feedback = when (groupFillState.lastOutcome) {
@@ -254,6 +266,7 @@ private fun DraggableFamily(
     var itemSize by remember { mutableStateOf(IntSize.Zero) }
     val name = stringResource(R.string.feeding_5000_gathering_crowd_family_content_description, headcount)
     val scope = rememberCoroutineScope()
+    val reducedMotion = LocalReducedMotion.current
 
     Box(
         modifier = Modifier
@@ -275,12 +288,16 @@ private fun DraggableFamily(
                         if (nearestIndex != null && distance <= snapRadiusPx && fits) {
                             val target = circleCenters[nearestIndex] - releasedCenter
                             scope.launch {
-                                snapOffset.animateTo(target, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
+                                snapOffset.animateTo(
+                                    target,
+                                    animationSpec = if (reducedMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+                                )
                                 onDropped(familyId, nearestIndex)
                             }
                             scope.launch {
-                                scaleAnim.animateTo(1.15f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                scaleAnim.animateTo(1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                                val pulseSpec: AnimationSpec<Float> = if (reducedMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                                scaleAnim.animateTo(1.15f, animationSpec = pulseSpec)
+                                scaleAnim.animateTo(1f, animationSpec = pulseSpec)
                             }
                         } else {
                             // Near a circle but wouldn't fit — still notify so feedback text

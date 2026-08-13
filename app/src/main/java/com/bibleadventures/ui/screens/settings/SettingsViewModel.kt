@@ -10,12 +10,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class SettingsUiState(val audioSettings: AudioSettings = AudioSettings())
+data class SettingsUiState(
+    val audioSettings: AudioSettings = AudioSettings(),
+    val reducedMotionEnabled: Boolean = false,
+)
 
 class SettingsViewModel(private val repository: PlayerProfileRepository) : ViewModel() {
 
     val uiState: StateFlow<SettingsUiState> = repository.profile
-        .map { SettingsUiState(audioSettings = it.audioSettings) }
+        .map { SettingsUiState(audioSettings = it.audioSettings, reducedMotionEnabled = it.reducedMotionEnabled) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -25,6 +28,10 @@ class SettingsViewModel(private val repository: PlayerProfileRepository) : ViewM
     fun onMusicToggled(enabled: Boolean) = updateAudioSettings { it.copy(musicEnabled = enabled) }
     fun onSoundEffectsToggled(enabled: Boolean) = updateAudioSettings { it.copy(soundEffectsEnabled = enabled) }
     fun onNarrationToggled(enabled: Boolean) = updateAudioSettings { it.copy(narrationEnabled = enabled) }
+
+    fun onReducedMotionToggled(enabled: Boolean) {
+        viewModelScope.launch { repository.updateReducedMotion(enabled) }
+    }
 
     private fun updateAudioSettings(transform: (AudioSettings) -> AudioSettings) {
         viewModelScope.launch {

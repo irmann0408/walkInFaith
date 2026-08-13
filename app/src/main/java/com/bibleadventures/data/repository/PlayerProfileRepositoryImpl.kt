@@ -23,6 +23,10 @@ class PlayerProfileRepositoryImpl(
         localDataSource.update { it.copy(audioSettings = audioSettings) }
     }
 
+    override suspend fun updateReducedMotion(enabled: Boolean) {
+        localDataSource.update { it.copy(reducedMotionEnabled = enabled) }
+    }
+
     override suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String) {
         localDataSource.update { current ->
             val existing = current.progressByChapter[chapterId] ?: AdventureProgress(chapterId = chapterId)

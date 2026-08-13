@@ -1,6 +1,8 @@
 package com.bibleadventures.ui.screens.noahsark.findanimals
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +40,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.stories.AnimalDef
 import com.bibleadventures.game.stories.DecoyItemDef
 import com.bibleadventures.game.stories.NoahsArkContent
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
@@ -161,7 +164,12 @@ private fun NoahsArkFindAnimalsContent(
 
 @Composable
 private fun AnimalTile(animal: AnimalDef, isFound: Boolean, onClick: () -> Unit) {
-    val alpha by animateFloatAsState(targetValue = if (isFound) 0.5f else 1f, label = "animalFoundAlpha")
+    val reducedMotion = LocalReducedMotion.current
+    val alpha by animateFloatAsState(
+        targetValue = if (isFound) 0.5f else 1f,
+        animationSpec = if (reducedMotion) snap() else spring(),
+        label = "animalFoundAlpha",
+    )
     val name = stringResource(animal.nameRes)
 
     Column(

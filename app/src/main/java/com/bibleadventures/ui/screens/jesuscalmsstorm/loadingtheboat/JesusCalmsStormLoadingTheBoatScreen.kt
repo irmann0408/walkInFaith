@@ -1,8 +1,10 @@
 package com.bibleadventures.ui.screens.jesuscalmsstorm.loadingtheboat
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,6 +57,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
 import com.bibleadventures.game.stories.JesusCalmsStormContent
+import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -64,6 +67,8 @@ import kotlin.math.roundToInt
 private val ITEM_SIZE = 64.dp
 private val SNAP_RADIUS = 72.dp
 private val STACK_LEVEL_RISE = 20.dp
+private val DROP_ZONE_WIDTH = 180.dp
+private val DROP_ZONE_HEIGHT = 200.dp
 
 /**
  * Six items loaded aboard before departure (Mark 4:36), each assigned a
@@ -120,6 +125,18 @@ private fun JesusCalmsStormLoadingTheBoatContent(
     val dropZoneDescription = stringResource(R.string.jesus_calms_storm_loading_dropzone_content_description)
     val remainingItemIds = trayOrder.filter { it in loadingState.remainingIds }
 
+    // Self-adjusting per-level rise so the full stack always fits inside
+    // DROP_ZONE_HEIGHT regardless of item count, instead of a fixed
+    // STACK_LEVEL_RISE that could clip the top items invisible above the
+    // frame — the same overflow trap Jericho's Setting Up Camp hit and
+    // fixed (see JerichoSettingUpCampScreen.kt).
+    val itemCount = loadingState.itemIds.size
+    val stackLevelRise = if (itemCount > 1) {
+        ((DROP_ZONE_HEIGHT - ITEM_SIZE) / (itemCount - 1)).coerceAtMost(STACK_LEVEL_RISE)
+    } else {
+        STACK_LEVEL_RISE
+    }
+
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
@@ -154,8 +171,8 @@ private fun JesusCalmsStormLoadingTheBoatContent(
 
             Box(
                 modifier = Modifier
-                    .width(180.dp)
-                    .height(200.dp)
+                    .width(DROP_ZONE_WIDTH)
+                    .height(DROP_ZONE_HEIGHT)
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
@@ -168,7 +185,7 @@ private fun JesusCalmsStormLoadingTheBoatContent(
                         Box(
                             modifier = Modifier
                                 .size(ITEM_SIZE)
-                                .offset(y = -(STACK_LEVEL_RISE * level)),
+                                .offset(y = -(stackLevelRise * level)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Image(painter = painterResource(itemIconRes(itemId)), contentDescription = null, modifier = Modifier.fillMaxSize())
@@ -238,6 +255,7 @@ private fun DraggableBoatItem(
     var itemSize by remember { mutableStateOf(IntSize.Zero) }
     val name = stringResource(R.string.jesus_calms_storm_loading_item_content_description, stringResource(itemNameRes(itemId)), weight)
     val scope = rememberCoroutineScope()
+    val reducedMotion = LocalReducedMotion.current
 
     Box(
         modifier = Modifier
@@ -257,12 +275,16 @@ private fun DraggableBoatItem(
                         if (distance <= snapRadiusPx && isNextExpected) {
                             val target = dropZoneCenter - releasedCenter
                             scope.launch {
-                                snapOffset.animateTo(target, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium))
+                                snapOffset.animateTo(
+                                    target,
+                                    animationSpec = if (reducedMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+                                )
                                 onSnapped(itemId)
                             }
                             scope.launch {
-                                scaleAnim.animateTo(1.15f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                scaleAnim.animateTo(1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                                val pulseSpec: AnimationSpec<Float> = if (reducedMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                                scaleAnim.animateTo(1.15f, animationSpec = pulseSpec)
+                                scaleAnim.animateTo(1f, animationSpec = pulseSpec)
                             }
                         } else {
                             // Either outside the snap radius, or the right spot but the wrong

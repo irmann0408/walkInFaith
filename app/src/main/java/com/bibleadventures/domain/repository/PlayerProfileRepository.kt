@@ -13,6 +13,8 @@ interface PlayerProfileRepository {
 
     suspend fun updateAudioSettings(audioSettings: AudioSettings)
 
+    suspend fun updateReducedMotion(enabled: Boolean)
+
     suspend fun markSceneCompleted(chapterId: ChapterId, sceneId: String)
 
     suspend fun completeChapter(

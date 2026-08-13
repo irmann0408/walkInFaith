@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -134,5 +135,19 @@ class PlayerProfileRepositoryImplTest {
         repository.addPlayTime(15_000L)
 
         assertEquals(45_000L, localDataSource.current().totalPlayTimeMillis)
+    }
+
+    @Test
+    fun `updateReducedMotion persists the toggle`() = runTest {
+        val localDataSource = FakePlayerProfileLocalDataSource()
+        val repository = PlayerProfileRepositoryImpl(localDataSource)
+
+        repository.updateReducedMotion(true)
+
+        assertTrue(localDataSource.current().reducedMotionEnabled)
+
+        repository.updateReducedMotion(false)
+
+        assertFalse(localDataSource.current().reducedMotionEnabled)
     }
 }
