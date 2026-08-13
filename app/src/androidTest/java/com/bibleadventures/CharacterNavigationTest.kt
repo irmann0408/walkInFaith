@@ -1,17 +1,43 @@
 package com.bibleadventures
 
+import android.content.Context
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.datastore.preferences.core.edit
+import androidx.test.core.app.ApplicationProvider
+import com.bibleadventures.data.local.playerProfileDataStore
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+/**
+ * This test asserts on the Hairstyle picker, which only renders when
+ * `CharacterStyle.CLASSIC` is selected (the default) — reset the save file
+ * before/after so a persisted `ILLUSTRATED` choice from manual on-device
+ * testing (which hides that picker) can't make this fail, same pattern as
+ * `WorldMapNavigationTest`'s reset for the same shared-save-file reason.
+ */
 class CharacterNavigationTest {
 
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Before
+    fun resetSaveFile() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        runBlocking { context.playerProfileDataStore.edit { it.clear() } }
+    }
+
+    @After
+    fun clearSaveFile() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        runBlocking { context.playerProfileDataStore.edit { it.clear() } }
+    }
 
     @Test
     fun selectingAHairstyle_persistsAcrossLeavingAndReturningToTheScreen() {

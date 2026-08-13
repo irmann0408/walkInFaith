@@ -4,11 +4,13 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
 import com.bibleadventures.R
 import com.bibleadventures.domain.model.Appearance
+import com.bibleadventures.domain.model.CharacterStyle
 import com.bibleadventures.domain.model.Clothing
 import com.bibleadventures.domain.model.Hairstyle
 import com.bibleadventures.domain.model.SkinTone
 
 data class AppearanceOption(val value: Appearance, @StringRes val labelRes: Int)
+data class CharacterStyleOption(val value: CharacterStyle, @StringRes val labelRes: Int)
 data class HairstyleOption(val value: Hairstyle, @StringRes val labelRes: Int)
 data class SkinToneOption(val value: SkinTone, @StringRes val labelRes: Int, val swatchColor: Color)
 data class ClothingOption(val value: Clothing, @StringRes val labelRes: Int, val swatchColor: Color)
@@ -23,6 +25,11 @@ object CharacterOptionCatalog {
     val appearances = listOf(
         AppearanceOption(Appearance.BOY, R.string.character_option_boy),
         AppearanceOption(Appearance.GIRL, R.string.character_option_girl),
+    )
+
+    val characterStyles = listOf(
+        CharacterStyleOption(CharacterStyle.CLASSIC, R.string.character_style_classic),
+        CharacterStyleOption(CharacterStyle.ILLUSTRATED, R.string.character_style_illustrated),
     )
 
     val hairstyles = listOf(

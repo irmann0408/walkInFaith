@@ -1,6 +1,7 @@
 package com.bibleadventures.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -12,6 +13,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -21,6 +23,8 @@ import com.bibleadventures.R
 import com.bibleadventures.character.CharacterOptionCatalog
 import com.bibleadventures.domain.model.Appearance
 import com.bibleadventures.domain.model.CharacterCustomization
+import com.bibleadventures.domain.model.CharacterStyle
+import com.bibleadventures.domain.model.Clothing
 import com.bibleadventures.domain.model.Hairstyle
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -33,16 +37,17 @@ private const val HeadRadiusFraction = 0.30f
 private const val HeadCenterYFraction = 0.34f
 
 /**
- * Chibi-proportioned character render, entirely Compose `Canvas`
- * primitives — placeholder art (spec section 25), no per-combination
- * image assets needed: swapping in final character art later only
- * touches this file and [CharacterOptionCatalog]. Deliberately
- * big-headed/small-bodied with a simple face, limbs, and outline strokes
- * so it reads as a cartoon character rather than raw geometric shapes —
- * every measurement is a fraction of the canvas, never a fixed dp, since
- * this same composable renders at 160dp on story screens and ~72dp in
- * the lane mini-games (David & Goliath's Crossing the Valley, Daniel's
- * Hurrying to Pray, Jesus Calms the Storm's Bailing the Boat).
+ * Renders the player's chosen character. [CharacterStyle.CLASSIC] is a
+ * chibi-proportioned Compose `Canvas` drawing — placeholder art (spec
+ * section 25), driven by [Hairstyle]/[com.bibleadventures.domain.model.SkinTone]/
+ * [Clothing]. [CharacterStyle.ILLUSTRATED] renders one real static image per
+ * [Appearance]/[Clothing] combination instead (see [illustratedDrawableRes])
+ * — that art has no separable hair/skin-tone layers, so those 2 choices are
+ * ignored in this style. Every Classic measurement is a fraction of the
+ * canvas, never a fixed dp, since this same composable renders at 160dp on
+ * story screens and ~72dp in the lane mini-games (David & Goliath's
+ * Crossing the Valley, Daniel's Hurrying to Pray, Jesus Calms the Storm's
+ * Bailing the Boat).
  */
 @Composable
 fun CharacterPreview(
@@ -50,6 +55,18 @@ fun CharacterPreview(
     modifier: Modifier = Modifier,
 ) {
     val contentDescription = stringResource(R.string.character_preview_content_description)
+
+    if (customization.characterStyle == CharacterStyle.ILLUSTRATED) {
+        Image(
+            painter = painterResource(illustratedDrawableRes(customization.appearance, customization.clothing)),
+            contentDescription = null,
+            modifier = modifier
+                .size(160.dp)
+                .semantics { this.contentDescription = contentDescription },
+        )
+        return
+    }
+
     val skinColor = CharacterOptionCatalog.skinTones.first { it.value == customization.skinTone }.swatchColor
     val clothingColor = CharacterOptionCatalog.clothingOptions.first { it.value == customization.clothing }.swatchColor
     val hairColor = CharacterOptionCatalog.hairColor
@@ -69,6 +86,29 @@ fun CharacterPreview(
         drawHead(skinColor)
         drawHair(hairColor, customization.hairstyle)
         drawFace()
+    }
+}
+
+/**
+ * Illustrated art always dresses the boy in a tunic and the girl in a
+ * robe, regardless of which of the 5 [Clothing] colors is picked — a
+ * simplification the user chose over matching each color to a specific
+ * garment shape.
+ */
+private fun illustratedDrawableRes(appearance: Appearance, clothing: Clothing): Int = when (appearance) {
+    Appearance.BOY -> when (clothing) {
+        Clothing.TUNIC_BLUE -> R.drawable.character_clothing_tunic_boy_blue
+        Clothing.TUNIC_GREEN -> R.drawable.character_clothing_tunic_boy_green
+        Clothing.ROBE_RED -> R.drawable.character_clothing_tunic_boy_red
+        Clothing.VEST_YELLOW -> R.drawable.character_clothing_tunic_boy_yellow
+        Clothing.ROBE_PURPLE -> R.drawable.character_clothing_tunic_boy_purple
+    }
+    Appearance.GIRL -> when (clothing) {
+        Clothing.TUNIC_BLUE -> R.drawable.character_clothing_robe_girl_blue
+        Clothing.TUNIC_GREEN -> R.drawable.character_clothing_robe_girl_green
+        Clothing.ROBE_RED -> R.drawable.character_clothing_robe_girl_red
+        Clothing.VEST_YELLOW -> R.drawable.character_clothing_robe_girl_yellow
+        Clothing.ROBE_PURPLE -> R.drawable.character_clothing_robe_girl_purple
     }
 }
 

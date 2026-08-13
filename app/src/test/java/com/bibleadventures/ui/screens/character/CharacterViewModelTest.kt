@@ -4,6 +4,7 @@ import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.domain.model.Appearance
 import com.bibleadventures.domain.model.AudioSettings
 import com.bibleadventures.domain.model.ChapterId
+import com.bibleadventures.domain.model.CharacterStyle
 import com.bibleadventures.domain.model.Clothing
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.model.Hairstyle
@@ -89,5 +90,9 @@ class CharacterViewModelTest {
         viewModel.onClothingSelected(Clothing.ROBE_RED)
         advanceUntilIdle()
         assertEquals(Clothing.ROBE_RED, viewModel.uiState.value.customization.clothing)
+
+        viewModel.onCharacterStyleSelected(CharacterStyle.ILLUSTRATED)
+        advanceUntilIdle()
+        assertEquals(CharacterStyle.ILLUSTRATED, viewModel.uiState.value.customization.characterStyle)
     }
 }

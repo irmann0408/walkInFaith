@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bibleadventures.domain.model.Appearance
 import com.bibleadventures.domain.model.CharacterCustomization
+import com.bibleadventures.domain.model.CharacterStyle
 import com.bibleadventures.domain.model.Clothing
 import com.bibleadventures.domain.model.Hairstyle
 import com.bibleadventures.domain.model.SkinTone
@@ -30,6 +31,7 @@ class CharacterViewModel(private val repository: PlayerProfileRepository) : View
     fun onHairstyleSelected(value: Hairstyle) = updateCustomization { it.copy(hairstyle = value) }
     fun onSkinToneSelected(value: SkinTone) = updateCustomization { it.copy(skinTone = value) }
     fun onClothingSelected(value: Clothing) = updateCustomization { it.copy(clothing = value) }
+    fun onCharacterStyleSelected(value: CharacterStyle) = updateCustomization { it.copy(characterStyle = value) }
 
     private fun updateCustomization(transform: (CharacterCustomization) -> CharacterCustomization) {
         viewModelScope.launch {

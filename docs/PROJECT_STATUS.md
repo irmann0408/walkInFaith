@@ -1,20 +1,30 @@
 # Project Status
 
-Last updated: 2026-08-13 (Milestone 7's full backlog closed out: a Reduced
-Motion setting (spec section 13) gated by a new `LocalReducedMotion`
-CompositionLocal, applied at the 9 purely-decorative animation call sites
-identified in a prior session (all 11 gameplay-timing `withFrameNanos`
-loops explicitly untouched); a UI consistency audit across the app's ~16
-mini-game screens found and fixed 7 concrete player-visible
-inconsistencies — a real accessibility bug (a wave image's noisy
-`contentDescription`), a real visual bug (a missing `ContentScale.Crop`),
-2 missing progress bars, 2 missing progress labels, a dormant
-stack-overflow regression risk ported-and-fixed from an earlier session's
-Jericho fix, and a missing correct-answer celebration animation on 2 of 3
-math-quiz screens — the last of which doubled as this pass's "general
-animation polish" deliverable. See "Milestone 7 — Polish, second pass"
-further down. Not yet committed — pending the user's go-ahead. Before
-that: follow-up redesign of 4 shipped mini-games: David
+Last updated: 2026-08-13 (v1.0 tagged; added a second, player-selectable
+"Illustrated" character art style alongside the original Canvas-drawn one
+— see "Character screen — Illustrated style" further down for the full
+design and why it's additive rather than a replacement. Illustrated mode
+now has full art coverage: boy always in a tunic, girl always in a robe,
+across all 5 of the app's clothing colors, per the user's simplification —
+no more Classic-rendering fallback needed for any combination. Just before that:
+two on-device-discovered Character Preview fixes — hairstyles that draw a
+full hair cap (Short/Braided/Ponytail) were overlapping the eyes (fixed by
+shifting the face down within the head), and the boy appearance still read
+as a dress (split into a real shirt+shorts silhouette distinct from the
+girl's dress). Before that: Milestone 7's full backlog closed out and
+committed: a Reduced Motion setting (spec section 13) gated by a new
+`LocalReducedMotion` CompositionLocal, applied at the 9 purely-decorative
+animation call sites identified in a prior session (all 11 gameplay-timing
+`withFrameNanos` loops explicitly untouched); a UI consistency audit
+across the app's ~16 mini-game screens found and fixed 7 concrete
+player-visible inconsistencies — a real accessibility bug (a wave image's
+noisy `contentDescription`), a real visual bug (a missing
+`ContentScale.Crop`), 2 missing progress bars, 2 missing progress labels,
+a dormant stack-overflow regression risk ported-and-fixed from an earlier
+session's Jericho fix, and a missing correct-answer celebration animation
+on 2 of 3 math-quiz screens — the last of which doubled as this pass's
+"general animation polish" deliverable. See "Milestone 7 — Polish, second
+pass" further down. Before that: follow-up redesign of 4 shipped mini-games: David
 & Goliath's Crossing the Valley and Daniel's Hurrying to Pray both moved off
 the old 2-lane tap-the-safe-side `dodge` engine onto a new `RhythmLaneGame.onLaneAvoided`
 — the inverse of Gathering the Leftovers' catch semantics — steering a single
@@ -3129,16 +3139,128 @@ renders/persists and several of the UI fixes render as expected. Not
 committed yet — pending the user's go-ahead, per this project's standing
 workflow.
 
+### v1.0 tag
+
+Tagged the codebase `v1.0` (`app/build.gradle.kts` `versionName` bumped
+`"0.1.0"` → `"1.0"`, `versionCode` `1` → `2`) at the commit right after
+Milestone 7's full backlog closed out — a deliberate stable-milestone
+marker requested before starting the character-art work below, so there's
+a clean point to diff against or roll back to if needed.
+
+### Character Preview: two on-device-discovered fixes
+
+Found while looking at the Character screen for unrelated reasons —
+neither is new functionality, both are visual correctness fixes to the
+existing Canvas-drawn character (`ui/components/CharacterPreview.kt`).
+- **Hairstyle/eye overlap**: `Hairstyle.SHORT`/`BRAIDED`/`PONYTAIL` all
+  call `drawHair`'s `drawCap()`, a half-circle whose flat bottom edge sits
+  exactly at the head's own vertical center — the same line the eyes were
+  drawn just above, so the cap visually cut across the top of both eyes.
+  `Hairstyle.CURLY` didn't have this problem (its bumps sit higher). Fixed
+  by shifting the whole face group (eyes/blush/mouth) down by a fixed
+  fraction of head radius (`faceOffsetY`) in `drawFace()`, clearing the
+  cap's edge with a small margin.
+- **Boy appearance read as a dress**: `drawBody()` drew the identical
+  flared dress `Path` for both appearances (only the flare width differed),
+  which reads as a dress regardless of how narrow it is. Split into
+  `drawDress()` (girl, unchanged) and `drawShirt()` + `drawShorts()` (boy)
+  — a short, only-slightly-flared shirt ending at hip height, with two
+  separate rounded-rect shorts legs (wider than the bare legs beneath,
+  the gap between them reading as the inseam) drawn *before* the shirt so
+  the shirt's solid hem paints over the shorts' rounded top corners,
+  keeping the shirt/shorts seam a single clean line instead of the corners
+  poking out a gap below it.
+
+### Character screen — Illustrated style
+
+Real illustrated character art arrived (produced externally, ages
+7-10 storybook style). Per the user's explicit direction, this was added
+as a **second, player-selectable character style alongside the existing
+Canvas-drawn one** — not a replacement — since the new art is a set of
+fully-flat, pre-composited renders (hair + face + body + one outfit color
+all fused into a single image each, confirmed by opening the actual files,
+not separable layers).
+- `domain/model/CharacterCustomization.kt`: new
+  `enum class CharacterStyle { CLASSIC, ILLUSTRATED }`; `CharacterCustomization`
+  gains a 5th field, `characterStyle: CharacterStyle = CharacterStyle.CLASSIC`
+  — a pure additive field, same low-risk shape as this session's earlier
+  `reducedMotionEnabled` addition. Nothing about the existing 4 fields
+  changed, so no persisted-save migration risk at all.
+- `CharacterViewModel.onCharacterStyleSelected` mirrors the other 4
+  per-field handlers exactly. `CharacterOptionCatalog.characterStyles`
+  (2 entries) mirrors `appearances`' shape.
+- `CharacterScreen.kt`: new Style `OptionPicker` row placed first, above
+  Appearance. Hairstyle and Skin Tone rows are wrapped in
+  `if (customization.characterStyle == CharacterStyle.CLASSIC)` — hidden
+  entirely in Illustrated mode (that art has no separable hair/skin-tone
+  layers to select), otherwise completely unchanged. Appearance and
+  Clothing stay visible in both styles.
+- `CharacterPreview.kt` branches at the top on `characterStyle`: `CLASSIC`
+  runs the exact pre-existing Canvas drawing code, byte-for-byte
+  unchanged. `ILLUSTRATED` looks up a `painterResource` from
+  `illustratedDrawableRes(appearance, clothing)` and renders one `Image`
+  (no layering needed, each file is already a complete character).
+- **Simplification, per the user's explicit follow-up direction**: rather
+  than matching each of the app's 5 `Clothing` colors to a specific
+  garment shape (tunic vs. robe vs. vest), Illustrated mode always dresses
+  the boy in a tunic and the girl in a robe, in whichever of the 5 colors
+  is picked — `illustratedDrawableRes` is a plain, total (non-nullable)
+  `when (appearance) { BOY -> when(clothing) {...5 tunic colors...};
+  GIRL -> when(clothing) {...5 robe colors...} }`, no fallback branch
+  needed since art now exists for all 10 combinations (2 appearances × 5
+  colors). This replaced an earlier version of this feature that matched
+  Clothing's existing shape-specific names (Blue *Tunic*, Red *Robe*,
+  Yellow *Vest*) to actual matching garment shapes and fell back to
+  Classic rendering for the 2 colors without art yet — abandoned once the
+  user chose the simpler tunic-boy/robe-girl mapping and provided full
+  5-color art for both.
+- New `character-art/` folder at the project root — a staging area for
+  source character art (not compiled into the app on its own; files get
+  copied into `res/drawable/` once ready), with a short README explaining
+  the naming convention (`character_clothing_<shape>_<appearance>_<color>.png`).
+- 10 new drawables in `app/src/main/res/drawable/`, copied verbatim from
+  `character-art/`: `character_clothing_tunic_boy_{blue,green,red,yellow,purple}.png`,
+  `character_clothing_robe_girl_{blue,green,red,yellow,purple}.png`.
+- New strings: `character_section_style`, `character_style_classic`,
+  `character_style_illustrated`.
+- Tests: new `CharacterViewModelTest` case for `onCharacterStyleSelected`;
+  its other cases needed no changes, confirming Classic mode's
+  ViewModel logic really is untouched. `CharacterNavigationTest`
+  (instrumented, exercises Hairstyle selection/persistence) *did* need
+  one change, but not to its assertions — it started failing after manual
+  on-device testing left the shared save file with `characterStyle =
+  ILLUSTRATED`, which hides the Hairstyle picker the test looks for. Same
+  root cause and same fix as `WorldMapNavigationTest`'s earlier flakiness
+  (Milestone 7 first pass): added a `@Before`/`@After` pair clearing
+  `context.playerProfileDataStore`, so the test always starts from a known
+  `CLASSIC`-default profile regardless of prior manual testing on the
+  device. Full `./gradlew build` green; full 22-class instrumented suite
+  green, 22/22 (confirmed failing without the reset, passing with it).
+  Verified on-device: switching to Illustrated correctly hides
+  Hairstyle/Skin Tone; cycling through all 5 Clothing swatches on both Boy
+  and Girl shows real art for every combination; switching back to Classic
+  is pixel-identical to before this change.
+- Not committed yet — pending the user's go-ahead, per this project's
+  standing workflow.
+
+**Known content note**: some of the externally-produced art (specifically
+the girl's Robe-family renders, all 5 colors) shows the character holding
+a knife-shaped prop alongside a stick. Per the user's explicit call, this
+is being treated as a stick for now since no knife-free alternative
+exists yet — flagged here rather than silently decided, easy to revisit
+if a redone asset arrives later.
+
 ## Next tasks
 
 All 8 chapters have real gameplay, Milestone 6 (Parent Area) is complete,
-and **Milestone 7's full backlog is now closed out** — both polish passes
-above cover everything originally scoped (WorldMapNavigationTest fix,
-empty-states audit, grid-maze accessibility, Reduced Motion, UI
-consistency audit, animation polish). Replacing placeholder art remains
-open-ended future work, not scoped. No other concrete backlog items are
-currently open; next work should come from a fresh round of playtesting
-or a new milestone/feature request.
+Milestone 7's full backlog is closed out, v1.0 is tagged, and the
+Illustrated character style now has full art coverage (boy tunic / girl
+robe × all 5 clothing colors). Open items:
+- Replacing the rest of the app's placeholder art (animals, supplies,
+  badges, backgrounds) remains open-ended future work, not scoped.
+- No other concrete backlog items are currently open; next work should
+  come from a fresh round of playtesting or a new milestone/feature
+  request.
 
 ## Architectural decisions log
 

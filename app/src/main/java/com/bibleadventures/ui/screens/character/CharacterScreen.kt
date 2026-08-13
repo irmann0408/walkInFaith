@@ -46,6 +46,7 @@ fun CharacterScreen(
         onHairstyleSelected = viewModel::onHairstyleSelected,
         onSkinToneSelected = viewModel::onSkinToneSelected,
         onClothingSelected = viewModel::onClothingSelected,
+        onCharacterStyleSelected = viewModel::onCharacterStyleSelected,
         modifier = modifier,
     )
 }
@@ -59,6 +60,7 @@ private fun CharacterContent(
     onHairstyleSelected: (com.bibleadventures.domain.model.Hairstyle) -> Unit,
     onSkinToneSelected: (com.bibleadventures.domain.model.SkinTone) -> Unit,
     onClothingSelected: (com.bibleadventures.domain.model.Clothing) -> Unit,
+    onCharacterStyleSelected: (com.bibleadventures.domain.model.CharacterStyle) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -94,6 +96,15 @@ private fun CharacterContent(
             }
             item {
                 OptionPicker(
+                    title = stringResource(R.string.character_section_style),
+                    options = CharacterOptionCatalog.characterStyles.map { it.value },
+                    selectedOption = customization.characterStyle,
+                    label = { value -> CharacterOptionCatalog.characterStyles.first { it.value == value }.let { stringResource(it.labelRes) } },
+                    onOptionSelected = onCharacterStyleSelected,
+                )
+            }
+            item {
+                OptionPicker(
                     title = stringResource(R.string.character_section_appearance),
                     options = CharacterOptionCatalog.appearances.map { it.value },
                     selectedOption = customization.appearance,
@@ -101,24 +112,26 @@ private fun CharacterContent(
                     onOptionSelected = onAppearanceSelected,
                 )
             }
-            item {
-                OptionPicker(
-                    title = stringResource(R.string.character_section_hairstyle),
-                    options = CharacterOptionCatalog.hairstyles.map { it.value },
-                    selectedOption = customization.hairstyle,
-                    label = { value -> CharacterOptionCatalog.hairstyles.first { it.value == value }.let { stringResource(it.labelRes) } },
-                    onOptionSelected = onHairstyleSelected,
-                )
-            }
-            item {
-                OptionPicker(
-                    title = stringResource(R.string.character_section_skin_tone),
-                    options = CharacterOptionCatalog.skinTones.map { it.value },
-                    selectedOption = customization.skinTone,
-                    label = { value -> CharacterOptionCatalog.skinTones.first { it.value == value }.let { stringResource(it.labelRes) } },
-                    swatchColor = { value -> CharacterOptionCatalog.skinTones.first { it.value == value }.swatchColor },
-                    onOptionSelected = onSkinToneSelected,
-                )
+            if (customization.characterStyle == com.bibleadventures.domain.model.CharacterStyle.CLASSIC) {
+                item {
+                    OptionPicker(
+                        title = stringResource(R.string.character_section_hairstyle),
+                        options = CharacterOptionCatalog.hairstyles.map { it.value },
+                        selectedOption = customization.hairstyle,
+                        label = { value -> CharacterOptionCatalog.hairstyles.first { it.value == value }.let { stringResource(it.labelRes) } },
+                        onOptionSelected = onHairstyleSelected,
+                    )
+                }
+                item {
+                    OptionPicker(
+                        title = stringResource(R.string.character_section_skin_tone),
+                        options = CharacterOptionCatalog.skinTones.map { it.value },
+                        selectedOption = customization.skinTone,
+                        label = { value -> CharacterOptionCatalog.skinTones.first { it.value == value }.let { stringResource(it.labelRes) } },
+                        swatchColor = { value -> CharacterOptionCatalog.skinTones.first { it.value == value }.swatchColor },
+                        onOptionSelected = onSkinToneSelected,
+                    )
+                }
             }
             item {
                 OptionPicker(
@@ -146,6 +159,7 @@ private fun CharacterScreenPreview() {
             onHairstyleSelected = {},
             onSkinToneSelected = {},
             onClothingSelected = {},
+            onCharacterStyleSelected = {},
         )
     }
 }
