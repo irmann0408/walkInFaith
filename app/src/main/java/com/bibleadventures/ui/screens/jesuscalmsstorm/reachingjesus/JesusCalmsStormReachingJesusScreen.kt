@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,11 +31,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.gridmaze.GridMazeOutcome
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
@@ -96,6 +101,19 @@ private fun JesusCalmsStormReachingJesusContent(
                     modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                 )
 
+                // Visible feedback + a screen-reader announcement after each move (a
+                // wall bump, since the grid's other tiles have no per-cell content
+                // description — narrating up to 63 non-interactive cells on every
+                // recomposition would be noisy for a D-pad-only maze where the
+                // player never touches a tile directly).
+                Box(modifier = Modifier.height(28.dp)) {
+                    Text(
+                        text = mazeFeedbackText(gridMazeState),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
+                }
+
                 // Non-interactive grid, same reasoning as DanielDariusMazeScreen:
                 // movement is via the D-pad below, not tap-on-tile.
                 Column(
@@ -140,6 +158,14 @@ private fun JesusCalmsStormReachingJesusContent(
             }
         }
     }
+}
+
+/** Reads as "Blocked" / "You reached the goal!" etc. — a live-region announcement plus visible feedback text, this screen's only feedback of any kind (the maze itself has none today). */
+@Composable
+private fun mazeFeedbackText(gridMazeState: GridMazeState): String = when {
+    gridMazeState.isComplete -> stringResource(R.string.grid_maze_feedback_goal_reached)
+    gridMazeState.lastOutcome == GridMazeOutcome.BLOCKED -> stringResource(R.string.grid_maze_feedback_blocked)
+    else -> ""
 }
 
 @Composable

@@ -181,6 +181,13 @@
     <string name="feedback_doesnt_belong">That doesn\'t belong on the ark!</string>
     <string name="feedback_not_a_stone">That\'s not a stone!</string>
 
+    <!-- Shared across every D-pad grid-maze screen (game/puzzles/gridmaze) — a live-region announcement plus visible feedback text after each move, not per-chapter since it's purely functional, not narrative. -->
+    <string name="grid_maze_feedback_blocked">Blocked — try a different direction.</string>
+    <string name="grid_maze_feedback_collected">Collected!</string>
+    <string name="grid_maze_feedback_checkpoint_needs_collectible">You need to collect something first.</string>
+    <string name="grid_maze_feedback_checkpoint_activated">Checkpoint activated!</string>
+    <string name="grid_maze_feedback_goal_reached">You reached the goal!</string>
+
     <string name="animal_lion">Lion</string>
     <string name="animal_elephant">Elephant</string>
     <string name="animal_giraffe">Giraffe</string>

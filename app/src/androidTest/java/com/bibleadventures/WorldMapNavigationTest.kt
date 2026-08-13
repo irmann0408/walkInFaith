@@ -1,5 +1,6 @@
 package com.bibleadventures
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
@@ -8,14 +9,43 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.datastore.preferences.core.edit
+import androidx.test.core.app.ApplicationProvider
+import com.bibleadventures.data.local.playerProfileDataStore
 import com.bibleadventures.game.stories.ChapterCatalog
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+/**
+ * This test's "everything past Noah's Ark is locked" assertion only holds
+ * for a fresh save, but this app's single DataStore save file persists
+ * real progress across test classes within one `connectedAndroidTest`
+ * invocation — so without a reset here, this test flakes whenever a
+ * chapter-completing flow test happens to run first. `adb shell pm clear`
+ * is blocked on the dev device (Knox/Secure Folder), so reset the save
+ * directly instead: instrumented tests run inside the app's own process,
+ * same UID/file permissions as the real app, so no adb is needed — same
+ * technique already used in `PlayerProfileLocalDataSourceInstrumentedTest`.
+ */
 class WorldMapNavigationTest {
 
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Before
+    fun resetSaveFile() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        runBlocking { context.playerProfileDataStore.edit { it.clear() } }
+    }
+
+    @After
+    fun clearSaveFile() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        runBlocking { context.playerProfileDataStore.edit { it.clear() } }
+    }
 
     @Test
     fun worldMap_showsHomeVillageAndAllChapterNodesWithCorrectLockState() {

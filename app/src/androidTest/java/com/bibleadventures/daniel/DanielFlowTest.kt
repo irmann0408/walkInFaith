@@ -103,6 +103,14 @@ class DanielFlowTest {
         val downLabel = activity.getString(R.string.daniel_darius_direction_down)
         val mazeLeftLabel = activity.getString(R.string.daniel_darius_direction_left)
         val mazeRightLabel = activity.getString(R.string.daniel_darius_direction_right)
+
+        // The start tile (0,0) is the map's top-left corner, so pressing Up
+        // walks off the edge — a deliberate, harmless BLOCKED move (doesn't
+        // change position) confirming the maze's new accessibility feedback
+        // text actually renders, not just that the engine reports it.
+        composeTestRule.onNodeWithContentDescription(upLabel).performClick()
+        composeTestRule.onNodeWithText(activity.getString(R.string.grid_maze_feedback_blocked)).assertExists()
+
         DanielContent.dariusSolutionPath.forEach { direction ->
             val label = when (direction) {
                 Direction.UP -> upLabel

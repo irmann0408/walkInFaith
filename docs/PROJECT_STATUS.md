@@ -56,16 +56,20 @@ Settings also complete)
 
 ## Current milestone
 
-**Milestone 6 — Parent Area: COMPLETE.** All 8 chapters already had real
-gameplay (Chapter 8 — Jesus Calms the Storm — shipped the prior session);
-this milestone adds the last planned piece of spec section 17: a gated
-Parent Area with a progress summary (chapters/stars/badges/scripture
-cards/time played), a Settings shortcut, a privacy-information dialog, and
-Reset Progress. See "Milestone 6 — Parent Area" further down. Full chain,
-all now with real gameplay: Noah's Ark → David & Goliath → Good Samaritan
-→ Daniel → Esther's Rescue of Her People → Jericho → Feeding the 5,000 →
-Jesus Calms the Storm. No chapter-content gaps and no planned milestones
-remain — see Next tasks.
+**Milestone 7 — Polish: first pass COMPLETE.** All 8 chapters and
+Milestone 6 (Parent Area) were already done. This pass covers 3 concrete
+items chosen out of Milestone 7's broad "Improve: Animations, Transitions,
+Accessibility, Error states, Empty states, Audio architecture, UI
+consistency" scope: fixed the long-standing `WorldMapNavigationTest`
+flakiness, audited empty states (found no gap), and added grid-maze
+accessibility announcements. See "Milestone 7 — Polish" further down. UI
+consistency, general animation polish, and a Reduced Motion setting were
+explicitly deferred — Reduced Motion specifically to the bottom of the
+backlog with its design already researched, the other two to a later pass
+once there's been a chance to actually play through the app and find
+concrete rough edges. Full chain, all now with real gameplay: Noah's Ark
+→ David & Goliath → Good Samaritan → Daniel → Esther's Rescue of Her
+People → Jericho → Feeding the 5,000 → Jesus Calms the Storm.
 
 ## Completed features
 
@@ -498,29 +502,15 @@ correctness.
 
 ## Known issues / follow-ups
 
-- **`WorldMapNavigationTest` can fail when run after any chapter-completing
-  flow test in the same `connectedAndroidTest` invocation.** It asserts
-  every chapter after Noah's Ark is locked, which only holds for a fresh
-  save — this app's single save file persists real progress across test
-  classes within one suite run (no `pm clear` between classes), so if a
-  flow test that completes chapters happens to run first, this test's
-  assumption breaks. Reproduced consistently (same single failure) again
-  this session while verifying Parent Area; confirmed unrelated (the
-  assertion has nothing to do with Parent Area). Not fixed here — would
-  need either per-class data isolation (a custom test orchestrator or a
-  `pm clear` hook) or reordering this test to run first, a
-  test-infrastructure change bigger than any one session's scope.
-  **Also confirmed this session**: `adb shell pm clear com.bibleadventures`
-  and `adb uninstall` both fail on the primary dev device with a bare
-  `Failed`/`DELETE_FAILED_INTERNAL_ERROR` (a `pm list packages` run in the
-  same shell session surfaced `SecurityException: Shell does not have
-  permission to access user 150`, a Secure Folder/Knox work-profile ID on
-  that device) — so a real per-class `pm clear` between test classes isn't
-  even available as a quick manual workaround on this hardware today.
-  `ParentAreaFlowTest` was written to tolerate this (asserts "at least 1"
-  earned stat rather than an exact count before Reset Progress, since the
-  deterministic "back to exactly 0" assertions after a real reset don't
-  depend on a clean starting save).
+- ~~`WorldMapNavigationTest` can fail when run after any chapter-completing
+  flow test in the same `connectedAndroidTest` invocation~~ — **fixed, see
+  "Milestone 7 — Polish" below.** `adb shell pm clear`/`adb uninstall` are
+  still both blocked on the primary dev device (Knox/Secure Folder), so
+  that workaround remains unavailable, but the fix doesn't need it —
+  `ParentAreaFlowTest` was already written to tolerate the old flakiness
+  (asserts "at least 1" earned stat rather than an exact count before
+  Reset Progress) and doesn't need to change now that the root cause is
+  fixed elsewhere.
 
 - Launcher icon is a placeholder vector shape, not final art.
 - minSdk 24 devices fall back to a non-adaptive icon; no legacy PNG mipmap was
@@ -911,11 +901,10 @@ general shape, not a mandatory checklist for every chapter.
   `RewardCatalog`. The scripture text was sourced from the actual World
   English Bible (public domain) via WebFetch, same standard as Genesis 6:22
   and 1 Samuel 17:45 — not written from memory.
-- **Known accessibility limitation, not fixed here**: individual grid
-  tiles (other than the player marker) have no content description, since
-  narrating up to 100 non-interactive cells to a screen reader on every
-  recomposition would be noisy and wasn't in scope for this pass. Worth
-  revisiting if this chapter needs a fuller accessibility pass later.
+- ~~Known accessibility limitation: individual grid tiles (other than the
+  player marker) have no content description~~ — **fixed in "Milestone 7
+  — Polish" below**, via a per-move outcome announcement instead of
+  per-tile descriptions.
 - Tests: `GridMazeGameTest.kt` (unit, mirrors `DodgeGameTest.kt`'s style —
   a blocked move is a same-position no-op, never a failure; medicine/
   traveler/Inn interactions; once-complete is a no-op); `GoodSamaritanViewModelTest.kt`
@@ -945,8 +934,6 @@ general shape, not a mandatory checklist for every chapter.
   newly placed on the return trip.
 - An optional "donkey feed" pickup the user mentioned (temporary
   vision-radius or extra-move buff) — a nice-to-have, not required.
-- A fuller accessibility pass on the grid maze's individual tiles (see
-  "Known accessibility limitation" above).
 
 ### Milestone 4 addendum 6 — removed Gather Supplies; added purple clothing
 Two small follow-ups after Chapter 3 shipped.
@@ -2817,13 +2804,149 @@ Miracle Multiplication. Two changes:
   the full 22-class instrumented suite (21/22 — sole failure the
   pre-existing, already-documented `WorldMapNavigationTest` flakiness).
 
+### Milestone 7 — Polish (first pass)
+
+Milestone 7 ("Improve: Animations, Transitions, Accessibility, Error
+states, Empty states, Audio architecture, UI consistency") has almost no
+elaboration in the spec beyond that one-line list. Rather than trying to
+"polish everything," this pass covers 3 concrete items the user chose
+after reviewing what was actually open per area.
+
+- **Fixed `WorldMapNavigationTest` flakiness**, closing out a
+  long-documented known issue. Root cause: the test asserts every chapter
+  after Noah's Ark is locked, which only holds for a fresh save, and this
+  app's single DataStore save file persists real progress across test
+  classes within one `connectedAndroidTest` invocation. `adb shell pm
+  clear` is blocked on the dev device (Knox/Secure Folder), so the fix
+  goes around it entirely: instrumented tests run inside the app's own
+  process (same UID, same file permissions as the real app), so the test
+  can reset its own DataStore file directly — no adb involved. Added a
+  `@Before`/`@After` pair to `WorldMapNavigationTest.kt` calling
+  `context.playerProfileDataStore.edit { it.clear() }` via
+  `ApplicationProvider.getApplicationContext<Context>()`, reusing the
+  exact pattern already established in
+  `PlayerProfileLocalDataSourceInstrumentedTest.kt` (that file's own
+  `@Before`/`@After` do the same thing) — `Context.playerProfileDataStore`
+  (`data/local/PlayerProfileLocalDataSource.kt`) is deliberately
+  `internal`, not `private`, with a comment confirming it's exposed
+  exactly so androidTest can touch it directly. No other test in the
+  suite assumes accumulated state from a prior test class, so clearing
+  before/after this one test is safe regardless of run order. Verified by
+  running a chapter-completing flow test (`NoahsArkFlowTest`) immediately
+  before `WorldMapNavigationTest` in the same invocation — the exact
+  scenario that used to fail — and confirming it now passes; then the
+  full 22-class suite, 22/22 green (the first time this session
+  `WorldMapNavigationTest` wasn't the documented sole failure).
+- **Empty states — audited, no gap found.** Checked Badges gallery,
+  Scripture Cards gallery, Main Menu's "Continue Adventure," World Map,
+  and Parent Area against a completely fresh `PlayerProfile.DEFAULT`
+  (zero everything). All 5 already handle it correctly by construction:
+  Badges/Scripture Cards galleries are driven by the fixed
+  `RewardCatalog` lists, not the profile's earned sets, so they always
+  render all 8 tiles, just all locked, never blank; "Continue Adventure"
+  is shown but disabled, never hidden or silently broken; World Map has
+  no zero-sensitive aggregate anywhere on it; Parent Area's stats are
+  plain string concatenation ("0 / 8"), no division happening anywhere,
+  and `formatPlayTime(0L)` already has a "Less than a minute" branch. No
+  code changes for this item — this looks like it was designed with the
+  empty state in mind from the start rather than retrofitted.
+- **Grid-maze tile accessibility**: added an outcome announcement instead
+  of per-tile content descriptions. The gap (previously a documented
+  Known issue): non-player maze tiles in all 4 maze screens (Good
+  Samaritan, Daniel's Darius Maze, Feeding the 5,000's Serving the Crowd,
+  Jesus Calms the Storm's Reaching Jesus) had no content description —
+  narrating up to 100 non-interactive cells per recomposition was judged
+  too noisy when these screens were first built. Since these are D-pad-
+  only mazes (no tap-to-move — confirmed no `clickable`/semantics click
+  action on any cell), a screen-reader user doesn't need per-cell
+  descriptions, just to know what happened after each move.
+  `game/puzzles/gridmaze/GridMazeGameState.kt`'s `GridMazeOutcome`
+  (`NONE, MOVED, BLOCKED, COLLECTED, CHECKPOINT_NEEDS_COLLECTIBLE,
+  CHECKPOINT_ACTIVATED`) plus `GridMazeState.isComplete` already carried
+  everything needed — no engine change. Added one
+  `Modifier.semantics { liveRegion = LiveRegionMode.Polite }` `Text` per
+  screen (this app's first use of `liveRegion` anywhere), driven by a
+  `when` on `lastOutcome` with an `isComplete` override for the
+  goal-reached case (GOAL-reached has no distinct outcome value of its
+  own — stepping onto it is just `MOVED`). Made the text visible too, not
+  accessibility-only — these 4 screens previously had zero feedback text
+  of any kind (unlike the math-quiz screens' `feedback_great_job`/
+  `feedback_try_another_one` idiom this reuses the shape of), so a wall
+  bump is now visibly acknowledged for sighted players as a small bonus,
+  not just announced to a screen reader. Stayed low-noise: no
+  announcement on a plain `MOVED` with nothing else notable — only
+  `BLOCKED` (wall or edge share one outcome value, so one message covers
+  both), `COLLECTED`, `CHECKPOINT_NEEDS_COLLECTIBLE`,
+  `CHECKPOINT_ACTIVATED`, and goal-reached. 5 new shared (not per-chapter)
+  strings — `grid_maze_feedback_*` — since these are functional
+  announcements, not narrative content, one set covers all 4 screens.
+  Good Samaritan needed its own wiring since its grid renders off a raw
+  `Char` from `GoodSamaritanContent.mapLayout`, not `GridTileType`
+  directly — the announcement logic is identical, just the tile-rendering
+  code around it isn't; no shared composable was extracted (no precedent
+  for extracting UI across these near-identical-but-not-identical maze
+  screens, and this pass wasn't the UI-consistency audit). Verified with
+  a new targeted assertion in `DanielFlowTest.kt` (a deliberate harmless
+  edge-bump at the maze's start tile, asserting the "Blocked" text
+  renders — confirming the announcement actually shows on-device, not
+  just that the engine reports the right outcome) plus the full
+  instrumented suite passing with all 4 maze-walking flow tests intact.
+- Full `./gradlew build` green (compile + unit tests + lint); full
+  22-class instrumented suite green, 22/22, twice.
+
+**Deferred from this pass — Reduced Motion setting** (spec section 13:
+"reduced animation setting if practical," currently unbuilt). Research
+already done so a future session doesn't need to re-investigate:
+- **Scope boundary**: 11 screens drive gameplay-critical timing via a
+  manual `withFrameNanos` accumulator loop (rhythm-lane catch/avoid/tap
+  mechanics — falling waves, rolling rocks, scrolling notes). Those loops
+  are the puzzle's judging clock, not decoration — must stay untouched by
+  this setting, since disabling them would change what counts as a hit,
+  not just how it looks.
+- Should only touch the **9 purely decorative animation call sites**
+  found via a full audit of every `Animatable`/`animateDpAsState`/
+  `animateFloatAsState`/`spring(...)` use in the app (confirmed
+  exhaustive — no `AnimatedContent`/`Crossfade`/`animateColorAsState`
+  anywhere, and no "stars appearing"/"badge celebration" animation exists
+  yet to touch, despite the spec's example list): 4× lane-slide
+  `animateDpAsState` (Daniel's Hurrying to Pray, David & Goliath's
+  Crossing the Valley, Feeding 5,000's Gathering the Leftovers, Jesus
+  Calms the Storm's Bailing the Boat), 1× found-item alpha fade
+  (`NoahsArkFindAnimalsScreen.kt`), 3× drag-snap-and-scale-pulse pairs
+  (Jericho's Setting Up Camp, Feeding 5,000's Gathering the Crowd, Jesus
+  Calms the Storm's Loading the Boat — one shared copy-pasted idiom), 1×
+  correct-answer burst-scale pulse (Feeding 5,000's Miracle
+  Multiplication).
+- **Plumbing recommendation**: not per-ViewModel `uiState` threading (would
+  touch 6 unrelated ViewModels for a cross-cutting UI concern). Instead, a
+  new `ui/LocalReducedMotion.kt` (`staticCompositionLocalOf { false }`),
+  mirroring the *spirit* of this app's one existing CompositionLocal
+  (`ui/LocalAudioController.kt` — provided once at the root in
+  `MainActivity`, consumed by leaf composables), fed from
+  `container.playerProfileRepository.profile.map { it.reducedMotionEnabled }`.
+  Each of the 9 call sites would read `LocalReducedMotion.current` and
+  pass `animationSpec = snap()` instead of its current spring/tween/
+  default when on.
+- **Data model**: a new sibling `PlayerProfile.reducedMotionEnabled: Boolean
+  = false` field (not nested in `AudioSettings` — that class is
+  audio-specific by name and every existing consumer's expectation),
+  `PlayerProfileRepository.updateReducedMotion(...)` mirroring
+  `updateAudioSettings` exactly, a 4th `SettingsToggleRow` ungated on the
+  Main Menu like the other 3 (comfort/accessibility preference, not
+  sensitive data, so no need to live behind Parent Area's gate).
+
 ## Next tasks
 
-All 8 chapters have real gameplay and Milestone 6 — Parent Area (the last
-planned milestone) is complete. No chapter-content gaps and no scoped
-work remain; future work would be net-new scope (e.g. Milestone 7 polish
-items already tracked individually under "Known issues," or replacing
-placeholder art) rather than anything already planned.
+All 8 chapters have real gameplay, Milestone 6 (Parent Area) is complete,
+and Milestone 7's first pass closed out 3 concrete polish items. Explicitly
+deferred, not yet scheduled: a UI-consistency audit across the ~15+
+near-identical mini-game/tray screens, general animation/transition
+polish (needs actual playtesting to find concrete targets first), and a
+Reduced Motion setting (spec section 13 — design already researched and
+kept at the bottom of this file's Milestone 7 section for whenever it's
+picked up: 9 decorative animation call sites identified across the whole
+app, the 11 `withFrameNanos` gameplay-timing loops explicitly excluded).
+Replacing placeholder art remains open-ended future work, not scoped.
 
 ## Architectural decisions log
 

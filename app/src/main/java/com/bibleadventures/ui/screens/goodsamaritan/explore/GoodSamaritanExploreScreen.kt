@@ -38,11 +38,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.gridmaze.GridMazeOutcome
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.stories.GoodSamaritanContent
@@ -103,6 +107,20 @@ private fun GoodSamaritanExploreContent(
                     modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                 )
 
+                // Visible feedback + a screen-reader announcement after each move (a
+                // wall bump, collecting the medicine, treating the traveler, or
+                // reaching the inn), since the grid's other tiles have no per-cell
+                // content description — narrating up to 100 non-interactive cells on
+                // every recomposition would be noisy for a D-pad-only maze where the
+                // player never touches a tile directly.
+                Box(modifier = Modifier.height(28.dp)) {
+                    Text(
+                        text = mazeFeedbackText(gridMazeState),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
+                }
+
                 // Non-interactive: a 10x10 grid can't give each cell a legible 48dp tap
                 // target on a phone screen, which is exactly why movement is via the
                 // D-pad below, not tap-on-tile.
@@ -154,6 +172,17 @@ private fun GoodSamaritanExploreContent(
             }
         }
     }
+}
+
+/** Reads as "Blocked" / "Collected!" / "Checkpoint activated!" / "You reached the goal!" — a live-region announcement plus visible feedback text, this screen's only feedback of any kind. */
+@Composable
+private fun mazeFeedbackText(gridMazeState: GridMazeState): String = when {
+    gridMazeState.isComplete -> stringResource(R.string.grid_maze_feedback_goal_reached)
+    gridMazeState.lastOutcome == GridMazeOutcome.CHECKPOINT_ACTIVATED -> stringResource(R.string.grid_maze_feedback_checkpoint_activated)
+    gridMazeState.lastOutcome == GridMazeOutcome.CHECKPOINT_NEEDS_COLLECTIBLE -> stringResource(R.string.grid_maze_feedback_checkpoint_needs_collectible)
+    gridMazeState.lastOutcome == GridMazeOutcome.COLLECTED -> stringResource(R.string.grid_maze_feedback_collected)
+    gridMazeState.lastOutcome == GridMazeOutcome.BLOCKED -> stringResource(R.string.grid_maze_feedback_blocked)
+    else -> ""
 }
 
 @Composable
