@@ -2935,6 +2935,76 @@ already done so a future session doesn't need to re-investigate:
   Main Menu like the other 3 (comfort/accessibility preference, not
   sensitive data, so no need to live behind Parent Area's gate).
 
+### Character redesign — chibi look, replacing the block-like placeholder
+
+Direct user feedback: the character (chosen on the Character screen,
+shown on every chapter's Intro screen, and steered directly in 3
+gameplay lane scenes) looked like "block-like figures" — a plain circle
+head with no face, a bare rounded-rect/trapezoid body with no limbs, no
+outlines, no shading. Rewrote `ui/components/CharacterPreview.kt`
+entirely — the single render function every one of those 12 call sites
+already shared, so the redesign propagated everywhere with zero other
+file changes (confirmed by grep before starting: every usage passes
+through this one composable, all reusing the same `Canvas`-primitive
+approach the file's own doc comment already anticipated —
+"swapping in final character art later only touches this file and
+`CharacterOptionCatalog`").
+
+- **Stayed 100% Compose `Canvas`-drawn**, no new image/vector-drawable
+  assets — confirmed with the user up front, since this environment has
+  no real illustration tooling and a well-executed enhanced-primitives
+  redesign was judged more reliable than hand-writing vector art paths
+  blind. `CharacterCustomization`'s 4 enums and `CharacterOptionCatalog`'s
+  swatch colors are completely unchanged — only the drawing math moved.
+- **Chibi proportions**: head radius grown from 0.22 to 0.30 of canvas
+  width and centered higher, over a visibly smaller/shorter body — the
+  single biggest contributor to reading as "cartoony" instead of "blocky."
+- **Added, from nothing**: a face (two eyes, a stroked smile arc, two
+  soft translucent blush circles), visible arms and legs (skin-toned
+  rounded "capsule" shapes — previously the character had no limbs at
+  all, just a floating head-and-torso), and a consistent warm dark-brown
+  outline stroke on every shape (head, body, limbs, hair) — the "cartoon
+  sticker" edge that most separates a cartoon character from flat
+  geometry.
+- **Body silhouette**: replaced the old straight-edged `drawRoundRect`/
+  4-point `Path` trapezoid with a `Path` using quadratic bezier curves on
+  the sides, keeping the boy/girl distinction (tunic vs. a-line dress,
+  the dress flaring wider at the hem) but rounded instead of boxy.
+- **Every measurement stayed a fraction of `size.width`/`size.height`**,
+  never a fixed dp — required since this same composable renders at
+  160dp on story/Character screens and ~72dp in the lane mini-games
+  (Daniel's Hurrying to Pray, David & Goliath's Crossing the Valley,
+  Jesus Calms the Storm's Bailing the Boat); a fraction-based redesign is
+  mathematically guaranteed to scale correctly at both sizes with no
+  separate verification needed per size.
+- Drawing order back-to-front: legs → body → arms → head → hair → face,
+  with the head deliberately overlapping the body's top edge and the
+  body's hem deliberately overlapping the legs' top — that overlap (not
+  precise trimming) is what gives the "no visible neck/waist joint" chibi
+  silhouette.
+- Verified on-device via screenshots across boy/girl and multiple
+  hairstyle/clothing combinations on the Character screen (confirmed the
+  face, limbs, and outlines render correctly) — the fraction-based math
+  held up at both this composable's caller sizes as designed, no scaling
+  issues found.
+- **Immediate follow-up from that same on-device look**: `Hairstyle.PONYTAIL`'s
+  single off-center circle (a leftover from the old design, unchanged in
+  the first redesign pass) sat right next to one cheek and read as
+  confusing/lopsided once the face existed to compare it against — a
+  problem the old faceless design never surfaced. Redrawn as two
+  symmetric pigtail-bun circles (one per side, mirrored) instead of one
+  asymmetric bump; the `PONYTAIL` enum name itself was deliberately left
+  unchanged (renaming an enum constant already present in saved data
+  silently loses that choice from existing saves — this codebase's own
+  standing rule) even though it now draws pigtails, not a single
+  ponytail. Re-verified on-device immediately after.
+- No unit tests apply (pure `Canvas` drawing, no state/logic change, same
+  as before the redesign). Full `./gradlew build` green; full 22-class
+  instrumented suite green, 22/22, both before and after the pigtail
+  follow-up — no test asserts on the Canvas's pixel content, only on
+  `character_preview_content_description`'s semantics text, which is
+  unchanged.
+
 ## Next tasks
 
 All 8 chapters have real gameplay, Milestone 6 (Parent Area) is complete,
