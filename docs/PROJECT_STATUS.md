@@ -5,8 +5,10 @@ Last updated: 2026-08-13 (v1.0 tagged; added a second, player-selectable
 — see "Character screen — Illustrated style" further down for the full
 design and why it's additive rather than a replacement. Illustrated mode
 now has full art coverage: boy always in a tunic, girl always in a robe,
-across all 5 of the app's clothing colors, per the user's simplification —
-no more Classic-rendering fallback needed for any combination. Just before that:
+across all 5 of the app's clothing colors AND all 4 hairstyles (40 images
+total), per the user's simplification and follow-up art delivery — the
+Hairstyle picker is shown in both styles now, only Skin Tone stays
+Classic-only. Just before that:
 two on-device-discovered Character Preview fixes — hairstyles that draw a
 full hair cap (Short/Braided/Ponytail) were overlapping the eyes (fixed by
 shifting the face down within the head), and the boy appearance still read
@@ -3198,29 +3200,40 @@ not separable layers).
 - `CharacterPreview.kt` branches at the top on `characterStyle`: `CLASSIC`
   runs the exact pre-existing Canvas drawing code, byte-for-byte
   unchanged. `ILLUSTRATED` looks up a `painterResource` from
-  `illustratedDrawableRes(appearance, clothing)` and renders one `Image`
-  (no layering needed, each file is already a complete character).
+  `illustratedDrawableRes(appearance, hairstyle, clothing)` and renders one
+  `Image` (no layering needed, each file is already a complete character).
 - **Simplification, per the user's explicit follow-up direction**: rather
   than matching each of the app's 5 `Clothing` colors to a specific
   garment shape (tunic vs. robe vs. vest), Illustrated mode always dresses
   the boy in a tunic and the girl in a robe, in whichever of the 5 colors
-  is picked — `illustratedDrawableRes` is a plain, total (non-nullable)
-  `when (appearance) { BOY -> when(clothing) {...5 tunic colors...};
-  GIRL -> when(clothing) {...5 robe colors...} }`, no fallback branch
-  needed since art now exists for all 10 combinations (2 appearances × 5
-  colors). This replaced an earlier version of this feature that matched
+  is picked. This replaced an earlier version of this feature that matched
   Clothing's existing shape-specific names (Blue *Tunic*, Red *Robe*,
   Yellow *Vest*) to actual matching garment shapes and fell back to
   Classic rendering for the 2 colors without art yet — abandoned once the
   user chose the simpler tunic-boy/robe-girl mapping and provided full
   5-color art for both.
+- **Follow-up, same session: full Hairstyle art added too.** The user
+  supplied a complete set of hairstyle variants — every one of the app's 4
+  `Hairstyle` values, for every one of the 5 clothing colors, for both
+  appearances (40 images total). `illustratedDrawableRes` grew a
+  `hairstyle` parameter and is now a plain, total (non-nullable) 3-level
+  `when (appearance) { -> when(hairstyle) { -> when(clothing) {...} } }`,
+  40 explicit branches, no fallback needed. `CharacterScreen.kt`'s
+  Hairstyle picker is now shown unconditionally in both styles (previously
+  hidden in Illustrated) — only Skin Tone stays Classic-only, since no
+  skin-tone art variants exist. One real bug found and fixed along the
+  way: the first batch of hairstyle-variant images had an opaque black
+  background instead of transparency (visible on-device as a black box
+  behind the character) — the user re-exported them and a
+  Pillow/PIL alpha-channel check (`alpha.getextrema()`, confirming a
+  nonzero-transparency range on all 40 files) confirmed the fix before
+  reinstalling.
 - New `character-art/` folder at the project root — a staging area for
   source character art (not compiled into the app on its own; files get
   copied into `res/drawable/` once ready), with a short README explaining
-  the naming convention (`character_clothing_<shape>_<appearance>_<color>.png`).
-- 10 new drawables in `app/src/main/res/drawable/`, copied verbatim from
-  `character-art/`: `character_clothing_tunic_boy_{blue,green,red,yellow,purple}.png`,
-  `character_clothing_robe_girl_{blue,green,red,yellow,purple}.png`.
+  the naming convention (`character_clothing_<shape>_<appearance>_<color>[_<hairstyle>].png`).
+- 40 drawables in `app/src/main/res/drawable/` (5 colors × 4 hairstyles ×
+  2 appearances), copied verbatim from `character-art/`.
 - New strings: `character_section_style`, `character_style_classic`,
   `character_style_illustrated`.
 - Tests: new `CharacterViewModelTest` case for `onCharacterStyleSelected`;
@@ -3229,17 +3242,19 @@ not separable layers).
   (instrumented, exercises Hairstyle selection/persistence) *did* need
   one change, but not to its assertions — it started failing after manual
   on-device testing left the shared save file with `characterStyle =
-  ILLUSTRATED`, which hides the Hairstyle picker the test looks for. Same
-  root cause and same fix as `WorldMapNavigationTest`'s earlier flakiness
-  (Milestone 7 first pass): added a `@Before`/`@After` pair clearing
+  ILLUSTRATED`, which (at the time) hid the Hairstyle picker the test
+  looks for — since fixed by making Hairstyle unconditional, but the test
+  fix is kept regardless as good general hygiene. Same root cause and same
+  fix as `WorldMapNavigationTest`'s earlier flakiness (Milestone 7 first
+  pass): added a `@Before`/`@After` pair clearing
   `context.playerProfileDataStore`, so the test always starts from a known
   `CLASSIC`-default profile regardless of prior manual testing on the
   device. Full `./gradlew build` green; full 22-class instrumented suite
-  green, 22/22 (confirmed failing without the reset, passing with it).
-  Verified on-device: switching to Illustrated correctly hides
-  Hairstyle/Skin Tone; cycling through all 5 Clothing swatches on both Boy
-  and Girl shows real art for every combination; switching back to Classic
-  is pixel-identical to before this change.
+  green, 22/22. Verified on-device: switching to Illustrated shows the
+  Hairstyle picker (Skin Tone hidden); cycling through all 4 hairstyles ×
+  5 Clothing swatches on both Boy and Girl shows correct real art for
+  every combination with clean transparency; switching back to Classic is
+  pixel-identical to before this change.
 - Not committed yet — pending the user's go-ahead, per this project's
   standing workflow.
 

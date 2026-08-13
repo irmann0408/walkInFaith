@@ -41,13 +41,13 @@ private const val HeadCenterYFraction = 0.34f
  * chibi-proportioned Compose `Canvas` drawing — placeholder art (spec
  * section 25), driven by [Hairstyle]/[com.bibleadventures.domain.model.SkinTone]/
  * [Clothing]. [CharacterStyle.ILLUSTRATED] renders one real static image per
- * [Appearance]/[Clothing] combination instead (see [illustratedDrawableRes])
- * — that art has no separable hair/skin-tone layers, so those 2 choices are
- * ignored in this style. Every Classic measurement is a fraction of the
- * canvas, never a fixed dp, since this same composable renders at 160dp on
- * story screens and ~72dp in the lane mini-games (David & Goliath's
- * Crossing the Valley, Daniel's Hurrying to Pray, Jesus Calms the Storm's
- * Bailing the Boat).
+ * [Appearance]/[Hairstyle]/[Clothing] combination instead (see
+ * [illustratedDrawableRes]) — that art has no separable skin-tone layer, so
+ * only [com.bibleadventures.domain.model.SkinTone] is ignored in this
+ * style. Every Classic measurement is a fraction of the canvas, never a
+ * fixed dp, since this same composable renders at 160dp on story screens
+ * and ~72dp in the lane mini-games (David & Goliath's Crossing the Valley,
+ * Daniel's Hurrying to Pray, Jesus Calms the Storm's Bailing the Boat).
  */
 @Composable
 fun CharacterPreview(
@@ -58,7 +58,9 @@ fun CharacterPreview(
 
     if (customization.characterStyle == CharacterStyle.ILLUSTRATED) {
         Image(
-            painter = painterResource(illustratedDrawableRes(customization.appearance, customization.clothing)),
+            painter = painterResource(
+                illustratedDrawableRes(customization.appearance, customization.hairstyle, customization.clothing),
+            ),
             contentDescription = null,
             modifier = modifier
                 .size(160.dp)
@@ -93,22 +95,72 @@ fun CharacterPreview(
  * Illustrated art always dresses the boy in a tunic and the girl in a
  * robe, regardless of which of the 5 [Clothing] colors is picked — a
  * simplification the user chose over matching each color to a specific
- * garment shape.
+ * garment shape. Every [Hairstyle] has its own art too, one full render
+ * per (appearance, hairstyle, clothing) combination — the boy's "no
+ * suffix" file is his Short look and the girl's is her Ponytail look
+ * (matching what the very first illustrated renders happened to show),
+ * everything else has an explicit file per hairstyle.
  */
-private fun illustratedDrawableRes(appearance: Appearance, clothing: Clothing): Int = when (appearance) {
-    Appearance.BOY -> when (clothing) {
-        Clothing.TUNIC_BLUE -> R.drawable.character_clothing_tunic_boy_blue
-        Clothing.TUNIC_GREEN -> R.drawable.character_clothing_tunic_boy_green
-        Clothing.ROBE_RED -> R.drawable.character_clothing_tunic_boy_red
-        Clothing.VEST_YELLOW -> R.drawable.character_clothing_tunic_boy_yellow
-        Clothing.ROBE_PURPLE -> R.drawable.character_clothing_tunic_boy_purple
+private fun illustratedDrawableRes(appearance: Appearance, hairstyle: Hairstyle, clothing: Clothing): Int = when (appearance) {
+    Appearance.BOY -> when (hairstyle) {
+        Hairstyle.SHORT -> when (clothing) {
+            Clothing.TUNIC_BLUE -> R.drawable.character_clothing_tunic_boy_blue
+            Clothing.TUNIC_GREEN -> R.drawable.character_clothing_tunic_boy_green
+            Clothing.ROBE_RED -> R.drawable.character_clothing_tunic_boy_red
+            Clothing.VEST_YELLOW -> R.drawable.character_clothing_tunic_boy_yellow
+            Clothing.ROBE_PURPLE -> R.drawable.character_clothing_tunic_boy_purple
+        }
+        Hairstyle.CURLY -> when (clothing) {
+            Clothing.TUNIC_BLUE -> R.drawable.character_clothing_tunic_boy_blue_curly
+            Clothing.TUNIC_GREEN -> R.drawable.character_clothing_tunic_boy_green_curly
+            Clothing.ROBE_RED -> R.drawable.character_clothing_tunic_boy_red_curly
+            Clothing.VEST_YELLOW -> R.drawable.character_clothing_tunic_boy_yellow_curly
+            Clothing.ROBE_PURPLE -> R.drawable.character_clothing_tunic_boy_purple_curly
+        }
+        Hairstyle.BRAIDED -> when (clothing) {
+            Clothing.TUNIC_BLUE -> R.drawable.character_clothing_tunic_boy_blue_pigtail
+            Clothing.TUNIC_GREEN -> R.drawable.character_clothing_tunic_boy_green_pigtail
+            Clothing.ROBE_RED -> R.drawable.character_clothing_tunic_boy_red_pigtail
+            Clothing.VEST_YELLOW -> R.drawable.character_clothing_tunic_boy_yellow_pigtail
+            Clothing.ROBE_PURPLE -> R.drawable.character_clothing_tunic_boy_purple_pigtail
+        }
+        Hairstyle.PONYTAIL -> when (clothing) {
+            Clothing.TUNIC_BLUE -> R.drawable.character_clothing_tunic_boy_blue_ponytail
+            Clothing.TUNIC_GREEN -> R.drawable.character_clothing_tunic_boy_green_ponytail
+            Clothing.ROBE_RED -> R.drawable.character_clothing_tunic_boy_red_ponytail
+            Clothing.VEST_YELLOW -> R.drawable.character_clothing_tunic_boy_yellow_ponytail
+            Clothing.ROBE_PURPLE -> R.drawable.character_clothing_tunic_boy_purple_ponytail
+        }
     }
-    Appearance.GIRL -> when (clothing) {
-        Clothing.TUNIC_BLUE -> R.drawable.character_clothing_robe_girl_blue
-        Clothing.TUNIC_GREEN -> R.drawable.character_clothing_robe_girl_green
-        Clothing.ROBE_RED -> R.drawable.character_clothing_robe_girl_red
-        Clothing.VEST_YELLOW -> R.drawable.character_clothing_robe_girl_yellow
-        Clothing.ROBE_PURPLE -> R.drawable.character_clothing_robe_girl_purple
+    Appearance.GIRL -> when (hairstyle) {
+        Hairstyle.PONYTAIL -> when (clothing) {
+            Clothing.TUNIC_BLUE -> R.drawable.character_clothing_robe_girl_blue
+            Clothing.TUNIC_GREEN -> R.drawable.character_clothing_robe_girl_green
+            Clothing.ROBE_RED -> R.drawable.character_clothing_robe_girl_red
+            Clothing.VEST_YELLOW -> R.drawable.character_clothing_robe_girl_yellow
+            Clothing.ROBE_PURPLE -> R.drawable.character_clothing_robe_girl_purple
+        }
+        Hairstyle.CURLY -> when (clothing) {
+            Clothing.TUNIC_BLUE -> R.drawable.character_clothing_robe_girl_blue_curly
+            Clothing.TUNIC_GREEN -> R.drawable.character_clothing_robe_girl_green_curly
+            Clothing.ROBE_RED -> R.drawable.character_clothing_robe_girl_red_curly
+            Clothing.VEST_YELLOW -> R.drawable.character_clothing_robe_girl_yellow_curly
+            Clothing.ROBE_PURPLE -> R.drawable.character_clothing_robe_girl_purple_curly
+        }
+        Hairstyle.BRAIDED -> when (clothing) {
+            Clothing.TUNIC_BLUE -> R.drawable.character_clothing_robe_girl_blue_pigtail
+            Clothing.TUNIC_GREEN -> R.drawable.character_clothing_robe_girl_green_pigtail
+            Clothing.ROBE_RED -> R.drawable.character_clothing_robe_girl_red_pigtail
+            Clothing.VEST_YELLOW -> R.drawable.character_clothing_robe_girl_yellow_pigtail
+            Clothing.ROBE_PURPLE -> R.drawable.character_clothing_robe_girl_purple_pigtail
+        }
+        Hairstyle.SHORT -> when (clothing) {
+            Clothing.TUNIC_BLUE -> R.drawable.character_clothing_robe_girl_blue_short
+            Clothing.TUNIC_GREEN -> R.drawable.character_clothing_robe_girl_green_short
+            Clothing.ROBE_RED -> R.drawable.character_clothing_robe_girl_red_short
+            Clothing.VEST_YELLOW -> R.drawable.character_clothing_robe_girl_yellow_short
+            Clothing.ROBE_PURPLE -> R.drawable.character_clothing_robe_girl_purple_short
+        }
     }
 }
 

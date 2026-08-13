@@ -112,17 +112,21 @@ private fun CharacterContent(
                     onOptionSelected = onAppearanceSelected,
                 )
             }
+            item {
+                // Hairstyle has real art for every value in both styles now
+                // (Illustrated has a full render per hairstyle, Classic
+                // draws it directly) — shown unconditionally.
+                OptionPicker(
+                    title = stringResource(R.string.character_section_hairstyle),
+                    options = CharacterOptionCatalog.hairstyles.map { it.value },
+                    selectedOption = customization.hairstyle,
+                    label = { value -> CharacterOptionCatalog.hairstyles.first { it.value == value }.let { stringResource(it.labelRes) } },
+                    onOptionSelected = onHairstyleSelected,
+                )
+            }
             if (customization.characterStyle == com.bibleadventures.domain.model.CharacterStyle.CLASSIC) {
                 item {
-                    OptionPicker(
-                        title = stringResource(R.string.character_section_hairstyle),
-                        options = CharacterOptionCatalog.hairstyles.map { it.value },
-                        selectedOption = customization.hairstyle,
-                        label = { value -> CharacterOptionCatalog.hairstyles.first { it.value == value }.let { stringResource(it.labelRes) } },
-                        onOptionSelected = onHairstyleSelected,
-                    )
-                }
-                item {
+                    // Skin Tone has no illustrated art variants yet — Classic only.
                     OptionPicker(
                         title = stringResource(R.string.character_section_skin_tone),
                         options = CharacterOptionCatalog.skinTones.map { it.value },
