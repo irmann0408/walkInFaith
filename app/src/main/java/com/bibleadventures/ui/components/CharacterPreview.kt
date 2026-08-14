@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.bibleadventures.R
 import com.bibleadventures.character.CharacterOptionCatalog
 import com.bibleadventures.domain.model.Appearance
+import com.bibleadventures.domain.model.CHARACTER_STYLE_ILLUSTRATED_ENABLED
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.model.CharacterStyle
 import com.bibleadventures.domain.model.Clothing
@@ -56,7 +57,7 @@ fun CharacterPreview(
 ) {
     val contentDescription = stringResource(R.string.character_preview_content_description)
 
-    if (customization.characterStyle == CharacterStyle.ILLUSTRATED) {
+    if (customization.characterStyle == CharacterStyle.ILLUSTRATED && CHARACTER_STYLE_ILLUSTRATED_ENABLED) {
         Image(
             painter = painterResource(
                 illustratedDrawableRes(customization.appearance, customization.hairstyle, customization.clothing),

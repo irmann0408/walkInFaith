@@ -8,7 +8,15 @@ now has full art coverage: boy always in a tunic, girl always in a robe,
 across all 5 of the app's clothing colors AND all 4 hairstyles (40 images
 total), per the user's simplification and follow-up art delivery — the
 Hairstyle picker is shown in both styles now, only Skin Tone stays
-Classic-only. Just before that:
+Classic-only. Per the user's direction, this feature is now marked a
+**Preview earmarked for v2.0**, paused, and gated off for v1.0 by a new
+`CHARACTER_STYLE_ILLUSTRATED_ENABLED = false` constant (not just a hidden
+picker — hiding the picker alone left devices that had already selected
+Illustrated stuck on it, a real bug found and fixed on-device the same
+pass; the constant forces Classic rendering regardless of what's
+persisted). Code/art all left intact for later — see "Illustrated
+character style — marked Preview, targeting v2.0; hidden for v1.0"
+further down. Just before that:
 two on-device-discovered Character Preview fixes — hairstyles that draw a
 full hair cap (Short/Braided/Ponytail) were overlapping the eyes (fixed by
 shifting the face down within the head), and the boy appearance still read
@@ -3265,12 +3273,63 @@ is being treated as a stick for now since no knife-free alternative
 exists yet — flagged here rather than silently decided, easy to revisit
 if a redone asset arrives later.
 
+### Illustrated character style — marked Preview, targeting v2.0; hidden for v1.0
+
+Per the user's explicit direction: the Illustrated character style
+(implemented and working, full 40-combination art coverage, committed and
+pushed) is being treated as a **preview feature earmarked for a future
+v2.0 release**, not part of the current v1.0 line — the user wants to
+publish v1.0 without players seeing it yet. UI work on it is **paused**
+— no further character-art changes planned until this is picked back up.
+
+**Actually hidden from players now, not just a scheduling note**: the
+user asked to have it "commented out" for the v1.0 build. Rather than
+delete or restructure any of the feature's code, two things were done
+together — hiding the picker alone turned out not to be enough (see the
+bug below), so a build-time gate was added as the real enforcement point:
+- The "Character Style" `OptionPicker` row was removed from
+  `ui/screens/character/CharacterScreen.kt`'s `CharacterContent` (replaced
+  with a comment pointing back here), so no player can select
+  `ILLUSTRATED` going forward.
+- **A real bug, found on-device and fixed the same pass**: hiding only
+  the picker isn't sufficient — a profile that had already selected
+  `ILLUSTRATED` during this session's testing stayed on Illustrated
+  rendering after the picker was removed (with Skin Tone still hidden,
+  since that row's condition also keyed off `characterStyle`), with no
+  way back to Classic short of a full progress reset. Fixed with a new
+  `const val CHARACTER_STYLE_ILLUSTRATED_ENABLED = false` in
+  `domain/model/CharacterCustomization.kt`, checked everywhere
+  `characterStyle` is read for rendering/gating decisions:
+  `CharacterPreview.kt`'s `if (characterStyle == ILLUSTRATED &&
+  CHARACTER_STYLE_ILLUSTRATED_ENABLED)`, and `CharacterScreen.kt`'s Skin
+  Tone visibility condition (`characterStyle == CLASSIC ||
+  !CHARACTER_STYLE_ILLUSTRATED_ENABLED`). This makes v1.0 render/behave
+  as Classic-only unconditionally, regardless of what's persisted —
+  verified on-device on the one device that actually had `ILLUSTRATED`
+  saved, confirming both the Chibi art and the Skin Tone row correctly
+  came back.
+- Everything else — the `CharacterStyle` enum itself, `CharacterPreview.kt`'s
+  `ILLUSTRATED` rendering branch and `illustratedDrawableRes`,
+  `CharacterViewModel.onCharacterStyleSelected`, `CharacterOptionCatalog.characterStyles`,
+  all 40 drawables, the `character-art/` staging folder, and the
+  `character_style_*` strings — stays fully intact in the codebase,
+  untouched. Re-enabling for v2.0 is purely additive: flip the one
+  constant to `true` and restore the removed `item { }` block.
+
+Known open items if/when v2.0 work resumes:
+- Skin Tone has no illustrated art variants (Classic-only for now).
+- The girl Robe-family art holds a knife-shaped prop (see "Known content
+  note" above) — still unresolved, being treated as a stick per the
+  user's call.
+- Only 5 clothing colors × 2 appearances × 4 hairstyles exist; no
+  additional outfits/colors are planned unless requested.
+
 ## Next tasks
 
 All 8 chapters have real gameplay, Milestone 6 (Parent Area) is complete,
-Milestone 7's full backlog is closed out, v1.0 is tagged, and the
-Illustrated character style now has full art coverage (boy tunic / girl
-robe × all 5 clothing colors). Open items:
+Milestone 7's full backlog is closed out, and v1.0 is tagged. The
+Illustrated character style is complete and working but paused as a v2.0
+preview (see above) — no further UI work on it for now. Open items:
 - Replacing the rest of the app's placeholder art (animals, supplies,
   badges, backgrounds) remains open-ended future work, not scoped.
 - No other concrete backlog items are currently open; next work should

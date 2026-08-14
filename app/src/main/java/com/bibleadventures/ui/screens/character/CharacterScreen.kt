@@ -25,7 +25,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bibleadventures.R
 import com.bibleadventures.character.CharacterOptionCatalog
+import com.bibleadventures.domain.model.CHARACTER_STYLE_ILLUSTRATED_ENABLED
 import com.bibleadventures.domain.model.CharacterCustomization
+import com.bibleadventures.domain.model.CharacterStyle
 import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.CharacterPreview
 import com.bibleadventures.ui.screens.character.components.OptionPicker
@@ -94,15 +96,12 @@ private fun CharacterContent(
                     CharacterPreview(customization = customization)
                 }
             }
-            item {
-                OptionPicker(
-                    title = stringResource(R.string.character_section_style),
-                    options = CharacterOptionCatalog.characterStyles.map { it.value },
-                    selectedOption = customization.characterStyle,
-                    label = { value -> CharacterOptionCatalog.characterStyles.first { it.value == value }.let { stringResource(it.labelRes) } },
-                    onOptionSelected = onCharacterStyleSelected,
-                )
-            }
+            // Character Style (Classic/Illustrated) picker parked for v2.0 —
+            // the underlying CharacterStyle enum, CharacterPreview's
+            // Illustrated rendering branch, and all art files stay intact;
+            // only this picker row is hidden, so characterStyle can never
+            // leave its CLASSIC default for a fresh install. Re-enable by
+            // restoring this item block (see docs/PROJECT_STATUS.md).
             item {
                 OptionPicker(
                     title = stringResource(R.string.character_section_appearance),
@@ -124,7 +123,14 @@ private fun CharacterContent(
                     onOptionSelected = onHairstyleSelected,
                 )
             }
-            if (customization.characterStyle == com.bibleadventures.domain.model.CharacterStyle.CLASSIC) {
+            // Effectively-Classic check, not a raw equality check: a profile
+            // saved before CHARACTER_STYLE_ILLUSTRATED_ENABLED existed could
+            // still have characterStyle = ILLUSTRATED persisted even though
+            // the picker that could set it is hidden — Skin Tone must still
+            // show for those devices too, matching CharacterPreview's own
+            // gate, or they'd be stuck with neither Skin Tone nor real
+            // Illustrated art.
+            if (customization.characterStyle == CharacterStyle.CLASSIC || !CHARACTER_STYLE_ILLUSTRATED_ENABLED) {
                 item {
                     // Skin Tone has no illustrated art variants yet — Classic only.
                     OptionPicker(
