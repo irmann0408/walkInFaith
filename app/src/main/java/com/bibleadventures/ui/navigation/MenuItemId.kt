@@ -5,7 +5,6 @@ package com.bibleadventures.ui.navigation
  * navigation dispatch never depends on translatable UI text.
  */
 enum class MenuItemId {
-    CONTINUE_ADVENTURE,
     ADVENTURES,
     BADGES,
     SCRIPTURE_CARDS,

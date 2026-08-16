@@ -58,6 +58,7 @@ import com.bibleadventures.game.puzzles.groupfill.GroupFillGameState
 import com.bibleadventures.game.puzzles.groupfill.GroupFillOutcome
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.launch
@@ -81,6 +82,7 @@ private val SNAP_RADIUS = 60.dp
 fun Feeding5000GatheringCrowdScreen(
     viewModel: Feeding5000ViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -90,6 +92,7 @@ fun Feeding5000GatheringCrowdScreen(
         groupFillState = uiState.groupFillState,
         onFamilyDropped = viewModel::onFamilyDropped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -100,6 +103,7 @@ private fun Feeding5000GatheringCrowdContent(
     groupFillState: GroupFillGameState,
     onFamilyDropped: (familyId: String, circleIndex: Int) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -107,7 +111,10 @@ private fun Feeding5000GatheringCrowdContent(
     val snapRadiusPx = with(LocalDensity.current) { SNAP_RADIUS.toPx() }
     val circleSums = groupFillState.circleTargets.indices.map { groupFillState.circleSum(it) }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -340,6 +347,7 @@ private fun Feeding5000GatheringCrowdPreview() {
             ),
             onFamilyDropped = { _, _ -> },
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

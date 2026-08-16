@@ -39,6 +39,7 @@ import com.bibleadventures.game.puzzles.sudoku.SudokuOutcome
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.SudokuIconDef
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -46,6 +47,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun EstherMessengerSudokuScreen(
     viewModel: EstherViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -57,6 +59,7 @@ fun EstherMessengerSudokuScreen(
         onCellSelected = viewModel::onSudokuCellSelected,
         onIconTapped = viewModel::onSudokuIconTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -69,10 +72,14 @@ private fun EstherMessengerSudokuContent(
     onCellSelected: (Int, Int) -> Unit,
     onIconTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -249,6 +256,7 @@ private fun EstherMessengerSudokuPreview() {
             onCellSelected = { _, _ -> },
             onIconTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

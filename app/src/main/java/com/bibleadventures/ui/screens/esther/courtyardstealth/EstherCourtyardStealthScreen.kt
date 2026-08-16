@@ -41,6 +41,7 @@ import com.bibleadventures.game.puzzles.stealth.StealthGameState
 import com.bibleadventures.game.puzzles.stealth.StealthOutcome
 import com.bibleadventures.game.puzzles.stealth.StealthTileType
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -48,6 +49,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun EstherCourtyardStealthScreen(
     viewModel: EstherViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -57,6 +59,7 @@ fun EstherCourtyardStealthScreen(
         stealthState = uiState.stealthState,
         onDirectionPressed = viewModel::onCourtyardDirectionPressed,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -67,10 +70,14 @@ private fun EstherCourtyardStealthContent(
     stealthState: StealthGameState,
     onDirectionPressed: (Direction) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -235,6 +242,7 @@ private fun EstherCourtyardStealthPreview() {
             ),
             onDirectionPressed = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

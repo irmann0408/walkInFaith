@@ -42,6 +42,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.isActive
@@ -74,6 +75,7 @@ private const val NOTE_GRACE_MS = 300L
 fun EstherCorridorScreen(
     viewModel: EstherViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -84,6 +86,7 @@ fun EstherCorridorScreen(
         onLaneTapped = viewModel::onCorridorLaneTapped,
         onTimeAdvanced = viewModel::onCorridorTimeAdvanced,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -95,6 +98,7 @@ private fun EstherCorridorContent(
     onLaneTapped: (Int, Long) -> Unit,
     onTimeAdvanced: (Long) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -119,7 +123,10 @@ private fun EstherCorridorContent(
         null -> ""
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -270,6 +277,7 @@ private fun EstherCorridorPreview() {
             onLaneTapped = { _, _ -> },
             onTimeAdvanced = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

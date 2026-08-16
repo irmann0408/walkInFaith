@@ -58,6 +58,7 @@ import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
 import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.launch
@@ -101,6 +102,7 @@ private val DROP_ZONE_HEIGHT = 200.dp
 fun JerichoSettingUpCampScreen(
     viewModel: JerichoViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -112,6 +114,7 @@ fun JerichoSettingUpCampScreen(
         trayOrder = uiState.campTrayOrder,
         onStonePlaced = viewModel::onCampStonePlaced,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -124,6 +127,7 @@ private fun JerichoSettingUpCampContent(
     trayOrder: List<String>,
     onStonePlaced: (String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -147,7 +151,10 @@ private fun JerichoSettingUpCampContent(
         STACK_LEVEL_RISE
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -341,6 +348,7 @@ private fun JerichoSettingUpCampPreview() {
             trayOrder = JerichoContent.campStoneIds,
             onStonePlaced = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

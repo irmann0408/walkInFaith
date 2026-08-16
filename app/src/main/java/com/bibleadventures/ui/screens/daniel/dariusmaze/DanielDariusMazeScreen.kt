@@ -45,6 +45,7 @@ import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -59,6 +60,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun DanielDariusMazeScreen(
     viewModel: DanielViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -68,6 +70,7 @@ fun DanielDariusMazeScreen(
         gridMazeState = uiState.gridMazeState,
         onDirectionPressed = viewModel::onDirectionPressed,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -78,10 +81,14 @@ private fun DanielDariusMazeContent(
     gridMazeState: GridMazeState,
     onDirectionPressed: (Direction) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             Column(
                 modifier = Modifier
@@ -241,6 +248,7 @@ private fun DanielDariusMazePreview() {
             gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(0, 0)),
             onDirectionPressed = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

@@ -14,7 +14,6 @@ import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
-import com.bibleadventures.ui.screens.mainmenu.MainMenuViewModel
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.screens.parentarea.ParentAreaViewModel
 import com.bibleadventures.ui.screens.scripturecards.ScriptureCardsViewModel
@@ -35,9 +34,6 @@ fun CreationExtras.bibleAdventuresApplication(): BibleAdventuresApplication =
  */
 object AppViewModelProvider {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
-        initializer {
-            MainMenuViewModel(bibleAdventuresApplication().container.playerProfileRepository)
-        }
         initializer {
             CharacterViewModel(bibleAdventuresApplication().container.playerProfileRepository)
         }

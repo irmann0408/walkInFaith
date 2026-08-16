@@ -17,10 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bibleadventures.R
-import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.navigation.MenuItemId
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -31,12 +28,8 @@ private data class MenuItem(val id: MenuItemId, val label: String, val enabled: 
 fun MainMenuScreen(
     onMenuItemClick: (MenuItemId) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MainMenuViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     MainMenuContent(
-        hasAdventureInProgress = uiState.hasAdventureInProgress,
         onMenuItemClick = onMenuItemClick,
         modifier = modifier,
     )
@@ -44,16 +37,10 @@ fun MainMenuScreen(
 
 @Composable
 private fun MainMenuContent(
-    hasAdventureInProgress: Boolean,
     onMenuItemClick: (MenuItemId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val menuItems = listOf(
-        MenuItem(
-            MenuItemId.CONTINUE_ADVENTURE,
-            stringResource(R.string.menu_continue_adventure),
-            enabled = hasAdventureInProgress,
-        ),
         MenuItem(MenuItemId.ADVENTURES, stringResource(R.string.menu_adventures)),
         MenuItem(MenuItemId.BADGES, stringResource(R.string.menu_badges)),
         MenuItem(MenuItemId.SCRIPTURE_CARDS, stringResource(R.string.menu_scripture_cards)),
@@ -96,6 +83,6 @@ private fun MainMenuContent(
 @Composable
 private fun MainMenuPreview() {
     BibleAdventuresTheme {
-        MainMenuContent(hasAdventureInProgress = false, onMenuItemClick = {})
+        MainMenuContent(onMenuItemClick = {})
     }
 }

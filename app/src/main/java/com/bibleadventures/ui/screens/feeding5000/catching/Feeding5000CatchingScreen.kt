@@ -52,6 +52,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.isActive
@@ -80,6 +81,7 @@ private const val NOTE_GRACE_MS = 300L
 fun Feeding5000CatchingScreen(
     viewModel: Feeding5000ViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -91,6 +93,7 @@ fun Feeding5000CatchingScreen(
         onBasketMoved = viewModel::onCatchingBasketMoved,
         onTimeAdvanced = viewModel::onCatchingTimeAdvanced,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -103,6 +106,7 @@ private fun Feeding5000CatchingContent(
     onBasketMoved: (Int) -> Unit,
     onTimeAdvanced: (Long) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -127,7 +131,10 @@ private fun Feeding5000CatchingContent(
         null -> ""
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -329,6 +336,7 @@ private fun Feeding5000CatchingPreview() {
             onBasketMoved = {},
             onTimeAdvanced = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

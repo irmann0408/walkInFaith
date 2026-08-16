@@ -40,6 +40,7 @@ import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
 import com.bibleadventures.game.stories.DecoyItem
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -47,6 +48,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun EstherRoyalAttireScreen(
     viewModel: EstherViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -56,6 +58,7 @@ fun EstherRoyalAttireScreen(
         hiddenObjectState = uiState.hiddenObjectState,
         onItemTapped = viewModel::onAttireItemTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -66,10 +69,14 @@ private fun EstherRoyalAttireContent(
     hiddenObjectState: HiddenObjectGameState,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -245,6 +252,7 @@ private fun EstherRoyalAttirePreview() {
             hiddenObjectState = HiddenObjectGameState(items = emptyList()),
             onItemTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

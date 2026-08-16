@@ -37,6 +37,7 @@ import com.bibleadventures.game.puzzles.matching.MatchItem
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.puzzles.matching.MatchingGameState
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -44,6 +45,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun NoahsArkMatchingScreen(
     viewModel: NoahsArkViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -53,6 +55,7 @@ fun NoahsArkMatchingScreen(
         matchingState = uiState.matchingState,
         onItemTapped = viewModel::onMatchItemTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -63,10 +66,14 @@ private fun NoahsArkMatchingContent(
     matchingState: MatchingGameState,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -168,6 +175,7 @@ private fun NoahsArkMatchingPreview() {
             matchingState = MatchingGameState(items = emptyList()),
             onItemTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

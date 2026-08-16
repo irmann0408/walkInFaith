@@ -36,6 +36,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -43,6 +44,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun NoahsArkMissingItemsScreen(
     viewModel: NoahsArkViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -52,6 +54,7 @@ fun NoahsArkMissingItemsScreen(
         hiddenObjectState = uiState.hiddenObjectState,
         onItemTapped = viewModel::onHiddenItemTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -62,10 +65,14 @@ private fun NoahsArkMissingItemsContent(
     hiddenObjectState: HiddenObjectGameState,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -175,6 +182,7 @@ private fun NoahsArkMissingItemsPreview() {
             hiddenObjectState = HiddenObjectGameState(items = emptyList()),
             onItemTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

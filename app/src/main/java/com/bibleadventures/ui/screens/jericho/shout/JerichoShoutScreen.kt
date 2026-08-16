@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -46,6 +47,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun JerichoShoutScreen(
     viewModel: JerichoViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -57,6 +59,7 @@ fun JerichoShoutScreen(
         isComplete = uiState.isShoutComplete,
         onShoutTapped = viewModel::onShoutTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -69,10 +72,14 @@ private fun JerichoShoutContent(
     isComplete: Boolean,
     onShoutTapped: () -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -168,6 +175,7 @@ private fun JerichoShoutPreview() {
             isComplete = false,
             onShoutTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

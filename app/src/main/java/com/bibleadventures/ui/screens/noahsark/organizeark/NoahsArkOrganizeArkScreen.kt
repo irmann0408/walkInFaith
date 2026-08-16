@@ -51,6 +51,7 @@ import com.bibleadventures.game.puzzles.dragsort.SortCategory
 import com.bibleadventures.game.puzzles.dragsort.SortOutcome
 import com.bibleadventures.game.puzzles.dragsort.SortableItem
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlin.math.roundToInt
@@ -59,6 +60,7 @@ import kotlin.math.roundToInt
 fun NoahsArkOrganizeArkScreen(
     viewModel: NoahsArkViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -68,6 +70,7 @@ fun NoahsArkOrganizeArkScreen(
         dragSortState = uiState.dragSortState,
         onItemDropped = viewModel::onSortItemDropped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -78,13 +81,17 @@ private fun NoahsArkOrganizeArkContent(
     dragSortState: DragSortGameState,
     onItemDropped: (itemId: String, categoryKey: String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val categoryBounds = remember { mutableStateMapOf<String, Rect>() }
     val unplacedItems = dragSortState.items.filter { it.id !in dragSortState.placedItems.keys }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -244,6 +251,7 @@ private fun NoahsArkOrganizeArkPreview() {
             dragSortState = DragSortGameState(items = emptyList(), categories = emptyList()),
             onItemDropped = { _, _ -> },
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

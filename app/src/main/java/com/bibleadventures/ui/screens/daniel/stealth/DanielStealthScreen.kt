@@ -55,6 +55,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.components.CharacterPreview
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -78,6 +79,7 @@ private const val NOTE_GRACE_MS = 300L
 fun DanielStealthScreen(
     viewModel: DanielViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -91,6 +93,7 @@ fun DanielStealthScreen(
         onLaneMoved = viewModel::onHurryToPrayLaneMoved,
         onTimeAdvanced = viewModel::onHurryToPrayTimeAdvanced,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -104,6 +107,7 @@ private fun DanielStealthContent(
     onLaneMoved: (Int) -> Unit,
     onTimeAdvanced: (Long) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -128,7 +132,10 @@ private fun DanielStealthContent(
         null -> ""
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -336,6 +343,7 @@ private fun DanielStealthPreview() {
             onLaneMoved = {},
             onTimeAdvanced = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

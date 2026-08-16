@@ -46,6 +46,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotOutcome
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.davidgoliath.ShieldZone
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -113,6 +114,7 @@ private fun markFractionAt(elapsedMs: Long): Float {
 fun DavidGoliathSlingPracticeScreen(
     viewModel: DavidGoliathViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -123,6 +125,7 @@ fun DavidGoliathSlingPracticeScreen(
         shieldZone = uiState.shieldZone,
         onStoneReleased = viewModel::onStoneReleased,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -134,10 +137,14 @@ private fun DavidGoliathSlingPracticeContent(
     shieldZone: ShieldZone,
     onStoneReleased: (aimedPosition: Float, markPosition: Float, shieldMinFraction: Float, shieldMaxFraction: Float) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -336,6 +343,7 @@ private fun DavidGoliathSlingPracticePreview() {
             shieldZone = ShieldZone.LEFT,
             onStoneReleased = { _, _, _, _ -> },
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

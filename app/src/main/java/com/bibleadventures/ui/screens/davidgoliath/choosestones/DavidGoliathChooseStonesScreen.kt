@@ -38,6 +38,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -46,6 +47,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun DavidGoliathChooseStonesScreen(
     viewModel: DavidGoliathViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -58,6 +60,7 @@ fun DavidGoliathChooseStonesScreen(
         onStoneTapped = viewModel::onStoneFound,
         onDecoyTapped = viewModel::onRiverbedDecoyTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -71,10 +74,14 @@ private fun DavidGoliathChooseStonesContent(
     onStoneTapped: (String) -> Unit,
     onDecoyTapped: () -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -222,6 +229,7 @@ private fun DavidGoliathChooseStonesPreview() {
             onStoneTapped = {},
             onDecoyTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

@@ -45,6 +45,7 @@ import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
 import com.bibleadventures.game.stories.JesusCalmsStormContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -61,6 +62,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun JesusCalmsStormReachingJesusScreen(
     viewModel: JesusCalmsStormViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -70,6 +72,7 @@ fun JesusCalmsStormReachingJesusScreen(
         gridMazeState = uiState.gridMazeState,
         onDirectionPressed = viewModel::onReachingJesusDirectionPressed,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -80,10 +83,14 @@ private fun JesusCalmsStormReachingJesusContent(
     gridMazeState: GridMazeState,
     onDirectionPressed: (Direction) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             Column(
                 modifier = Modifier
@@ -243,6 +250,7 @@ private fun JesusCalmsStormReachingJesusPreview() {
             gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(0, 0)),
             onDirectionPressed = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

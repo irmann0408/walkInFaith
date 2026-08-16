@@ -37,6 +37,7 @@ import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
 import com.bibleadventures.game.stories.DecoyItem
 import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -52,6 +53,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun Feeding5000SearchingForFoodScreen(
     viewModel: Feeding5000ViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -61,6 +63,7 @@ fun Feeding5000SearchingForFoodScreen(
         hiddenObjectState = uiState.searchingState,
         onItemTapped = viewModel::onBoyFound,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -71,10 +74,14 @@ private fun Feeding5000SearchingForFoodContent(
     hiddenObjectState: HiddenObjectGameState,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -193,6 +200,7 @@ private fun Feeding5000SearchingForFoodPreview() {
             ),
             onItemTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

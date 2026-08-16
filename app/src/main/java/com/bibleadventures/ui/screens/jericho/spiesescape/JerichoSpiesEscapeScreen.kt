@@ -30,6 +30,7 @@ import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -44,6 +45,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun JerichoSpiesEscapeScreen(
     viewModel: JerichoViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -53,6 +55,7 @@ fun JerichoSpiesEscapeScreen(
         puzzleState = uiState.spiesEscapeState,
         onTileTapped = viewModel::onSpiesEscapeTileTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -63,10 +66,14 @@ private fun JerichoSpiesEscapeContent(
     puzzleState: SlidingPuzzleGameState,
     onTileTapped: (Int) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -148,6 +155,7 @@ private fun JerichoSpiesEscapePreview() {
             puzzleState = SlidingPuzzleGame.newShuffled(size = 3),
             onTileTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

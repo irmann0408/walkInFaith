@@ -37,6 +37,7 @@ import com.bibleadventures.game.puzzles.matching.MatchItem
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.puzzles.matching.MatchingGameState
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -51,6 +52,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun DavidGoliathSheepCountingScreen(
     viewModel: DavidGoliathViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -60,6 +62,7 @@ fun DavidGoliathSheepCountingScreen(
         sheepCountingState = uiState.sheepCountingState,
         onItemTapped = viewModel::onSheepCountingItemTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -70,10 +73,14 @@ private fun DavidGoliathSheepCountingContent(
     sheepCountingState: MatchingGameState,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -173,6 +180,7 @@ private fun DavidGoliathSheepCountingPreview() {
             sheepCountingState = MatchingGameState(items = emptyList()),
             onItemTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

@@ -59,6 +59,7 @@ import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
 import com.bibleadventures.game.stories.JesusCalmsStormContent
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.launch
@@ -94,6 +95,7 @@ private val DROP_ZONE_HEIGHT = 200.dp
 fun JesusCalmsStormLoadingTheBoatScreen(
     viewModel: JesusCalmsStormViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -105,6 +107,7 @@ fun JesusCalmsStormLoadingTheBoatScreen(
         trayOrder = uiState.boatTrayOrder,
         onItemPlaced = viewModel::onBoatItemPlaced,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -117,6 +120,7 @@ private fun JesusCalmsStormLoadingTheBoatContent(
     trayOrder: List<String>,
     onItemPlaced: (String) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -137,7 +141,10 @@ private fun JesusCalmsStormLoadingTheBoatContent(
         STACK_LEVEL_RISE
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -367,6 +374,7 @@ private fun JesusCalmsStormLoadingTheBoatPreview() {
             trayOrder = JesusCalmsStormContent.boatItemIds,
             onItemPlaced = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

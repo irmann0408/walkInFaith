@@ -42,6 +42,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.isActive
@@ -67,6 +68,7 @@ private const val NOTE_GRACE_MS = 400L
 fun JerichoSixDayMarchScreen(
     viewModel: JerichoViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -77,6 +79,7 @@ fun JerichoSixDayMarchScreen(
         onLaneTapped = viewModel::onSixDayMarchTapped,
         onTimeAdvanced = viewModel::onSixDayMarchTimeAdvanced,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -88,6 +91,7 @@ private fun JerichoSixDayMarchContent(
     onLaneTapped: (Int, Long) -> Unit,
     onTimeAdvanced: (Long) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -113,7 +117,10 @@ private fun JerichoSixDayMarchContent(
         null -> ""
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -264,6 +271,7 @@ private fun JerichoSixDayMarchPreview() {
             onLaneTapped = { _, _ -> },
             onTimeAdvanced = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

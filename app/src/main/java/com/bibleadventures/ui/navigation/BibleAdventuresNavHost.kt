@@ -108,6 +108,14 @@ import com.bibleadventures.ui.screens.worldmap.WorldMapScreen
 fun BibleAdventuresNavHost(navController: NavHostController = rememberNavController()) {
     val comingSoonTitles = emptyMap<MenuItemId, String>()
 
+    // Shared by every already-completed puzzle/scene screen's Main-Menu
+    // shortcut button — jumps straight to the Main Menu regardless of how
+    // many scenes deep the player currently is, unlike a normal one-step
+    // Back.
+    val onBackToMainMenu: () -> Unit = {
+        navController.popBackStack(Destination.MainMenu.route, false)
+    }
+
     NavHost(navController = navController, startDestination = Destination.MainMenu.route) {
         composable(Destination.MainMenu.route) {
             MainMenuScreen(
@@ -115,9 +123,6 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                     when (itemId) {
                         MenuItemId.CHARACTER -> navController.navigate(Destination.Character.route)
                         MenuItemId.ADVENTURES -> navController.navigate(Destination.WorldMap.route)
-                        // Continuing simply takes the player back to the World Map, where
-                        // the in-progress chapter's node already shows its state.
-                        MenuItemId.CONTINUE_ADVENTURE -> navController.navigate(Destination.WorldMap.route)
                         MenuItemId.BADGES -> navController.navigate(Destination.Badges.route)
                         MenuItemId.SCRIPTURE_CARDS -> navController.navigate(Destination.ScriptureCards.route)
                         MenuItemId.SETTINGS -> navController.navigate(Destination.Settings.route)
@@ -175,14 +180,14 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
         composable(Destination.ScriptureCards.route) {
             ScriptureCardsScreen(onBack = { navController.popBackStack() })
         }
-        noahsArkGraph(navController)
-        davidGoliathGraph(navController)
-        goodSamaritanGraph(navController)
-        danielGraph(navController)
-        estherGraph(navController)
-        jerichoGraph(navController)
-        feeding5000Graph(navController)
-        jesusCalmsStormGraph(navController)
+        noahsArkGraph(navController, onBackToMainMenu)
+        davidGoliathGraph(navController, onBackToMainMenu)
+        goodSamaritanGraph(navController, onBackToMainMenu)
+        danielGraph(navController, onBackToMainMenu)
+        estherGraph(navController, onBackToMainMenu)
+        jerichoGraph(navController, onBackToMainMenu)
+        feeding5000Graph(navController, onBackToMainMenu)
+        jesusCalmsStormGraph(navController, onBackToMainMenu)
         composable(Destination.ComingSoon.ROUTE_WITH_ARGS) { backStackEntry ->
             val featureTitle =
                 backStackEntry.arguments?.getString(Destination.ComingSoon.ARG_FEATURE_TITLE).orEmpty()
@@ -194,7 +199,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
     }
 }
 
-private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
+private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
         startDestination = Destination.NoahsArk.Intro.route,
         route = Destination.NoahsArk.GRAPH_ROUTE,
@@ -222,6 +227,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
             NoahsArkFindAnimalsScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "find_animals" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("find_animals")
                     navController.navigate(Destination.NoahsArk.AnimalMatching.route)
@@ -234,6 +240,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
             NoahsArkMatchingScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "animal_matching" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("animal_matching")
                     navController.navigate(Destination.NoahsArk.OrganizeArkContext.route)
@@ -253,6 +260,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
             NoahsArkOrganizeArkScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "organize_ark" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("organize_ark")
                     navController.navigate(Destination.NoahsArk.FindMissingItems.route)
@@ -265,6 +273,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController) {
             NoahsArkMissingItemsScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "find_missing_items" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("find_missing_items")
                     navController.navigate(Destination.NoahsArk.Lesson.route)
@@ -302,7 +311,7 @@ private fun NavHostController.noahsArkViewModel(entry: NavBackStackEntry): Noahs
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 
-private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) {
+private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
         startDestination = Destination.DavidGoliath.Intro.route,
         route = Destination.DavidGoliath.GRAPH_ROUTE,
@@ -330,6 +339,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
             DavidGoliathSheepCountingScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "sheep_counting" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("sheep_counting")
                     navController.navigate(Destination.DavidGoliath.ChooseStonesContext.route)
@@ -349,6 +359,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
             DavidGoliathChooseStonesScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "choose_stones" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("choose_stones")
                     navController.navigate(Destination.DavidGoliath.SlingPracticeContext.route)
@@ -385,6 +396,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
             DavidGoliathDodgeScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "dodge" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("dodge")
                     navController.navigate(Destination.DavidGoliath.SlingPractice.route)
@@ -397,6 +409,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController) 
             DavidGoliathSlingPracticeScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "sling_practice" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("sling_practice")
                     navController.navigate(Destination.DavidGoliath.Lesson.route)
@@ -434,7 +447,7 @@ private fun NavHostController.davidGoliathViewModel(entry: NavBackStackEntry): D
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 
-private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController) {
+private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
         startDestination = Destination.GoodSamaritan.Intro.route,
         route = Destination.GoodSamaritan.GRAPH_ROUTE,
@@ -462,6 +475,7 @@ private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController)
             GoodSamaritanExploreScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "explore" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("explore")
                     navController.navigate(Destination.GoodSamaritan.Lesson.route)
@@ -499,7 +513,7 @@ private fun NavHostController.goodSamaritanViewModel(entry: NavBackStackEntry): 
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 
-private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
+private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
         startDestination = Destination.Daniel.Intro.route,
         route = Destination.Daniel.GRAPH_ROUTE,
@@ -527,6 +541,7 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
             DanielStealthScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "stealth" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("stealth")
                     navController.navigate(Destination.Daniel.Choice.route)
@@ -556,6 +571,7 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
             DanielLionsDenScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "lions_den" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("lions_den")
                     navController.navigate(Destination.Daniel.DariusContext.route)
@@ -575,6 +591,7 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController) {
             DanielDariusMazeScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "darius_maze" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("darius_maze")
                     navController.navigate(Destination.Daniel.Lesson.route)
@@ -612,7 +629,7 @@ private fun NavHostController.danielViewModel(entry: NavBackStackEntry): DanielV
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 
-private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
+private fun NavGraphBuilder.estherGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
         startDestination = Destination.Esther.Intro.route,
         route = Destination.Esther.GRAPH_ROUTE,
@@ -640,6 +657,7 @@ private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
             EstherRoyalAttireScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "royal_attire" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("royal_attire")
                     navController.navigate(Destination.Esther.CrownedContext.route)
@@ -676,6 +694,7 @@ private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
             EstherCourtyardStealthScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "courtyard_stealth" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("courtyard_stealth")
                     navController.navigate(Destination.Esther.WarnedContext.route)
@@ -702,6 +721,7 @@ private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
             EstherMessengerSudokuScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "messenger_sudoku" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("messenger_sudoku")
                     navController.navigate(Destination.Esther.MourningContext.route)
@@ -738,6 +758,7 @@ private fun NavGraphBuilder.estherGraph(navController: NavHostController) {
             EstherCorridorScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "corridor" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("corridor")
                     navController.navigate(Destination.Esther.Lesson.route)
@@ -775,7 +796,7 @@ private fun NavHostController.estherViewModel(entry: NavBackStackEntry): EstherV
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 
-private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
+private fun NavGraphBuilder.jerichoGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
         startDestination = Destination.Jericho.Intro.route,
         route = Destination.Jericho.GRAPH_ROUTE,
@@ -814,6 +835,7 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
             JerichoSpiesEscapeScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "spies_escape" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("spies_escape")
                     navController.navigate(Destination.Jericho.SpiesEscapedContext.route)
@@ -850,6 +872,7 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
             JerichoSettingUpCampScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "setting_up_camp" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("setting_up_camp")
                     navController.navigate(Destination.Jericho.TentsContext.route)
@@ -876,6 +899,7 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
             JerichoSixDayMarchScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "six_day_march" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("six_day_march")
                     navController.navigate(Destination.Jericho.SeventhDayContext.route)
@@ -895,6 +919,7 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
             JerichoFastMarchScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "fast_march" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("fast_march")
                     navController.navigate(Destination.Jericho.BlowShofar.route)
@@ -907,6 +932,7 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
             JerichoBlowShofarScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "blow_shofar" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("blow_shofar")
                     navController.navigate(Destination.Jericho.Shout.route)
@@ -919,6 +945,7 @@ private fun NavGraphBuilder.jerichoGraph(navController: NavHostController) {
             JerichoShoutScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "shout" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("shout")
                     navController.navigate(Destination.Jericho.RahabSavedContext.route)
@@ -963,7 +990,7 @@ private fun NavHostController.jerichoViewModel(entry: NavBackStackEntry): Jerich
     return viewModel(viewModelStoreOwner = parentEntry, factory = AppViewModelProvider.Factory)
 }
 
-private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
+private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
         startDestination = Destination.Feeding5000.Intro.route,
         route = Destination.Feeding5000.GRAPH_ROUTE,
@@ -991,6 +1018,7 @@ private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
             Feeding5000GatheringCrowdScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "gathering_crowd" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("gathering_crowd")
                     navController.navigate(Destination.Feeding5000.SearchingContext.route)
@@ -1010,6 +1038,7 @@ private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
             Feeding5000SearchingForFoodScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "searching_for_food" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("searching_for_food")
                     navController.navigate(Destination.Feeding5000.BoysGiftContext.route)
@@ -1029,6 +1058,7 @@ private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
             Feeding5000BoysGiftScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "boys_gift" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("boys_gift")
                     navController.navigate(Destination.Feeding5000.Choice.route)
@@ -1058,6 +1088,7 @@ private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
             Feeding5000MiracleMultiplicationScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "miracle_multiplication" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("miracle_multiplication")
                     navController.navigate(Destination.Feeding5000.FeastContext.route)
@@ -1077,6 +1108,7 @@ private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
             Feeding5000ServingScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "serving" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("serving")
                     navController.navigate(Destination.Feeding5000.Catching.route)
@@ -1089,6 +1121,7 @@ private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
             Feeding5000CatchingScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "catching" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("catching")
                     navController.navigate(Destination.Feeding5000.Lesson.route)
@@ -1120,7 +1153,7 @@ private fun NavGraphBuilder.feeding5000Graph(navController: NavHostController) {
     }
 }
 
-private fun NavGraphBuilder.jesusCalmsStormGraph(navController: NavHostController) {
+private fun NavGraphBuilder.jesusCalmsStormGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
         startDestination = Destination.JesusCalmsStorm.Intro.route,
         route = Destination.JesusCalmsStorm.GRAPH_ROUTE,
@@ -1148,6 +1181,7 @@ private fun NavGraphBuilder.jesusCalmsStormGraph(navController: NavHostControlle
             JesusCalmsStormLoadingTheBoatScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "loading_the_boat" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("loading_the_boat")
                     navController.navigate(Destination.JesusCalmsStorm.StormContext.route)
@@ -1167,6 +1201,7 @@ private fun NavGraphBuilder.jesusCalmsStormGraph(navController: NavHostControlle
             JesusCalmsStormBailingTheBoatScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "bailing_the_boat" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("bailing_the_boat")
                     navController.navigate(Destination.JesusCalmsStorm.Choice.route)
@@ -1196,6 +1231,7 @@ private fun NavGraphBuilder.jesusCalmsStormGraph(navController: NavHostControlle
             JesusCalmsStormReachingJesusScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "reaching_jesus" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("reaching_jesus")
                     navController.navigate(Destination.JesusCalmsStorm.CalmContext.route)
@@ -1215,6 +1251,7 @@ private fun NavGraphBuilder.jesusCalmsStormGraph(navController: NavHostControlle
             JesusCalmsStormPeaceBeStillScreen(
                 viewModel = viewModel,
                 previouslyCompleted = "peace_be_still" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("peace_be_still")
                     navController.navigate(Destination.JesusCalmsStorm.Lesson.route)

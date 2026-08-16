@@ -40,6 +40,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.JesusCalmsStormContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.isActive
@@ -72,6 +73,7 @@ private val CALM_COLOR = Color(0xFFF5C94A)
 fun JesusCalmsStormPeaceBeStillScreen(
     viewModel: JesusCalmsStormViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -82,6 +84,7 @@ fun JesusCalmsStormPeaceBeStillScreen(
         onWordTapped = viewModel::onPeaceBeStillWordTapped,
         onTimeAdvanced = viewModel::onPeaceBeStillTimeAdvanced,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -93,6 +96,7 @@ private fun JesusCalmsStormPeaceBeStillContent(
     onWordTapped: (Int, Long) -> Unit,
     onTimeAdvanced: (Long) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -123,7 +127,10 @@ private fun JesusCalmsStormPeaceBeStillContent(
         R.string.jesus_calms_storm_peace_be_still_word_still,
     )
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -237,6 +244,7 @@ private fun JesusCalmsStormPeaceBeStillPreview() {
             onWordTapped = { _, _ -> },
             onTimeAdvanced = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

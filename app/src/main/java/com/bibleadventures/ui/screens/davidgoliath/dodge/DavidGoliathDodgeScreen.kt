@@ -55,6 +55,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.components.CharacterPreview
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -81,6 +82,7 @@ private const val NOTE_GRACE_MS = 300L
 fun DavidGoliathDodgeScreen(
     viewModel: DavidGoliathViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -94,6 +96,7 @@ fun DavidGoliathDodgeScreen(
         onLaneMoved = viewModel::onCrossingValleyLaneMoved,
         onTimeAdvanced = viewModel::onCrossingValleyTimeAdvanced,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -107,6 +110,7 @@ private fun DavidGoliathDodgeContent(
     onLaneMoved: (Int) -> Unit,
     onTimeAdvanced: (Long) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -131,7 +135,10 @@ private fun DavidGoliathDodgeContent(
         null -> ""
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -339,6 +346,7 @@ private fun DavidGoliathDodgePreview() {
             onLaneMoved = {},
             onTimeAdvanced = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

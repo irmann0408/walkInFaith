@@ -1,5 +1,6 @@
 package com.bibleadventures.noahsark
 
+import android.content.Context
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -10,9 +11,15 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.geometry.Offset
+import androidx.datastore.preferences.core.edit
+import androidx.test.core.app.ApplicationProvider
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
+import com.bibleadventures.data.local.playerProfileDataStore
 import com.bibleadventures.game.stories.NoahsArkContent
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -27,10 +34,57 @@ class NoahsArkFlowTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
+    @Before
+    fun resetSaveFile() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        runBlocking { context.playerProfileDataStore.edit { it.clear() } }
+    }
+
+    @After
+    fun clearSaveFile() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        runBlocking { context.playerProfileDataStore.edit { it.clear() } }
+    }
+
     @Test
     fun completingNoahsArk_awardsStarsAndUnlocksDavidAndGoliathOnTheWorldMap() {
         val activity = composeTestRule.activity
         val continueLabel = activity.getString(R.string.action_continue)
+
+        completeNoahsArk(continueLabel)
+
+        // Back on the World Map: Noah's Ark completed, David & Goliath unlocked.
+        composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_david_goliath_title)).assertExists()
+    }
+
+    /**
+     * Re-enters an already-completed chapter and confirms the Main-Menu
+     * shortcut button (added alongside removing "Continue Adventure" from
+     * the Main Menu) jumps straight back to the Main Menu from a
+     * previously-completed scene, without needing to re-solve it or step
+     * back one screen at a time.
+     */
+    @Test
+    fun revisitingACompletedScene_backToMainMenuButtonReturnsDirectlyToMainMenu() {
+        val activity = composeTestRule.activity
+        val continueLabel = activity.getString(R.string.action_continue)
+
+        completeNoahsArk(continueLabel)
+
+        // Re-enter the chapter: Intro -> Find Animals context -> Find Animals, which is
+        // now a previously-completed scene.
+        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(continueLabel).performClick()
+
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.action_back_to_main_menu)).performClick()
+
+        composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).assertExists()
+    }
+
+    private fun completeNoahsArk(continueLabel: String) {
+        val activity = composeTestRule.activity
 
         // World Map -> Noah's Ark.
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
@@ -84,10 +138,6 @@ class NoahsArkFlowTest {
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.badge_ark_builder_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
-
-        // Back on the World Map: Noah's Ark completed, David & Goliath unlocked.
-        composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_david_goliath_title)).assertExists()
     }
 
     private fun dragOnto(itemNode: SemanticsNodeInteraction, targetLabel: String) {

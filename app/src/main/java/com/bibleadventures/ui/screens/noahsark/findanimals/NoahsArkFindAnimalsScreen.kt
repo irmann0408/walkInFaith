@@ -42,6 +42,7 @@ import com.bibleadventures.game.stories.DecoyItemDef
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -50,6 +51,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun NoahsArkFindAnimalsScreen(
     viewModel: NoahsArkViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -62,6 +64,7 @@ fun NoahsArkFindAnimalsScreen(
         onAnimalTapped = viewModel::onAnimalFound,
         onDecoyTapped = viewModel::onFindAnimalsDecoyTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -75,12 +78,16 @@ private fun NoahsArkFindAnimalsContent(
     onAnimalTapped: (String) -> Unit,
     onDecoyTapped: () -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val allFound = foundAnimalIds.size == NoahsArkContent.animals.size
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -247,6 +254,7 @@ private fun NoahsArkFindAnimalsPreview() {
             onAnimalTapped = {},
             onDecoyTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

@@ -45,6 +45,7 @@ import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
 import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -64,6 +65,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun Feeding5000ServingScreen(
     viewModel: Feeding5000ViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -73,6 +75,7 @@ fun Feeding5000ServingScreen(
         gridMazeState = uiState.servingState,
         onDirectionPressed = viewModel::onServingDirectionPressed,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -83,10 +86,14 @@ private fun Feeding5000ServingContent(
     gridMazeState: GridMazeState,
     onDirectionPressed: (Direction) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -258,6 +265,7 @@ private fun Feeding5000ServingPreview() {
             gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(0, 0)),
             onDirectionPressed = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

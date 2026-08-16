@@ -45,6 +45,7 @@ import com.bibleadventures.game.stories.MathOperator
 import com.bibleadventures.game.stories.MathProblem
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.BackToMainMenuTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -62,6 +63,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 fun Feeding5000MiracleMultiplicationScreen(
     viewModel: Feeding5000ViewModel,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -72,6 +74,7 @@ fun Feeding5000MiracleMultiplicationScreen(
         problems = uiState.miracleProblems,
         onAnswerTapped = viewModel::onMiracleAnswerTapped,
         onContinue = onContinue,
+        onBackToMainMenu = onBackToMainMenu,
         previouslyCompleted = previouslyCompleted,
         modifier = modifier,
     )
@@ -83,6 +86,7 @@ private fun Feeding5000MiracleMultiplicationContent(
     problems: List<MathProblem>,
     onAnswerTapped: (Int) -> Unit,
     onContinue: () -> Unit,
+    onBackToMainMenu: () -> Unit,
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -97,7 +101,10 @@ private fun Feeding5000MiracleMultiplicationContent(
         }
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -211,6 +218,7 @@ private fun Feeding5000MiracleMultiplicationPreview() {
             problems = previewProblems,
             onAnswerTapped = {},
             onContinue = {},
+            onBackToMainMenu = {},
         )
     }
 }

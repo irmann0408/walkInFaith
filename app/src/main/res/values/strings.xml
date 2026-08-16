@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Bible Adventures</string>
 
-    <string name="menu_continue_adventure">Continue Adventure</string>
     <string name="menu_adventures">Adventures</string>
     <string name="menu_badges">My Badges</string>
     <string name="menu_scripture_cards">Scripture Cards</string>
@@ -12,6 +11,7 @@
     <string name="coming_soon_title">Coming Soon!</string>
     <string name="coming_soon_body">This part of the adventure is still being built. Check back soon!</string>
     <string name="action_back">Back</string>
+    <string name="action_back_to_main_menu">Back to Main Menu</string>
 
     <string name="settings_screen_title">Settings</string>
     <string name="settings_music_label">Music</string>
