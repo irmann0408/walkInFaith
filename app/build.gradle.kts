@@ -2,8 +2,9 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    // No org.jetbrains.kotlin.android — AGP 9.0+ built-in Kotlin support.
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 // Release signing credentials live in keystore.properties (gitignored, never
@@ -19,12 +20,16 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.bibleadventures"
-    compileSdk = 34
+    // compileSdk ahead of targetSdk: the Compose BOM's current libraries
+    // require compiling against API 37, but Play's actual policy
+    // requirement (as of this session) is targetSdk 36+ — compileSdk can
+    // be newer without opting into API-37 runtime behavior changes.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.bibleadventures"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 2
         versionName = "1.0"
 
@@ -60,16 +65,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    // With AGP 9's built-in Kotlin support, Kotlin's jvmTarget is derived
+    // from compileOptions.targetCompatibility above — no separate Kotlin
+    // compilerOptions block needed.
 
     buildFeatures {
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     packaging {
@@ -80,7 +81,7 @@ android {
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    implementation(platform("androidx.compose:compose-bom:2026.08.00"))
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
@@ -103,7 +104,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.08.00"))
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

@@ -33,9 +33,15 @@ it — don't update it automatically.
       (answers guidance already drafted in `docs/play-store-listing.md` — "no data
       collected" across the board, matches the app's actual empty-permissions manifest)
 - [ ] Accept Google Play Families Policy declarations (this is a children's app)
-- [ ] **Double-check `compileSdk`/`targetSdk` (currently 34) against whatever Play
-      Console's current minimum target-API requirement actually is at submission
-      time** — this shifts over time and wasn't re-verified against live policy
+- [x] **Toolchain upgraded to meet Play's Aug 31, 2026 target-API deadline** —
+      checked live policy: new app submissions must target API 36+ starting that
+      date. Upgraded AGP 8.5.2→9.3.0, Gradle 8.7→9.5.0, Kotlin 1.9.24→2.4.10,
+      Compose Compiler migrated from `composeOptions` to the
+      `org.jetbrains.kotlin.plugin.compose` plugin (required for Kotlin 2.x),
+      Compose BOM→2026.08.00, `compileSdk`→37 (required by current Compose
+      library deps), `targetSdk`→36 (`minSdk` stays 24). Full build, unit tests,
+      and instrumented suite (22/22) all green; signed release AAB/APK rebuilt
+      with the same keystore identity confirmed unchanged.
 - [ ] Submit for review; respond to any Google review feedback
 
 ## v2.0 Plan
