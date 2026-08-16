@@ -80,10 +80,12 @@ object DavidGoliathContent {
      * Reuses `rhythmlane`'s lane-steering shape (established by Feeding the
      * 5,000's Gathering the Leftovers) via the inverse `RhythmLaneGame.onLaneAvoided`
      * — David steers himself OUT of a rolling rock's lane instead of into a
-     * falling item's lane. 3 required avoids, one rock per lane (lanes
-     * 1,0,2 in that order, so the very first rock lands in the character's
-     * default starting lane, forcing a real first move rather than an
-     * automatic free avoid); even 1000ms gaps give plenty of reaction time.
+     * falling item's lane. 7 required avoids (the 3-note chart loops
+     * forever, so this just takes a few more loop cycles, not more
+     * content), one rock per lane (lanes 1,0,2 in that order, so the very
+     * first rock lands in the character's default starting lane, forcing
+     * a real first move rather than an automatic free avoid); even 1000ms
+     * gaps give plenty of reaction time.
      */
     val crossingValleyChart = RhythmLaneChart(
         notes = listOf(
@@ -93,5 +95,5 @@ object DavidGoliathContent {
         ),
         loopDurationMs = 3600,
     )
-    const val CROSSING_VALLEY_REQUIRED_AVOIDS = 3
+    const val CROSSING_VALLEY_REQUIRED_AVOIDS = 7
 }

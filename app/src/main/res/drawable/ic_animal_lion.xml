@@ -3,7 +3,15 @@
     android:height="64dp"
     android:viewportWidth="64"
     android:viewportHeight="64">
-    <path android:fillColor="#FFE0A94A" android:pathData="M32,10 L44,20 L48,34 L40,32 L38,44 L26,44 L24,32 L16,34 L20,20 Z" />
+    <!-- Cloudy mane: 8 overlapping bumps ringing the face instead of sharp spikes. -->
+    <path android:fillColor="#FFE0A94A" android:pathData="M44,20 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path android:fillColor="#FFE0A94A" android:pathData="M41,12 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path android:fillColor="#FFE0A94A" android:pathData="M32,8 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path android:fillColor="#FFE0A94A" android:pathData="M23,12 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path android:fillColor="#FFE0A94A" android:pathData="M20,20 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path android:fillColor="#FFE0A94A" android:pathData="M23,29 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path android:fillColor="#FFE0A94A" android:pathData="M32,32 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path android:fillColor="#FFE0A94A" android:pathData="M41,29 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
     <path android:fillColor="#FFF6D9A6" android:pathData="M32,20 m-11,0 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0" />
     <path android:fillColor="#FF8C5A2B" android:pathData="M28,20 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" />
     <path android:fillColor="#FF8C5A2B" android:pathData="M36,20 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0" />

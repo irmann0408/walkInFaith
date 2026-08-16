@@ -47,7 +47,7 @@ object DanielContent {
 
     /**
      * A literal reskin of [DavidGoliathContent.crossingValleyChart] — same
-     * `rhythmlane`-via-`onLaneAvoided` shape, same 3 lanes/3 required
+     * `rhythmlane`-via-`onLaneAvoided` shape, same 3 lanes/7 required
      * avoids, only the hazard (an official blocking the hallway instead of
      * a rolling rock) and background differ. Framed as getting past, not
      * hiding — Daniel 6:10 has him praying openly.
@@ -60,7 +60,7 @@ object DanielContent {
         ),
         loopDurationMs = 3600,
     )
-    const val HURRY_TO_PRAY_REQUIRED_AVOIDS = 3
+    const val HURRY_TO_PRAY_REQUIRED_AVOIDS = 7
 
     // Flavor-only responses at Daniel 6:10's real decision point — he "went
     // to his house... and prayed, and gave thanks before his God, as he did

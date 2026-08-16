@@ -3,8 +3,11 @@
     android:height="64dp"
     android:viewportWidth="64"
     android:viewportHeight="64">
-    <path android:fillColor="#FFF5F0E6" android:pathData="M32,34 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0" />
-    <path android:fillColor="#FFF5F0E6" android:pathData="M20,24 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
-    <path android:fillColor="#FFF5F0E6" android:pathData="M44,24 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
-    <path android:fillColor="#FF6E5A47" android:pathData="M32,18 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+    <!-- Cloud body: one center-bottom lobe plus left/right/top-middle bumps. -->
+    <path android:fillColor="#FFF5F0E6" android:pathData="M32,38 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
+    <path android:fillColor="#FFF5F0E6" android:pathData="M18,30 m-10,0 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0" />
+    <path android:fillColor="#FFF5F0E6" android:pathData="M46,30 m-10,0 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0" />
+    <path android:fillColor="#FFF5F0E6" android:pathData="M32,22 m-9,0 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0" />
+    <!-- Single black inverted triangle mark, centered in the cloud body. -->
+    <path android:fillColor="#FF000000" android:pathData="M24,32 L40,32 L32,44 Z" />
 </vector>
