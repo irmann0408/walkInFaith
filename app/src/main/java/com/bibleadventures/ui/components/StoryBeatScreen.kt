@@ -29,7 +29,7 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
  * context for what they're about to do (and, implicitly, what doesn't belong)
  * before any decoy items show up. Deliberately lighter than the chapter's full
  * [com.bibleadventures.ui.screens.noahsark.intro.NoahsArkIntroScreen] — no
- * character render, just a title, a couple of lines, and Continue.
+ * character render, just a title, a couple of lines, and a top-bar Next Page.
  *
  * Narrates its lines once via [LocalAudioController] on first composition
  * (respects the Settings narration toggle internally) — this one shared
@@ -49,7 +49,17 @@ fun StoryBeatScreen(
 
     LaunchedEffect(lineRes) { audioController.speak(narration) }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            PuzzleTopBar(
+                showBackButton = false,
+                onBackToMainMenu = {},
+                showNextButton = true,
+                onNext = onContinue,
+            )
+        },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -78,12 +88,6 @@ fun StoryBeatScreen(
                     Text(text = line, style = MaterialTheme.typography.bodyLarge)
                 }
             }
-
-            AdventureMenuButton(
-                text = stringResource(R.string.action_continue),
-                onClick = onContinue,
-                modifier = Modifier.widthIn(max = 320.dp),
-            )
         }
     }
 }

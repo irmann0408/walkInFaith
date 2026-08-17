@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.bibleadventures.R
 import com.bibleadventures.game.rewards.EstherReward
 import com.bibleadventures.ui.LocalAudioController
-import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.components.ScriptureCardView
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -38,7 +38,17 @@ fun EstherLessonScreen(
 
     val highlightedCard = EstherReward.scriptureCards.first { it.id == "ESTHER_4_14" }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            PuzzleTopBar(
+                showBackButton = false,
+                onBackToMainMenu = {},
+                showNextButton = true,
+                onNext = onContinue,
+            )
+        },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -68,14 +78,6 @@ fun EstherLessonScreen(
                 reference = highlightedCard.reference,
                 text = stringResource(highlightedCard.textRes),
                 modifier = Modifier.widthIn(max = 480.dp),
-            )
-
-            AdventureMenuButton(
-                text = stringResource(R.string.action_continue),
-                onClick = onContinue,
-                modifier = Modifier
-                    .widthIn(max = 320.dp)
-                    .padding(top = 32.dp),
             )
         }
     }

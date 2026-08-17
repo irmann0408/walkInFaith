@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -54,7 +55,17 @@ private fun DavidGoliathChoiceContent(
 ) {
     val selected = DavidGoliathContent.choiceOptions.find { it.id == selectedChoiceId }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            PuzzleTopBar(
+                showBackButton = false,
+                onBackToMainMenu = {},
+                showNextButton = selected != null,
+                onNext = onContinue,
+            )
+        },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -89,13 +100,6 @@ private fun DavidGoliathChoiceContent(
                     text = stringResource(selected.reactionTextRes),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.widthIn(max = 480.dp),
-                )
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier
-                        .widthIn(max = 320.dp)
-                        .padding(top = 24.dp),
                 )
             }
         }

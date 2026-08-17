@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.bibleadventures.R
 import com.bibleadventures.game.rewards.Feeding5000Reward
 import com.bibleadventures.ui.LocalAudioController
-import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.components.ScriptureCardView
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -36,7 +36,17 @@ fun Feeding5000LessonScreen(
 
     LaunchedEffect(Unit) { audioController.speak(narration) }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            PuzzleTopBar(
+                showBackButton = false,
+                onBackToMainMenu = {},
+                showNextButton = true,
+                onNext = onContinue,
+            )
+        },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -66,14 +76,6 @@ fun Feeding5000LessonScreen(
                 reference = Feeding5000Reward.scriptureCard.reference,
                 text = stringResource(Feeding5000Reward.scriptureCard.textRes),
                 modifier = Modifier.widthIn(max = 480.dp),
-            )
-
-            AdventureMenuButton(
-                text = stringResource(R.string.action_continue),
-                onClick = onContinue,
-                modifier = Modifier
-                    .widthIn(max = 320.dp)
-                    .padding(top = 32.dp),
             )
         }
     }

@@ -78,11 +78,11 @@ class WorldMapNavigationTest {
         // of ComingSoonScreen.
         val adventuresLabel = composeTestRule.activity.getString(R.string.menu_adventures)
         val noahsArkTitle = composeTestRule.activity.getString(R.string.chapter_noahs_ark_title)
-        val continueLabel = composeTestRule.activity.getString(R.string.action_continue)
+        val nextPageLabel = composeTestRule.activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(adventuresLabel).performClick()
         composeTestRule.onNodeWithText(noahsArkTitle).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).assertExists()
+        composeTestRule.onNodeWithText(nextPageLabel).assertExists()
     }
 }

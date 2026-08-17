@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.ui.components.AdventureMenuButton
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -48,7 +49,17 @@ private fun JerichoChoiceContent(
 ) {
     val selected = JerichoContent.choiceOptions.find { it.id == selectedChoiceId }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            PuzzleTopBar(
+                showBackButton = false,
+                onBackToMainMenu = {},
+                showNextButton = selected != null,
+                onNext = onContinue,
+            )
+        },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -83,13 +94,6 @@ private fun JerichoChoiceContent(
                     text = stringResource(selected.reactionTextRes),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.widthIn(max = 480.dp),
-                )
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier
-                        .widthIn(max = 320.dp)
-                        .padding(top = 24.dp),
                 )
             }
         }

@@ -49,9 +49,8 @@ class NoahsArkFlowTest {
     @Test
     fun completingNoahsArk_awardsStarsAndUnlocksDavidAndGoliathOnTheWorldMap() {
         val activity = composeTestRule.activity
-        val continueLabel = activity.getString(R.string.action_continue)
 
-        completeNoahsArk(continueLabel)
+        completeNoahsArk()
 
         // Back on the World Map: Noah's Ark completed, David & Goliath unlocked.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
@@ -68,40 +67,41 @@ class NoahsArkFlowTest {
     @Test
     fun revisitingACompletedScene_backToMainMenuButtonReturnsDirectlyToMainMenu() {
         val activity = composeTestRule.activity
-        val continueLabel = activity.getString(R.string.action_continue)
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
-        completeNoahsArk(continueLabel)
+        completeNoahsArk()
 
         // Re-enter the chapter: Intro -> Find Animals context -> Find Animals, which is
         // now a previously-completed scene.
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithContentDescription(activity.getString(R.string.action_back_to_main_menu)).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).assertExists()
     }
 
-    private fun completeNoahsArk(continueLabel: String) {
+    private fun completeNoahsArk() {
         val activity = composeTestRule.activity
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         // World Map -> Noah's Ark.
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
 
         // Scene 1: Intro.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 1b: Find the Animals context card.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 2: Find the Animals. The decoy (a rock) is deliberately left untapped —
         // completion must not depend on it.
         NoahsArkContent.animals.forEach { animal ->
             composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 3: Animal Matching — match every pair by content description.
         NoahsArkContent.animals.forEach { animal ->
@@ -109,10 +109,10 @@ class NoahsArkFlowTest {
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
             composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 3b: Organize the Ark context card.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 4: Organize the Ark — drag every real item onto its category. The decoy
         // (a hammer, categoryKey == null) is deliberately left in the tray, untouched.
@@ -122,17 +122,17 @@ class NoahsArkFlowTest {
             val categoryLabel = activity.getString(categoryLabelRes)
             dragOnto(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetLabel = categoryLabel)
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 5: Find the Missing Items.
         NoahsArkContent.hiddenItems.forEach { item ->
             composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 6: Lesson.
         composeTestRule.onNodeWithText(activity.getString(R.string.noahs_ark_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 7: Reward.
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()

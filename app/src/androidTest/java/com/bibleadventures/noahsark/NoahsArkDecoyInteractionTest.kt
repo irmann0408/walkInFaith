@@ -49,12 +49,12 @@ class NoahsArkDecoyInteractionTest {
     @Test
     fun decoysShowFeedback_neverCompleteTheScene_andStayInteractiveAfterRepeatedTaps() {
         val activity = composeTestRule.activity
-        val continueLabel = activity.getString(R.string.action_continue)
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro -> Find Animals context
-        composeTestRule.onNodeWithText(continueLabel).performClick() // context -> Find Animals
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro -> Find Animals context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // context -> Find Animals
 
         // --- Find the Animals: tapping the rock never counts, never completes the scene.
         val rockName = activity.getString(R.string.decoy_rock)
@@ -63,12 +63,12 @@ class NoahsArkDecoyInteractionTest {
             composeTestRule.onNodeWithContentDescription(rockName).performClick()
             composeTestRule.onNodeWithText(notAnAnimal).assertExists()
         }
-        composeTestRule.onNodeWithText(continueLabel).assertDoesNotExist()
+        composeTestRule.onNodeWithText(nextPageLabel).assertDoesNotExist()
 
         NoahsArkContent.animals.forEach { animal ->
             composeTestRule.onNodeWithContentDescription(activity.getString(animal.nameRes)).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Find Animals -> Matching
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Find Animals -> Matching
 
         // --- Animal Matching is out of scope for decoys; match every pair to move on.
         NoahsArkContent.animals.forEach { animal ->
@@ -76,8 +76,8 @@ class NoahsArkDecoyInteractionTest {
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
             composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Matching -> Organize Ark context
-        composeTestRule.onNodeWithText(continueLabel).performClick() // context -> Organize the Ark
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Matching -> Organize Ark context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // context -> Organize the Ark
 
         // --- Organize the Ark: dropping the hammer on any category never places it or
         // completes the scene.
@@ -88,7 +88,7 @@ class NoahsArkDecoyInteractionTest {
             dragOnto(composeTestRule.onNodeWithContentDescription(hammerName), firstCategoryLabel)
             composeTestRule.onNodeWithText(doesntBelong).assertExists()
         }
-        composeTestRule.onNodeWithText(continueLabel).assertDoesNotExist()
+        composeTestRule.onNodeWithText(nextPageLabel).assertDoesNotExist()
 
         NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->
             val itemName = activity.getString(item.nameRes)
@@ -96,7 +96,7 @@ class NoahsArkDecoyInteractionTest {
             val categoryLabel = activity.getString(categoryLabelRes)
             dragOnto(composeTestRule.onNodeWithContentDescription(itemName), categoryLabel)
         }
-        composeTestRule.onNodeWithText(continueLabel).assertExists()
+        composeTestRule.onNodeWithText(nextPageLabel).assertExists()
     }
 
     private fun dragOnto(itemNode: SemanticsNodeInteraction, targetLabel: String) {

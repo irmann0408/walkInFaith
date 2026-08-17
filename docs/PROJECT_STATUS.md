@@ -1,18 +1,22 @@
 # Project Status
 
-Last updated: 2026-08-17 (all 32 puzzle-mini-game screens redesigned to
-shrink-to-fit their content instead of scrolling — Cross the Courtyard was
-the worst offender, reported directly by the user after 3 earlier rounds
-had only moved *where* the scroll lived rather than removing it. The
-"Continue" button also moved out of the scrolling body and into a new
-top-bar "Next Page" button, next to the existing back-to-main-menu arrow,
-scoped only to these 32 screens (`action_continue` is unchanged
-everywhere else). Also fixes a real Gathering the Crowd gameplay bug where
-a legal-looking drop could strand another circle so it could never reach
-its target sum. See "Round 4 — Puzzle screen shrink-to-fit layout, top-bar
-Next Page, Gathering the Crowd dead-end fix" further down for the full
-writeup, and the new architectural-decisions-log entry on
-`Modifier.aspectRatio()`'s two-dimensional-fit gotcha. Before that:
+Last updated: 2026-08-17 (every remaining bottom-of-screen "Continue"
+button — chapter intros, lessons, choice screens, and the shared
+pre-puzzle `StoryBeatScreen`, 25 production files — now uses the same
+top-bar "Next Page" pattern the 32 puzzle screens gained in the round
+just before this one. A direct, mechanical repeat of that round's
+pattern; see "Round 5 — unify remaining 'Continue' buttons into the
+'Next Page' top-bar pattern" further down. Immediately before that: all
+32 puzzle-mini-game screens redesigned to shrink-to-fit their content
+instead of scrolling — Cross the Courtyard was the worst offender,
+reported directly by the user after 3 earlier rounds had only moved
+*where* the scroll lived rather than removing it. Also fixed a real
+Gathering the Crowd gameplay bug where a legal-looking drop could strand
+another circle so it could never reach its target sum. See "Round 4 —
+Puzzle screen shrink-to-fit layout, top-bar Next Page, Gathering the
+Crowd dead-end fix" further down for that full writeup, and the
+architectural-decisions-log entry on `Modifier.aspectRatio()`'s
+two-dimensional-fit gotcha. Before that:
 v1.0 tagged; added a second, player-selectable
 "Illustrated" character art style alongside the original Canvas-drawn one
 — see "Character screen — Illustrated style" further down for the full
@@ -3449,8 +3453,74 @@ else, 56 files), and fix a real Gathering the Crowd bug.
   every remaining bottom-of-screen "Continue" button app-wide
   (intros/lessons/choices/rewards, `action_continue`, 56 files) with the
   same "Next Page" pattern — until after this 32-screen puzzle rollout
-  was complete and verified. Not started; a candidate for a future
-  round if requested.
+  was complete and verified. **Done in Round 5, immediately following**
+  — see below.
+
+### Round 5 — unify remaining "Continue" buttons into the "Next Page" top-bar pattern
+
+Finished the idea deferred at the end of Round 4: every remaining
+bottom-of-screen "Continue" button (chapter intros, lessons, choice
+screens, and the shared pre-puzzle `StoryBeatScreen`) now uses the same
+top-bar "Next Page" pattern as the 32 puzzle screens, for visual/
+interaction consistency across the whole app. A direct, mechanical
+repeat of Round 4's pattern — no new design problem, confirmed by
+investigation before starting.
+
+- **25 production files converted**: `ui/components/StoryBeatScreen.kt`
+  (one shared component, reused at 34 call sites across the `NavHost`'s
+  pre-puzzle "context card" screens — one edit covers all 34), the 8
+  chapter intro screens, the 8 lesson screens, and the 7 choice screens
+  (Daniel, David & Goliath, Esther ×2 — decision + greeting, Feeding the
+  5,000, Jericho, Jesus Calms the Storm; Noah's Ark and Good Samaritan
+  have no choice screen). Each gained `topBar = { PuzzleTopBar(showBackButton = false, onBackToMainMenu = {}, showNextButton = <condition>, onNext = onContinue) }` (`showNextButton = true` for
+  intro/lesson/`StoryBeatScreen`, always available; `showNextButton = selected != null` for choice screens, matching their existing two-state
+  body) and lost their body-level `AdventureMenuButton(text = action_continue, ...)` footer call. Per the user's explicit choice: no
+  back-to-main-menu icon was added to these screens' top bars (staying
+  Next-Page-only, matching their existing system-Back-only behavior —
+  unlike puzzle screens, none of these had a back button before this
+  change either), and the shared `PuzzleTopBar` component keeps its
+  existing name rather than being renamed to something more generic, to
+  keep the round's diff smaller.
+- **Explicitly excluded, confirmed by investigation**:
+  `GoodSamaritanExploreScreen.kt`'s `action_continue` use is a
+  `HelpingBeatOverlay` modal dismiss button — a different interaction
+  (close a dialog, not advance the page) — left as a body-level Continue
+  button. Reward screens (`*/reward/*RewardScreen.kt`) use a separate
+  string, `R.string.action_return_to_map` ("Return to Map") — a "leave
+  the chapter" action, not "advance to next page" — untouched.
+  `action_continue` itself stays defined in `strings.xml`, still used by
+  that one modal call site.
+- **Test updates, 12 `androidTest` files**: investigated all 335
+  `continueLabel`/`action_continue` occurrences across every file that
+  referenced the string; confirmed every one is exactly one of the
+  screens converted above, except a single `GoodSamaritanFlowTest.kt`
+  click explicitly commented "This 'Continue' belongs to
+  HelpingBeatOverlay" (the excluded modal), which alone still targets
+  `continueLabel`. Simpler than Round 4's test update (which needed
+  per-call-site puzzle-vs-story classification): this round is close to
+  "replace `continueLabel` with `nextPageLabel` everywhere except that
+  one modal click." The 7 files already carrying both labels from Round
+  4 (`DanielFlowTest`, `EstherFlowTest`, `Feeding5000FlowTest`,
+  `GoodSamaritanFlowTest`, `JerichoFlowTest`, `JesusCalmsStormFlowTest`,
+  `DavidGoliathFlowTest`) had their remaining `continueLabel` clicks
+  switched over; 5 files that never needed `nextPageLabel` before
+  (`WorldMapNavigationTest`, `ParentAreaFlowTest`,
+  `AnimalMatchingGameTest`, `NoahsArkDecoyInteractionTest`,
+  `NoahsArkFlowTest`) gained the new label and switched too. Fixing
+  these 5 incidentally repaired a latent gap from Round 4: their
+  `completeNoahsArk`-style helpers had never been updated when Round 4
+  moved puzzle-completion buttons to "Next Page" (Round 4's test sweep
+  only touched the 7 files that complete *other* chapters as
+  prerequisites), so a couple of their puzzle-completion clicks had been
+  silently targeting the wrong label since Round 4 — never caught
+  because the full instrumented suite wasn't run after Round 4. This
+  round's uniform "everything becomes Next Page" rule fixed those
+  call sites for free, without needing to hunt for the gap separately.
+- Full `./gradlew build -x connectedAndroidTest` green after all 25
+  production files and 12 test files. Per the user's established
+  preference from Round 4, the full instrumented suite was not run this
+  round either; verification was `installDebug` plus manual on-device
+  testing, which the user confirmed directly ("everything looks good").
 
 ## Next tasks
 
@@ -3460,15 +3530,12 @@ Illustrated character style is complete and working but paused as a v2.0
 preview (see above) — no further UI work on it for now. Open items:
 - Replacing the rest of the app's placeholder art (animals, supplies,
   badges, backgrounds) remains open-ended future work, not scoped.
-- A user-raised idea, explicitly deferred rather than rejected: unify
-  every remaining bottom-of-screen "Continue" button app-wide into the
-  same "Next Page" top-bar pattern the 32 puzzle screens now use (see
-  "Round 4" above). Not scoped or started.
 - The full instrumented suite (`connectedAndroidTest`) hasn't been re-run
-  since round 4's layout changes — verification so far is `./gradlew
-  build -x connectedAndroidTest` plus manual on-device testing. Worth
-  running the full suite next time an emulator/device is set up for it,
-  though the 7 flow test files were already updated to match the new UI.
+  since Round 4/5's layout and button changes — verification so far is
+  `./gradlew build -x connectedAndroidTest` plus manual on-device
+  testing. Worth running the full suite next time an emulator/device is
+  set up for it, though all 12 relevant flow test files were already
+  updated to match the new UI (see "Round 5" above).
 - No other concrete backlog items are currently open; next work should
   come from a fresh round of playtesting or a new milestone/feature
   request.

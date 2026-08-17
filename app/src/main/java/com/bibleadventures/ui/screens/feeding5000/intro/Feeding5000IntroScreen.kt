@@ -27,8 +27,8 @@ import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.ui.LocalAudioController
-import com.bibleadventures.ui.components.AdventureMenuButton
 import com.bibleadventures.ui.components.CharacterPreview
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -62,7 +62,17 @@ private fun Feeding5000IntroContent(
         audioController.playMusic(MusicTrack.ADVENTURE)
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            PuzzleTopBar(
+                showBackButton = false,
+                onBackToMainMenu = {},
+                showNextButton = true,
+                onNext = onContinue,
+            )
+        },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -94,12 +104,6 @@ private fun Feeding5000IntroContent(
                     )
                 }
             }
-
-            AdventureMenuButton(
-                text = stringResource(R.string.action_continue),
-                onClick = onContinue,
-                modifier = Modifier.widthIn(max = 320.dp),
-            )
         }
     }
 }

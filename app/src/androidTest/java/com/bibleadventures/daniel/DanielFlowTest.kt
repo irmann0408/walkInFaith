@@ -52,18 +52,18 @@ class DanielFlowTest {
         val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
-        completeNoahsArk(continueLabel)
-        completeDavidGoliath(continueLabel)
+        completeNoahsArk()
+        completeDavidGoliath()
         completeGoodSamaritan(continueLabel)
 
         // World Map -> Daniel and the Lions (now unlocked).
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_daniel_title)).performClick()
 
         // Scene 1: Intro.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 1b: Hurrying to Pray context card.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 2: Hurrying to Pray — steer Daniel out of each official's
         // lane before they arrive (rhythmlane avoid semantics, 3 avoids).
@@ -80,10 +80,10 @@ class DanielFlowTest {
 
         // Scene 3: Choice — Daniel's prayer, flavor-only.
         composeTestRule.onNodeWithText(activity.getString(R.string.daniel_choice_option_1)).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 3b: Into the Lions' Den context card.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 4: The Angel's Shield — 5 random math problems, one per
         // light. Two wrong answers in a row now replace the problem instead
@@ -97,7 +97,7 @@ class DanielFlowTest {
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 4b: Darius's Long Night context card.
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 5: Darius's Maze — solve with a hand-verified move sequence.
         val upLabel = activity.getString(R.string.daniel_darius_direction_up)
@@ -125,7 +125,7 @@ class DanielFlowTest {
 
         // Scene 6: Lesson.
         composeTestRule.onNodeWithText(activity.getString(R.string.daniel_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 7: Reward.
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
@@ -138,14 +138,14 @@ class DanielFlowTest {
     }
 
     /** Walks Noah's Ark end to end (mirrors NoahsArkFlowTest) so David & Goliath unlocks. */
-    private fun completeNoahsArk(continueLabel: String) {
+    private fun completeNoahsArk() {
         val activity = composeTestRule.activity
         val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Find Animals context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Find Animals context
 
         NoahsArkContent.animals.forEach { animal ->
             composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
@@ -159,7 +159,7 @@ class DanielFlowTest {
         }
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Organize the Ark context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Organize the Ark context
 
         NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->
             val itemName = activity.getString(item.nameRes)
@@ -174,20 +174,20 @@ class DanielFlowTest {
         }
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Lesson
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Lesson
 
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
     }
 
     /** Walks David and Goliath end to end (mirrors DavidGoliathFlowTest) so Good Samaritan unlocks. */
-    private fun completeDavidGoliath(continueLabel: String) {
+    private fun completeDavidGoliath() {
         val activity = composeTestRule.activity
         val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_david_goliath_title)).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Counting the Flock context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Counting the Flock context
 
         DavidGoliathContent.sheepCounts.forEach { count ->
             val name = activity.getString(count.nameRes)
@@ -196,19 +196,19 @@ class DanielFlowTest {
         }
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Choose the Stones context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Choose the Stones context
 
         DavidGoliathContent.stones.forEach { stone ->
             composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)).performClick()
         }
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Sling Practice context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Sling Practice context
 
         composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_choice_option_1)).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Crossing the Valley context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Crossing the Valley context
 
         completeLaneAvoid(
             chart = DavidGoliathContent.crossingValleyChart,
@@ -227,7 +227,7 @@ class DanielFlowTest {
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
@@ -240,8 +240,8 @@ class DanielFlowTest {
 
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_good_samaritan_title)).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(continueLabel).performClick() // The Road to Jericho context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // The Road to Jericho context
 
         val upLabel = activity.getString(R.string.good_samaritan_direction_up)
         val downLabel = activity.getString(R.string.good_samaritan_direction_down)
@@ -268,7 +268,7 @@ class DanielFlowTest {
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.good_samaritan_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()

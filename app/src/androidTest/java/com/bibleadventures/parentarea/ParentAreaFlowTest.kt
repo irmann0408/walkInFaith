@@ -40,9 +40,8 @@ class ParentAreaFlowTest {
     @Test
     fun parentArea_gateSummaryAndResetProgressAllWorkEndToEnd() {
         val activity = composeTestRule.activity
-        val continueLabel = activity.getString(R.string.action_continue)
 
-        completeNoahsArk(continueLabel)
+        completeNoahsArk()
 
         // completeNoahsArk() ends on the World Map — back to Main Menu -> Parent Area.
         composeTestRule.onNodeWithContentDescription(activity.getString(R.string.action_back)).performClick()
@@ -126,28 +125,29 @@ class ParentAreaFlowTest {
         assert(earned >= minimum) { "Expected stat \"$tag\" to read at least \"$minimum / $total\" but was \"$actual\"" }
     }
 
-    private fun completeNoahsArk(continueLabel: String) {
+    private fun completeNoahsArk() {
         val activity = composeTestRule.activity
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Find Animals context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Find Animals context
 
         NoahsArkContent.animals.forEach { animal ->
             composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         NoahsArkContent.animals.forEach { animal ->
             val name = activity.getString(animal.nameRes)
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
             composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Organize the Ark context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Organize the Ark context
 
         NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->
             val itemName = activity.getString(item.nameRes)
@@ -155,14 +155,14 @@ class ParentAreaFlowTest {
             val categoryLabel = activity.getString(categoryLabelRes)
             dragOntoText(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetText = categoryLabel)
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         NoahsArkContent.hiddenItems.forEach { item ->
             composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Lesson
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Lesson
 
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
     }

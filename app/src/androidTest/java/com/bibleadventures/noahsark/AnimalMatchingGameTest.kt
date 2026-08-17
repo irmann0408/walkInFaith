@@ -26,20 +26,20 @@ class AnimalMatchingGameTest {
         val activity = composeTestRule.activity
         val adventuresLabel = activity.getString(R.string.menu_adventures)
         val noahsArkTitle = activity.getString(R.string.chapter_noahs_ark_title)
-        val continueLabel = activity.getString(R.string.action_continue)
+        val nextPageLabel = activity.getString(R.string.action_next_page)
         val greatJob = activity.getString(R.string.feedback_great_job)
         val tryAnotherOne = activity.getString(R.string.feedback_try_another_one)
 
         composeTestRule.onNodeWithText(adventuresLabel).performClick()
         composeTestRule.onNodeWithText(noahsArkTitle).performClick()
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Intro -> Find Animals context
-        composeTestRule.onNodeWithText(continueLabel).performClick() // context -> Find Animals
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro -> Find Animals context
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // context -> Find Animals
 
         NoahsArkContent.animals.forEach { animal ->
             val name = activity.getString(animal.nameRes)
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick() // Find Animals -> Matching
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Find Animals -> Matching
 
         val lionName = activity.getString(NoahsArkContent.animals.first { it.id == "lion" }.nameRes)
         val elephantName = activity.getString(NoahsArkContent.animals.first { it.id == "elephant" }.nameRes)
