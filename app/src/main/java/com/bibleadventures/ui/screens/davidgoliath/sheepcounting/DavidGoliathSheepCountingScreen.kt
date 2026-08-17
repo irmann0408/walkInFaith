@@ -6,15 +6,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,16 +30,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.matching.MatchItem
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.puzzles.matching.MatchingGameState
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
+
+private val SHEEP_TILE_SIZE = 72.dp
+private const val SHEEP_TILE_ICON_FRACTION = 56f / 72f
 
 /**
  * A themed reuse of the same memory/concentration engine as Animal Matching —
@@ -79,7 +82,16 @@ private fun DavidGoliathSheepCountingContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || sheepCountingState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = sheepCountingState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -107,23 +119,34 @@ private fun DavidGoliathSheepCountingContent(
                 Text(text = feedback, style = MaterialTheme.typography.titleLarge)
             }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                sheepCountingState.items.chunked(4).forEach { rowItems ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        rowItems.forEach { item ->
-                            key(item.id) {
-                                SheepCountTile(
-                                    item = item,
-                                    isFaceUp = sheepCountingState.isFaceUp(item.id),
-                                    isSelected = item.id in sheepCountingState.selectedIds,
-                                    isMatched = item.id in sheepCountingState.matchedIds,
-                                    onClick = { onItemTapped(item.id) },
-                                )
+            // weight(1f, fill = true) hands this region exactly the space left over
+            // after every other sibling above claims its natural size, and
+            // BoxWithConstraints reads that resolved space to compute a tile size
+            // that makes the whole grid fit — shrinking below SHEEP_TILE_SIZE only
+            // when there isn't room for it, never overflowing.
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f, fill = true)) {
+                val columns = 4
+                val rows = ((sheepCountingState.items.size + columns - 1) / columns).coerceAtLeast(1)
+                val spacing = 12.dp
+                val tileSize = minOf(
+                    (maxWidth - spacing * (columns - 1)) / columns,
+                    (maxHeight - spacing * (rows - 1)) / rows,
+                ).coerceIn(48.dp, SHEEP_TILE_SIZE)
+
+                Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                    sheepCountingState.items.chunked(columns).forEach { rowItems ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                            rowItems.forEach { item ->
+                                key(item.id) {
+                                    SheepCountTile(
+                                        item = item,
+                                        tileSize = tileSize,
+                                        isFaceUp = sheepCountingState.isFaceUp(item.id),
+                                        isSelected = item.id in sheepCountingState.selectedIds,
+                                        isMatched = item.id in sheepCountingState.matchedIds,
+                                        onClick = { onItemTapped(item.id) },
+                                    )
+                                }
                             }
                         }
                     }
@@ -137,26 +160,18 @@ private fun DavidGoliathSheepCountingContent(
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
-
-            if (sheepCountingState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
-            }
         }
     }
 }
 
 @Composable
-private fun SheepCountTile(item: MatchItem, isFaceUp: Boolean, isSelected: Boolean, isMatched: Boolean, onClick: () -> Unit) {
+private fun SheepCountTile(item: MatchItem, tileSize: Dp, isFaceUp: Boolean, isSelected: Boolean, isMatched: Boolean, onClick: () -> Unit) {
     val name = stringResource(item.contentDescriptionRes)
     val borderColor = if (isSelected && !isMatched) MaterialTheme.colorScheme.primary else Color.Transparent
 
     Box(
         modifier = Modifier
-            .size(72.dp)
+            .size(tileSize)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(3.dp, borderColor, RoundedCornerShape(12.dp))
@@ -167,7 +182,7 @@ private fun SheepCountTile(item: MatchItem, isFaceUp: Boolean, isSelected: Boole
         Image(
             painter = if (isFaceUp) painterResource(item.iconRes) else painterResource(R.drawable.ic_card_back),
             contentDescription = null,
-            modifier = Modifier.size(56.dp),
+            modifier = Modifier.size(tileSize * SHEEP_TILE_ICON_FRACTION),
         )
     }
 }

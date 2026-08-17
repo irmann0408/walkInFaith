@@ -51,8 +51,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.ui.LocalReducedMotion
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.isActive
@@ -62,6 +61,7 @@ private val NOTE_SIZE = 40.dp
 private val BASKET_SIZE = 56.dp
 private const val TRAVEL_DURATION_MS = 1800L
 private const val NOTE_GRACE_MS = 300L
+
 
 /**
  * Phase B of the Grand Feast finale — still reuses `rhythmlane` exactly as
@@ -133,7 +133,16 @@ private fun Feeding5000CatchingContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -178,12 +187,12 @@ private fun Feeding5000CatchingContent(
             }
 
             if (!isComplete) {
-                // A nested Column so the falling-lane tracks, the basket
-                // track, and the move controls all share this remaining
-                // space properly — putting the basket track as a sibling of
-                // a weight(1f, fill = true) Row (which alone claims all
-                // remaining space) would starve it and the controls below
-                // it of any height at all.
+                // weight(1f, fill = true) hands this wrapping Column exactly the
+                // space left over after title/instructions/progress-meter claim
+                // theirs, then the falling-lane Row's own weight(1f, fill = true)
+                // divides that against its own fixed-size siblings (the basket
+                // track, the move controls) — nested the same way, so nothing here
+                // ever needs to scroll.
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -217,14 +226,6 @@ private fun Feeding5000CatchingContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

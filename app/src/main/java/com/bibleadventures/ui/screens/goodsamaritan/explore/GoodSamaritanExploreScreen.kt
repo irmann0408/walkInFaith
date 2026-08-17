@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -51,7 +49,8 @@ import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -95,7 +94,16 @@ private fun GoodSamaritanExploreContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if ((previouslyCompleted || gridMazeState.isComplete) && !helpingBeatOverlayShowing) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = gridMazeState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             Column(
@@ -130,23 +138,24 @@ private fun GoodSamaritanExploreContent(
 
                 // Non-interactive: a 10x10 grid can't give each cell a legible 48dp tap
                 // target on a phone screen, which is exactly why movement is via the
-                // D-pad below, not tap-on-tile.
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .aspectRatio(1f),
-                ) {
-                    GoodSamaritanContent.mapLayout.forEachIndexed { rowIndex, rowChars ->
-                        Row(modifier = Modifier.weight(1f)) {
-                            rowChars.forEachIndexed { colIndex, tileChar ->
-                                GridCell(
-                                    tileChar = tileChar,
-                                    isPlayer = gridMazeState.playerPosition == GridPosition(rowIndex, colIndex),
-                                    isMedicineCollected = GridPosition(rowIndex, colIndex) in gridMazeState.collectedPositions,
-                                    isTravelerTreated = gridMazeState.checkpointActivated,
-                                    modifier = Modifier.weight(1f).fillMaxSize(),
-                                )
+                // D-pad below, not tap-on-tile. weight(1f, fill = true) hands this
+                // element exactly the space left over after every other (naturally-
+                // sized) sibling in this Column, and AspectRatioFitBox letterbox-fits
+                // within that bounded box — shrinking on cramped viewports instead of
+                // overflowing, so nothing here ever needs to scroll.
+                AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        GoodSamaritanContent.mapLayout.forEachIndexed { rowIndex, rowChars ->
+                            Row(modifier = Modifier.weight(1f)) {
+                                rowChars.forEachIndexed { colIndex, tileChar ->
+                                    GridCell(
+                                        tileChar = tileChar,
+                                        isPlayer = gridMazeState.playerPosition == GridPosition(rowIndex, colIndex),
+                                        isMedicineCollected = GridPosition(rowIndex, colIndex) in gridMazeState.collectedPositions,
+                                        isTravelerTreated = gridMazeState.checkpointActivated,
+                                        modifier = Modifier.weight(1f).fillMaxSize(),
+                                    )
+                                }
                             }
                         }
                     }
@@ -162,14 +171,6 @@ private fun GoodSamaritanExploreContent(
                         text = stringResource(R.string.puzzle_already_completed_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-
-                if ((gridMazeState.isComplete || previouslyCompleted) && !helpingBeatOverlayShowing) {
-                    AdventureMenuButton(
-                        text = stringResource(R.string.action_continue),
-                        onClick = onContinue,
-                        modifier = Modifier.widthIn(max = 320.dp).padding(top = 16.dp),
                     )
                 }
             }

@@ -5,11 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -30,8 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.stories.JerichoContent
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -78,7 +80,16 @@ private fun JerichoShoutContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -120,9 +131,14 @@ private fun JerichoShoutContent(
                 )
             }
 
+            // weight(1f, fill = true) hands this element exactly the space left
+            // over after every other (naturally-sized) sibling in this Column, so
+            // nothing here ever needs to scroll; the tap circle itself is sized
+            // relative to whatever's available, capped so it doesn't balloon on
+            // tall/tablet screens.
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .weight(1f, fill = true),
                 contentAlignment = Alignment.Center,
             ) {
@@ -130,7 +146,9 @@ private fun JerichoShoutContent(
                     val shoutDescription = stringResource(R.string.jericho_shout_button_content_description)
                     Box(
                         modifier = Modifier
-                            .size(160.dp)
+                            .fillMaxHeight(0.8f)
+                            .aspectRatio(1f)
+                            .sizeIn(maxWidth = 200.dp, maxHeight = 200.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.error)
                             .clickable(onClickLabel = shoutDescription, onClick = onShoutTapped)
@@ -151,14 +169,6 @@ private fun JerichoShoutContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

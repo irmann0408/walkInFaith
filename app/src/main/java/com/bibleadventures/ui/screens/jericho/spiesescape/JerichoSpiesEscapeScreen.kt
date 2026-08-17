@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -29,8 +28,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -72,7 +71,16 @@ private fun JerichoSpiesEscapeContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || puzzleState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = puzzleState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -91,13 +99,21 @@ private fun JerichoSpiesEscapeContent(
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
             )
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(puzzleState.size),
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-                userScrollEnabled = false,
-            ) {
-                itemsIndexed(puzzleState.tiles) { index, number ->
-                    SlidingTile(number = number, onClick = { onTileTapped(index) })
+            // weight(1f, fill = true) hands this element exactly the space left
+            // over after every other (naturally-sized) sibling in this Column,
+            // and AspectRatioFitBox letterbox-fits within that bounded box — which
+            // also gives LazyVerticalGrid the bounded height it needs to measure.
+            // userScrollEnabled = false since there's nothing to scroll to, the
+            // grid always renders at its fitted size.
+            AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(puzzleState.size),
+                    modifier = Modifier.fillMaxSize(),
+                    userScrollEnabled = false,
+                ) {
+                    itemsIndexed(puzzleState.tiles) { index, number ->
+                        SlidingTile(number = number, onClick = { onTileTapped(index) })
+                    }
                 }
             }
 
@@ -106,14 +122,6 @@ private fun JerichoSpiesEscapeContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (puzzleState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

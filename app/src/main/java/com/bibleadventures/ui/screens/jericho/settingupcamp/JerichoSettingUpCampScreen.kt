@@ -12,6 +12,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -57,8 +59,7 @@ import com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
 import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.ui.LocalReducedMotion
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.launch
@@ -153,7 +154,16 @@ private fun JerichoSettingUpCampContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || campState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = campState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -209,25 +219,40 @@ private fun JerichoSettingUpCampContent(
                 }
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                remainingStoneIds.chunked(4).forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    ) {
-                        row.forEach { stoneId ->
-                            key(stoneId) {
-                                DraggableStone(
-                                    stoneId = stoneId,
-                                    value = stoneValues.getValue(stoneId),
-                                    isNextExpected = stoneId == campState.nextExpectedId,
-                                    dropZoneCenter = dropZoneCenter,
-                                    snapRadiusPx = snapRadiusPx,
-                                    onSnapped = onStonePlaced,
-                                )
+            // Every remaining stone is visible at once. weight(1f, fill = true)
+            // hands this region exactly the space left over after every other
+            // sibling above claims its natural size, and BoxWithConstraints reads
+            // that resolved space to compute a stone size that makes the whole
+            // tray fit — shrinking below STONE_SIZE only when there isn't room for
+            // it, never overflowing. Drag/drop detection reads live positions via
+            // onGloballyPositioned, so a smaller stone size doesn't affect it.
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f, fill = true).padding(top = 16.dp)) {
+                val columns = 4
+                val rows = ((remainingStoneIds.size + columns - 1) / columns).coerceAtLeast(1)
+                val spacing = 8.dp
+                val traySize = minOf(
+                    (maxWidth - spacing * (columns - 1)) / columns,
+                    (maxHeight - spacing * (rows - 1)) / rows,
+                ).coerceIn(48.dp, STONE_SIZE)
+
+                Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                    remainingStoneIds.chunked(columns).forEach { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally),
+                        ) {
+                            row.forEach { stoneId ->
+                                key(stoneId) {
+                                    DraggableStone(
+                                        stoneId = stoneId,
+                                        value = stoneValues.getValue(stoneId),
+                                        stoneSize = traySize,
+                                        isNextExpected = stoneId == campState.nextExpectedId,
+                                        dropZoneCenter = dropZoneCenter,
+                                        snapRadiusPx = snapRadiusPx,
+                                        onSnapped = onStonePlaced,
+                                    )
+                                }
                             }
                         }
                     }
@@ -241,14 +266,6 @@ private fun JerichoSettingUpCampContent(
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
-
-            if (campState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
-            }
         }
     }
 }
@@ -257,6 +274,7 @@ private fun JerichoSettingUpCampContent(
 private fun DraggableStone(
     stoneId: String,
     value: Int,
+    stoneSize: Dp,
     isNextExpected: Boolean,
     dropZoneCenter: Offset,
     snapRadiusPx: Float,
@@ -280,7 +298,7 @@ private fun DraggableStone(
             .offset {
                 IntOffset((dragOffset.x + snapOffset.value.x).roundToInt(), (dragOffset.y + snapOffset.value.y).roundToInt())
             }
-            .size(STONE_SIZE)
+            .size(stoneSize)
             .pointerInput(stoneId, isNextExpected, dropZoneCenter) {
                 detectDragGestures(
                     onDragEnd = {
@@ -323,7 +341,7 @@ private fun DraggableStone(
         Image(
             painter = painterResource(R.drawable.ic_stone_smooth),
             contentDescription = null,
-            modifier = Modifier.size(56.dp).scale(scaleAnim.value),
+            modifier = Modifier.size(stoneSize * (56f / 64f)).scale(scaleAnim.value),
         )
         Text(text = value.toString(), style = MaterialTheme.typography.titleMedium)
     }

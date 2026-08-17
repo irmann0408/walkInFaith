@@ -66,6 +66,7 @@ class EstherFlowTest {
     fun completingEsther_awardsOneBadgeAndAllFiveScriptureCardsAndUnlocksJericho() {
         val activity = composeTestRule.activity
         val continueLabel = activity.getString(R.string.action_continue)
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
         completeNoahsArk(continueLabel)
@@ -84,7 +85,7 @@ class EstherFlowTest {
         EstherContent.royalAttireItems.forEach { item ->
             composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Esther Becomes Queen context -> Greeting choice.
         composeTestRule.onNodeWithText(continueLabel).performClick()
@@ -108,7 +109,7 @@ class EstherFlowTest {
             }
             composeTestRule.onNodeWithContentDescription(label).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // The King is Warned context -> A Wicked Law context.
         composeTestRule.onNodeWithText(continueLabel).performClick()
@@ -134,7 +135,7 @@ class EstherFlowTest {
             composeTestRule.onNodeWithContentDescription(cellLabel, substring = true).performClick()
             composeTestRule.onNodeWithContentDescription(activity.getString(iconKeyToLabel.getValue(iconKey))).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // The City Mourns and Fasts context -> decision choice.
         composeTestRule.onNodeWithText(continueLabel).performClick()
@@ -150,7 +151,7 @@ class EstherFlowTest {
         // Leads straight into the Lesson now — Reveal Haman's Plot and its
         // surrounding context cards were dropped to tighten the chapter's tail end.
         completeCorridorRhythmLane()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
         composeTestRule.onNodeWithText(activity.getString(R.string.esther_brave_approach_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()
 
@@ -177,6 +178,7 @@ class EstherFlowTest {
     /** Walks Noah's Ark end to end (mirrors NoahsArkFlowTest) so David & Goliath unlocks. */
     private fun completeNoahsArk(continueLabel: String) {
         val activity = composeTestRule.activity
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         scrollToChapterOnWorldMap(activity.getString(R.string.chapter_noahs_ark_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
@@ -187,14 +189,14 @@ class EstherFlowTest {
         NoahsArkContent.animals.forEach { animal ->
             composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         NoahsArkContent.animals.forEach { animal ->
             val name = activity.getString(animal.nameRes)
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
             composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Organize the Ark context
 
@@ -204,12 +206,12 @@ class EstherFlowTest {
             val categoryLabel = activity.getString(categoryLabelRes)
             dragOntoText(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetText = categoryLabel)
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         NoahsArkContent.hiddenItems.forEach { item ->
             composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Lesson
 
@@ -219,6 +221,7 @@ class EstherFlowTest {
     /** Walks David and Goliath end to end (mirrors DavidGoliathFlowTest) so Good Samaritan unlocks. */
     private fun completeDavidGoliath(continueLabel: String) {
         val activity = composeTestRule.activity
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         scrollToChapterOnWorldMap(activity.getString(R.string.chapter_david_goliath_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_david_goliath_title)).performClick()
@@ -231,14 +234,14 @@ class EstherFlowTest {
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
             composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Choose the Stones context
 
         DavidGoliathContent.stones.forEach { stone ->
             composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Sling Practice context
 
@@ -256,12 +259,12 @@ class EstherFlowTest {
             moveLeftLabelRes = R.string.david_goliath_dodge_move_left_content_description,
             moveRightLabelRes = R.string.david_goliath_dodge_move_right_content_description,
         )
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         completeSlingPractice()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.feedback_great_job)).assertExists()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()
@@ -273,6 +276,7 @@ class EstherFlowTest {
     /** Walks Good Samaritan end to end (mirrors GoodSamaritanFlowTest) so Daniel unlocks. */
     private fun completeGoodSamaritan(continueLabel: String) {
         val activity = composeTestRule.activity
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         scrollToChapterOnWorldMap(activity.getString(R.string.chapter_good_samaritan_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_good_samaritan_title)).performClick()
@@ -297,11 +301,12 @@ class EstherFlowTest {
 
             val helpingBeatShown = composeTestRule.onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()
             if (helpingBeatShown) {
+                // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
                 composeTestRule.onNodeWithText(continueLabel).performClick()
             }
         }
 
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.good_samaritan_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()
@@ -313,6 +318,7 @@ class EstherFlowTest {
     /** Walks Daniel and the Lions end to end (mirrors DanielFlowTest) so Esther unlocks. */
     private fun completeDaniel(continueLabel: String) {
         val activity = composeTestRule.activity
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         scrollToChapterOnWorldMap(activity.getString(R.string.chapter_daniel_title))
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_daniel_title)).performClick()
@@ -329,7 +335,7 @@ class EstherFlowTest {
             moveLeftLabelRes = R.string.daniel_stealth_move_left_content_description,
             moveRightLabelRes = R.string.daniel_stealth_move_right_content_description,
         )
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.daniel_choice_option_1)).performClick()
         composeTestRule.onNodeWithText(continueLabel).performClick()
@@ -343,7 +349,7 @@ class EstherFlowTest {
         repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) {
             solveLionsDenProblem()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Darius's Long Night context
 
@@ -360,7 +366,7 @@ class EstherFlowTest {
             }
             composeTestRule.onNodeWithContentDescription(label).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.daniel_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()

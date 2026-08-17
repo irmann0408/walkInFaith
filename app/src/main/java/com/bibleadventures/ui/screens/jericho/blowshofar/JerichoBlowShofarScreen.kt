@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -51,8 +50,8 @@ import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.game.stories.MathOperator
 import com.bibleadventures.game.stories.MathProblem
 import com.bibleadventures.ui.LocalReducedMotion
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -122,7 +121,16 @@ private fun JerichoBlowShofarContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || shofarState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = shofarState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -155,19 +163,23 @@ private fun JerichoBlowShofarContent(
                 Text(text = feedback, style = MaterialTheme.typography.titleLarge)
             }
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .scale(burstScale.value),
-            ) {
-                JerichoContent.shofarNoteIds.forEachIndexed { index, noteId ->
-                    val position = JerichoContent.shofarNotePositions[index]
-                    NoteLight(
-                        noteId = noteId,
-                        isLit = index < shofarState.currentStepIndex,
-                        modifier = Modifier.offset(x = maxWidth * position.x - 24.dp, y = maxHeight * position.y - 24.dp),
-                    )
+            // weight(1f, fill = true) hands this element exactly the space left
+            // over after every other (naturally-sized) sibling in this Column —
+            // including the answer-choice row below — and AspectRatioFitBox
+            // letterbox-fits within that bounded box, so nothing here ever needs
+            // to scroll. The nested BoxWithConstraints re-reads the fitted box's
+            // own size so note positions below can still be placed as fractions
+            // of it.
+            AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+                BoxWithConstraints(modifier = Modifier.fillMaxSize().scale(burstScale.value)) {
+                    JerichoContent.shofarNoteIds.forEachIndexed { index, noteId ->
+                        val position = JerichoContent.shofarNotePositions[index]
+                        NoteLight(
+                            noteId = noteId,
+                            isLit = index < shofarState.currentStepIndex,
+                            modifier = Modifier.offset(x = maxWidth * position.x - 24.dp, y = maxHeight * position.y - 24.dp),
+                        )
+                    }
                 }
             }
 
@@ -202,14 +214,6 @@ private fun JerichoBlowShofarContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (shofarState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

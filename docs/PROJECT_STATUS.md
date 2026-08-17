@@ -1,6 +1,19 @@
 # Project Status
 
-Last updated: 2026-08-13 (v1.0 tagged; added a second, player-selectable
+Last updated: 2026-08-17 (all 32 puzzle-mini-game screens redesigned to
+shrink-to-fit their content instead of scrolling — Cross the Courtyard was
+the worst offender, reported directly by the user after 3 earlier rounds
+had only moved *where* the scroll lived rather than removing it. The
+"Continue" button also moved out of the scrolling body and into a new
+top-bar "Next Page" button, next to the existing back-to-main-menu arrow,
+scoped only to these 32 screens (`action_continue` is unchanged
+everywhere else). Also fixes a real Gathering the Crowd gameplay bug where
+a legal-looking drop could strand another circle so it could never reach
+its target sum. See "Round 4 — Puzzle screen shrink-to-fit layout, top-bar
+Next Page, Gathering the Crowd dead-end fix" further down for the full
+writeup, and the new architectural-decisions-log entry on
+`Modifier.aspectRatio()`'s two-dimensional-fit gotcha. Before that:
+v1.0 tagged; added a second, player-selectable
 "Illustrated" character art style alongside the original Canvas-drawn one
 — see "Character screen — Illustrated style" further down for the full
 design and why it's additive rather than a replacement. Illustrated mode
@@ -3324,6 +3337,121 @@ Known open items if/when v2.0 work resumes:
 - Only 5 clothing colors × 2 appearances × 4 hairstyles exist; no
   additional outfits/colors are planned unless requested.
 
+### Round 4 — Puzzle screen shrink-to-fit layout, top-bar Next Page, Gathering the Crowd dead-end fix
+
+Three earlier rounds of layout fixes (this session) had each moved
+*where* a puzzle screen's scroll lived — per-puzzle scroll wrapper, then
+whole-page scroll, then a pinned non-scrolling footer — without removing
+scrolling itself. The user's round-4 report made clear scrolling was
+still the actual problem for a kids' app: "most of the screen requires
+scrolling to see the whole puzzle... 'Cross the Courtyard' puzzle is the
+worst." Bundled with that: move Continue into the top bar next to the
+back button, relabel it "Next Page" (scoped to puzzle screens only, per
+the user's explicit choice — `action_continue` is untouched everywhere
+else, 56 files), and fix a real Gathering the Crowd bug.
+
+- **Shrink-to-fit layout, all 32 puzzle screens, zero scrolling
+  anywhere.** Verified (not assumed) how Compose's `Column`/`Row`
+  measurement actually works: non-weighted children are each measured
+  against the parent's full bounded max-size independently; only
+  `Modifier.weight(1f, fill = true)` children split whatever space is
+  left over after every non-weighted sibling's natural size is
+  subtracted. Every screen dropped its round-2/3 outer
+  `verticalScroll()` wrapper and instead gives exactly one "big visual"
+  element `weight(1f, fill = true)` inside an otherwise plain Column —
+  title/instructions/feedback/D-pad/answer-row siblings stay natural-
+  sized and never need to shrink. Four concrete shapes covered all 32
+  screens: (1) an existing `aspectRatio`-anchored visual (mazes, grids,
+  rhythm-lane backgrounds) just gains the weight modifier; (2) fixed-dp
+  rhythm-lane tracks (Corridor, Fast March, Six Day March, Catching) had
+  their `NOTE_LANE_TRACK_HEIGHT`-style fixed-dp constants replaced with
+  weighted `BoxWithConstraints` tracks; (3) Jericho's Shout tap-circle
+  went from a fixed 200dp box to `weight(1f, fill = true)` sized
+  relative to available space, capped at 200dp so it doesn't balloon on
+  tall screens; (4) fixed-size tile grids/drag trays (Matching, Sheep
+  Counting, Find Animals, Organize the Ark, Setting Up Camp, Loading the
+  Boat, Gathering the Crowd) now compute `tileSize` dynamically via
+  `BoxWithConstraints`, coerced into `48.dp` (the accessibility
+  touch-target floor) through each puzzle's original fixed size, so
+  tiles only ever shrink, never grow past their original design.
+- **New shared `AspectRatioFitBox` component**
+  (`ui/components/AspectRatioFitBox.kt`) — built after the first
+  on-device bug report (below) proved `Modifier.aspectRatio()` doesn't
+  do a true two-dimensional "contain" fit by default; it only derives
+  one dimension from the other, ignoring any height cap already in
+  effect from `weight(1f, true)`. `AspectRatioFitBox` reads the real
+  bounded width/height via `BoxWithConstraints` and computes the fitted
+  size manually (`fittedWidth = minOf(maxWidth, maxHeight * ratio)`,
+  `fittedHeight = fittedWidth / ratio`), the same calculation
+  `ContentScale.Fit` does for images. Used across roughly half the 32
+  screens; see the architectural-decisions-log entry below for the full
+  story.
+- **New `PuzzleTopBar`** (`ui/components/PuzzleTopBar.kt`) replaces
+  `BackToMainMenuTopBar` (deleted, confirmed zero other consumers) on
+  all 32 puzzle screens: keeps the existing back-to-main-menu
+  `IconButton`, adds a `TextButton` "Next Page" action
+  (`action_next_page`, new string) that fires the same `onContinue`
+  callback the old body-level `AdventureMenuButton` used to. Every
+  screen's body-level Continue button was deleted — Next Page now lives
+  only in the top bar. `puzzle_already_completed_hint`'s copy was
+  reworded from "Tap Continue" to "Tap Next Page" to match, since it's
+  used only by these same 32 screens.
+- **Gathering the Crowd dead-end bug, fixed at the domain layer.** A
+  family could be dropped into a circle in a way that left some *other*
+  circle's remaining gap impossible to reach exactly with whatever
+  families were left in the pool — a legal-looking move that silently
+  stranded the player with no way to finish. `GroupFillGameState` gained
+  `isEveryCircleStillReachable()` (backed by a standard subset-sum
+  reachability DP, `isSubsetSumReachable`) and a new
+  `GroupFillOutcome.REJECTED_UNREACHABLE`; `GroupFillGame.onFamilyDropped`
+  now checks reachability after a would-be-successful placement and
+  rejects it (same "try another one" feedback as an overshoot) rather
+  than allowing a stranding move. Also exposed a pure
+  `GroupFillGame.canAccept(state, familyId, circleIndex): Boolean` query
+  and had the screen call it directly for its drag-and-drop preview
+  logic, instead of a separately-hand-maintained client-side check — see
+  the "hang on drop" bug below for why that mattered.
+- **Two real on-device bugs found by the user during a 3-screen
+  prototype (Cross the Courtyard / Fast March / Gathering the Crowd),
+  both fixed before the remaining 29 screens were swept**: (1) Cross the
+  Courtyard's control pad overlapped and covered the character — root
+  cause was the `aspectRatio()`-doesn't-two-dimensionally-fit gotcha
+  above, fixed by `AspectRatioFitBox`. (2) Gathering the Crowd's dragged
+  tile sometimes hung in place instead of returning to its tray when a
+  drop didn't fit — root cause was the screen's own `fits` boolean only
+  checking overshoot, not the new `REJECTED_UNREACHABLE` rule, so it
+  played an optimistic snap-into-circle animation for a drop the domain
+  layer then silently rejected, leaving the tile's drag/snap offset
+  state stuck mid-animation with nothing to reset it. Fixed by routing
+  the screen through `GroupFillGame.canAccept(...)` directly (see above)
+  instead of duplicating the check.
+- After the fix, the user separately noticed Cross the Courtyard's
+  *next* screen still opened at the old large/scrolling size — that
+  screen just hadn't been converted yet at that point in the sweep; no
+  separate bug once the full 32-screen conversion finished.
+- Full `./gradlew build` (compile + unit tests + lint) green after all 32
+  screens. All 7 instrumented flow test files
+  (`DanielFlowTest`, `EstherFlowTest`, `Feeding5000FlowTest`,
+  `GoodSamaritanFlowTest`, `JerichoFlowTest`, `JesusCalmsStormFlowTest`,
+  `DavidGoliathFlowTest`) updated: every `.performScrollTo()` added in
+  rounds 2-3 reverted to a plain `.performClick()` (nothing is
+  scrollable anymore), and every puzzle-completion "Continue" click
+  target switched to a new `nextPageLabel`
+  (`R.string.action_next_page`) while story/lesson/choice-screen
+  Continue clicks kept the existing `continueLabel` — a careful
+  per-call-site read, not a blind find-replace, since each flow test
+  interleaves both kinds of continue. Per the user's explicit choice,
+  the full instrumented suite was not run this round; verification was
+  `./gradlew build -x connectedAndroidTest` plus `installDebug` and
+  manual on-device testing, which the user signed off on directly
+  ("changes look good").
+- User explicitly deferred a follow-on idea raised mid-round — replacing
+  every remaining bottom-of-screen "Continue" button app-wide
+  (intros/lessons/choices/rewards, `action_continue`, 56 files) with the
+  same "Next Page" pattern — until after this 32-screen puzzle rollout
+  was complete and verified. Not started; a candidate for a future
+  round if requested.
+
 ## Next tasks
 
 All 8 chapters have real gameplay, Milestone 6 (Parent Area) is complete,
@@ -3332,12 +3460,39 @@ Illustrated character style is complete and working but paused as a v2.0
 preview (see above) — no further UI work on it for now. Open items:
 - Replacing the rest of the app's placeholder art (animals, supplies,
   badges, backgrounds) remains open-ended future work, not scoped.
+- A user-raised idea, explicitly deferred rather than rejected: unify
+  every remaining bottom-of-screen "Continue" button app-wide into the
+  same "Next Page" top-bar pattern the 32 puzzle screens now use (see
+  "Round 4" above). Not scoped or started.
+- The full instrumented suite (`connectedAndroidTest`) hasn't been re-run
+  since round 4's layout changes — verification so far is `./gradlew
+  build -x connectedAndroidTest` plus manual on-device testing. Worth
+  running the full suite next time an emulator/device is set up for it,
+  though the 7 flow test files were already updated to match the new UI.
 - No other concrete backlog items are currently open; next work should
   come from a fresh round of playtesting or a new milestone/feature
   request.
 
 ## Architectural decisions log
 
+- **`Modifier.aspectRatio(ratio)` does not perform a true two-dimensional
+  "contain" fit, even when combined with `weight(1f, fill = true)` inside
+  a height-bounded parent.** By default it derives one dimension from the
+  other (height from width) and can still overflow past a height cap
+  already imposed by an outer `weight`/`fillMaxHeight` — it does *not*
+  automatically behave like `ContentScale.Fit`, which was the wrong
+  assumption the round-4 shrink-to-fit plan started from. Only found via
+  the user's on-device Cross the Courtyard report ("the control pad
+  overlaps with the puzzle screen and covers the character") — not caught
+  by compiling or by my own review of the layout code. Fixed by adding
+  `ui/components/AspectRatioFitBox.kt`, which reads the real bounded
+  width/height via `BoxWithConstraints` and computes the fitted size
+  manually (`fittedWidth = minOf(maxWidth, maxHeight * ratio)`,
+  `fittedHeight = fittedWidth / ratio`) rather than trusting
+  `aspectRatio()` alone. Use `AspectRatioFitBox` (not raw
+  `.aspectRatio()`) for any future ratio-anchored visual that must fit
+  within both a bounded width AND a bounded height — reach for plain
+  `.aspectRatio()` only when just one dimension is actually bounded.
 - **Single Gradle module for the MVP.** A multi-module split (`core`, `feature-*`) is
   not warranted yet at this scope; revisit if build times or team size grow.
 - **No dark theme variant.** The target audience and warm/storybook visual language

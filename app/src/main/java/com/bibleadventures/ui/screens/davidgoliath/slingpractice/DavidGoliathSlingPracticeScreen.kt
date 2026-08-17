@@ -7,9 +7,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -45,8 +43,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotOutcome
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.davidgoliath.ShieldZone
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -143,7 +141,16 @@ private fun DavidGoliathSlingPracticeContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || slingshotState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = slingshotState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -211,12 +218,14 @@ private fun DavidGoliathSlingPracticeContent(
             // way elapsedMs (a MutableState) already reads live there.
             val currentShieldZone by rememberUpdatedState(shieldZone)
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false)
-                    .aspectRatio(1f),
-            ) {
+            // weight(1f, fill = true) hands this element exactly the space left
+            // over after every other (naturally-sized) sibling in this Column,
+            // and AspectRatioFitBox letterbox-fits within that bounded box, so
+            // nothing here ever needs to scroll. The nested BoxWithConstraints
+            // re-reads the fitted box's own size so maxWidth/maxHeight below stay
+            // correct.
+            AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 val density = LocalDensity.current
                 val trackWidthPx = with(density) { maxWidth.toPx() }
                 var dragOffsetX by remember { mutableStateOf(0f) }
@@ -314,20 +323,13 @@ private fun DavidGoliathSlingPracticeContent(
                     )
                 }
             }
+            }
 
             if (previouslyCompleted && !slingshotState.isComplete) {
                 Text(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (slingshotState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

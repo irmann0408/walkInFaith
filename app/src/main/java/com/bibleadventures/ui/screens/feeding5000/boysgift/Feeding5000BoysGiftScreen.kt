@@ -5,9 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,8 +33,8 @@ import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
 import com.bibleadventures.game.stories.DecoyItem
 import com.bibleadventures.game.stories.Feeding5000Content
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -82,7 +80,16 @@ private fun Feeding5000BoysGiftContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || hiddenObjectState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = hiddenObjectState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -106,34 +113,38 @@ private fun Feeding5000BoysGiftContent(
                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
             )
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.bg_feeding_basket),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-
-                // Decoys render first, underneath, and are never wired to onItemTapped —
-                // a harmless no-op by construction, not something the engine defends against.
-                Feeding5000Content.boysGiftDecoys.forEach { decoy ->
-                    DecoyTarget(
-                        decoy = decoy,
-                        modifier = Modifier.offset(x = maxWidth * decoy.position.x, y = maxHeight * decoy.position.y),
+            // weight(1f, fill = true) hands this element exactly the space left
+            // over after every other (naturally-sized) sibling in this Column,
+            // and AspectRatioFitBox letterbox-fits within that bounded box, so
+            // nothing here ever needs to scroll. The nested BoxWithConstraints
+            // re-reads the fitted box's own size so item positions below can
+            // still be placed as fractions of it.
+            AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        painter = painterResource(R.drawable.bg_feeding_basket),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
                     )
-                }
 
-                hiddenObjectState.items.forEach { item ->
-                    RealItemTarget(
-                        item = item,
-                        isFound = item.id in hiddenObjectState.foundIds,
-                        onClick = { onItemTapped(item.id) },
-                        modifier = Modifier.offset(x = maxWidth * item.position.x, y = maxHeight * item.position.y),
-                    )
+                    // Decoys render first, underneath, and are never wired to onItemTapped —
+                    // a harmless no-op by construction, not something the engine defends against.
+                    Feeding5000Content.boysGiftDecoys.forEach { decoy ->
+                        DecoyTarget(
+                            decoy = decoy,
+                            modifier = Modifier.offset(x = maxWidth * decoy.position.x, y = maxHeight * decoy.position.y),
+                        )
+                    }
+
+                    hiddenObjectState.items.forEach { item ->
+                        RealItemTarget(
+                            item = item,
+                            isFound = item.id in hiddenObjectState.foundIds,
+                            onClick = { onItemTapped(item.id) },
+                            modifier = Modifier.offset(x = maxWidth * item.position.x, y = maxHeight * item.position.y),
+                        )
+                    }
                 }
             }
 
@@ -142,14 +153,6 @@ private fun Feeding5000BoysGiftContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (hiddenObjectState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

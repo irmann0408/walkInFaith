@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +42,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -50,11 +52,14 @@ import com.bibleadventures.game.puzzles.dragsort.DragSortGameState
 import com.bibleadventures.game.puzzles.dragsort.SortCategory
 import com.bibleadventures.game.puzzles.dragsort.SortOutcome
 import com.bibleadventures.game.puzzles.dragsort.SortableItem
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlin.math.roundToInt
+
+private val SORT_ITEM_SIZE = 64.dp
+private const val SORT_ITEM_IMAGE_FRACTION = 56f / 64f
+private val SORT_ITEM_LABEL_HEIGHT = 20.dp
 
 @Composable
 fun NoahsArkOrganizeArkScreen(
@@ -90,7 +95,16 @@ private fun NoahsArkOrganizeArkContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || dragSortState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = dragSortState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -135,21 +149,35 @@ private fun NoahsArkOrganizeArkContent(
                 }
             }
 
-            // A static wrapped grid, not a hidden scroll — every item is visible at once
-            // so nothing can be missed (spec section 13: simple, discoverable navigation).
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                unplacedItems.chunked(4).forEach { rowItems ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        rowItems.forEach { item ->
-                            key(item.id) {
-                                DraggableSortItem(
-                                    item = item,
-                                    categoryBounds = categoryBounds,
-                                    onDropped = { categoryKey -> onItemDropped(item.id, categoryKey) },
-                                )
+            // A static wrapped grid — every item is visible at once (spec section
+            // 13's "simple, discoverable navigation"). weight(1f, fill = true)
+            // hands this region exactly the space left over after every other
+            // sibling above claims its natural size, and BoxWithConstraints reads
+            // that resolved space to compute an item size that makes the whole
+            // tray fit — shrinking below SORT_ITEM_SIZE only when there isn't room
+            // for it, never overflowing. Drag/drop detection reads live positions
+            // via onGloballyPositioned, so a smaller item size doesn't affect it.
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f, fill = true).padding(top = 32.dp)) {
+                val columns = 4
+                val rows = ((unplacedItems.size + columns - 1) / columns).coerceAtLeast(1)
+                val spacing = 16.dp
+                val itemSize = minOf(
+                    (maxWidth - spacing * (columns - 1)) / columns,
+                    (maxHeight - spacing * (rows - 1) - SORT_ITEM_LABEL_HEIGHT * rows) / rows,
+                ).coerceIn(48.dp, SORT_ITEM_SIZE)
+
+                Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                    unplacedItems.chunked(columns).forEach { rowItems ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                            rowItems.forEach { item ->
+                                key(item.id) {
+                                    DraggableSortItem(
+                                        item = item,
+                                        itemSize = itemSize,
+                                        categoryBounds = categoryBounds,
+                                        onDropped = { categoryKey -> onItemDropped(item.id, categoryKey) },
+                                    )
+                                }
                             }
                         }
                     }
@@ -161,14 +189,6 @@ private fun NoahsArkOrganizeArkContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (dragSortState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 32.dp),
                 )
             }
         }
@@ -191,30 +211,31 @@ private fun CategoryDropZone(category: SortCategory, modifier: Modifier = Modifi
 @Composable
 private fun DraggableSortItem(
     item: SortableItem,
+    itemSize: Dp,
     categoryBounds: Map<String, Rect>,
     onDropped: (categoryKey: String) -> Unit,
 ) {
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var baseTopLeft by remember { mutableStateOf(Offset.Zero) }
-    var itemSize by remember { mutableStateOf(IntSize.Zero) }
+    var boxSizePx by remember { mutableStateOf(IntSize.Zero) }
     val name = stringResource(item.contentDescriptionRes)
 
     // The label sits below the draggable box rather than inside it, so it doesn't
     // affect the drag/drop hit-testing math (which uses the box's own center).
-    Column(modifier = Modifier.width(64.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = Modifier.width(itemSize), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
                 .onGloballyPositioned { coords ->
                     baseTopLeft = coords.positionInRoot()
-                    itemSize = coords.size
+                    boxSizePx = coords.size
                 }
                 .offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
-                .size(64.dp)
+                .size(itemSize)
                 .pointerInput(item.id) {
                     detectDragGestures(
                         onDragEnd = {
                             val center = baseTopLeft + dragOffset +
-                                Offset(itemSize.width / 2f, itemSize.height / 2f)
+                                Offset(boxSizePx.width / 2f, boxSizePx.height / 2f)
                             val targetCategory = categoryBounds.entries.firstOrNull { (_, rect) -> rect.contains(center) }?.key
                             if (targetCategory != null) {
                                 onDropped(targetCategory)
@@ -231,7 +252,7 @@ private fun DraggableSortItem(
                 .semantics { contentDescription = name },
             contentAlignment = Alignment.Center,
         ) {
-            Image(painter = painterResource(item.iconRes), contentDescription = null, modifier = Modifier.size(56.dp))
+            Image(painter = painterResource(item.iconRes), contentDescription = null, modifier = Modifier.size(itemSize * SORT_ITEM_IMAGE_FRACTION))
         }
         Text(
             text = name,

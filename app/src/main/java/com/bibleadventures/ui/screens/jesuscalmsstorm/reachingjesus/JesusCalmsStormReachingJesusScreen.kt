@@ -6,14 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -44,8 +41,8 @@ import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
 import com.bibleadventures.game.stories.JesusCalmsStormContent
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -89,46 +86,56 @@ private fun JesusCalmsStormReachingJesusContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || gridMazeState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = gridMazeState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.jesus_calms_storm_reaching_jesus_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-                Text(
-                    text = stringResource(R.string.jesus_calms_storm_reaching_jesus_instructions),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
-                )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(R.string.jesus_calms_storm_reaching_jesus_title),
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Text(
+                text = stringResource(R.string.jesus_calms_storm_reaching_jesus_instructions),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+            )
 
-                // Visible feedback + a screen-reader announcement after each move (a
-                // wall bump, since the grid's other tiles have no per-cell content
-                // description — narrating up to 63 non-interactive cells on every
-                // recomposition would be noisy for a D-pad-only maze where the
-                // player never touches a tile directly).
-                Box(modifier = Modifier.height(28.dp)) {
-                    Text(
-                        text = mazeFeedbackText(gridMazeState),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                    )
-                }
+            // Visible feedback + a screen-reader announcement after each move (a
+            // wall bump, since the grid's other tiles have no per-cell content
+            // description — narrating up to 63 non-interactive cells on every
+            // recomposition would be noisy for a D-pad-only maze where the
+            // player never touches a tile directly).
+            Box(modifier = Modifier.height(28.dp)) {
+                Text(
+                    text = mazeFeedbackText(gridMazeState),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
 
-                // Non-interactive grid, same reasoning as DanielDariusMazeScreen:
-                // movement is via the D-pad below, not tap-on-tile.
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .aspectRatio(7f / 9f),
-                ) {
+            // Non-interactive grid, same reasoning as DanielDariusMazeScreen:
+            // movement is via the D-pad below, not tap-on-tile. weight(1f, fill =
+            // true) hands this element exactly the space left over after every
+            // other (naturally-sized) sibling in this Column, and
+            // AspectRatioFitBox letterbox-fits within that bounded box —
+            // shrinking on cramped viewports instead of overflowing, so nothing
+            // here ever needs to scroll.
+            AspectRatioFitBox(ratio = 7f / 9f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
                     gridMazeState.grid.forEachIndexed { rowIndex, rowTiles ->
                         Row(modifier = Modifier.weight(1f)) {
                             rowTiles.forEachIndexed { colIndex, tile ->
@@ -141,27 +148,19 @@ private fun JesusCalmsStormReachingJesusContent(
                         }
                     }
                 }
+            }
 
-                DirectionalPad(
-                    onDirectionPressed = onDirectionPressed,
-                    modifier = Modifier.padding(top = 16.dp),
+            DirectionalPad(
+                onDirectionPressed = onDirectionPressed,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+
+            if (previouslyCompleted && !gridMazeState.isComplete) {
+                Text(
+                    text = stringResource(R.string.puzzle_already_completed_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
                 )
-
-                if (previouslyCompleted && !gridMazeState.isComplete) {
-                    Text(
-                        text = stringResource(R.string.puzzle_already_completed_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-
-                if (gridMazeState.isComplete || previouslyCompleted) {
-                    AdventureMenuButton(
-                        text = stringResource(R.string.action_continue),
-                        onClick = onContinue,
-                        modifier = Modifier.widthIn(max = 320.dp).padding(top = 16.dp),
-                    )
-                }
             }
         }
     }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,17 +49,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.groupfill.FamilyGroup
+import com.bibleadventures.game.puzzles.groupfill.GroupFillGame
 import com.bibleadventures.game.puzzles.groupfill.GroupFillGameState
 import com.bibleadventures.game.puzzles.groupfill.GroupFillOutcome
 import com.bibleadventures.ui.LocalReducedMotion
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.launch
@@ -113,7 +115,16 @@ private fun Feeding5000GatheringCrowdContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || groupFillState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = groupFillState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -143,7 +154,7 @@ private fun Feeding5000GatheringCrowdContent(
 
             val feedback = when (groupFillState.lastOutcome) {
                 GroupFillOutcome.ADDED, GroupFillOutcome.CIRCLE_COMPLETE, GroupFillOutcome.ALL_COMPLETE -> stringResource(R.string.feedback_great_job)
-                GroupFillOutcome.REJECTED_OVERSHOOT -> stringResource(R.string.feedback_try_another_one)
+                GroupFillOutcome.REJECTED_OVERSHOOT, GroupFillOutcome.REJECTED_UNREACHABLE -> stringResource(R.string.feedback_try_another_one)
                 GroupFillOutcome.NONE -> ""
             }
             Box(modifier = Modifier.height(28.dp).padding(top = 4.dp)) {
@@ -169,27 +180,47 @@ private fun Feeding5000GatheringCrowdContent(
                 }
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            // Every remaining family is visible at once. weight(1f, fill = true)
+            // hands this region exactly the space left over after every other
+            // sibling above claims its natural size, and BoxWithConstraints reads
+            // that resolved space to compute a tile size that makes the whole
+            // grid fit — shrinking below FAMILY_TILE_SIZE only when there isn't
+            // room for it, never overflowing. Drag/drop detection reads live
+            // positions via onGloballyPositioned, so a smaller tile size doesn't
+            // affect it.
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = true)
+                    .padding(top = 24.dp),
             ) {
-                groupFillState.remainingFamilyIds.chunked(5).forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    ) {
-                        row.forEach { familyId ->
-                            key(familyId) {
-                                val headcount = groupFillState.families.first { it.id == familyId }.headcount
-                                DraggableFamily(
-                                    familyId = familyId,
-                                    headcount = headcount,
-                                    circleCenters = circleCenters,
-                                    circleSums = circleSums,
-                                    circleTargets = groupFillState.circleTargets,
-                                    snapRadiusPx = snapRadiusPx,
-                                    onDropped = onFamilyDropped,
-                                )
+                val columns = 5
+                val rows = ((groupFillState.remainingFamilyIds.size + columns - 1) / columns).coerceAtLeast(1)
+                val spacing = 8.dp
+                val tileSize = minOf(
+                    (maxWidth - spacing * (columns - 1)) / columns,
+                    (maxHeight - spacing * (rows - 1)) / rows,
+                ).coerceIn(48.dp, FAMILY_TILE_SIZE)
+
+                Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                    groupFillState.remainingFamilyIds.chunked(columns).forEach { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally),
+                        ) {
+                            row.forEach { familyId ->
+                                key(familyId) {
+                                    val headcount = groupFillState.families.first { it.id == familyId }.headcount
+                                    DraggableFamily(
+                                        familyId = familyId,
+                                        headcount = headcount,
+                                        tileSize = tileSize,
+                                        circleCenters = circleCenters,
+                                        canAccept = { circleIndex -> GroupFillGame.canAccept(groupFillState, familyId, circleIndex) },
+                                        snapRadiusPx = snapRadiusPx,
+                                        onDropped = onFamilyDropped,
+                                    )
+                                }
                             }
                         }
                     }
@@ -201,14 +232,6 @@ private fun Feeding5000GatheringCrowdContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (groupFillState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }
@@ -260,9 +283,9 @@ private fun CircleDropZone(index: Int, sum: Int, target: Int, isComplete: Boolea
 private fun DraggableFamily(
     familyId: String,
     headcount: Int,
+    tileSize: Dp,
     circleCenters: List<Offset>,
-    circleSums: List<Int>,
-    circleTargets: List<Int>,
+    canAccept: (circleIndex: Int) -> Boolean,
     snapRadiusPx: Float,
     onDropped: (familyId: String, circleIndex: Int) -> Unit,
 ) {
@@ -284,14 +307,14 @@ private fun DraggableFamily(
             .offset {
                 IntOffset((dragOffset.x + snapOffset.value.x).roundToInt(), (dragOffset.y + snapOffset.value.y).roundToInt())
             }
-            .size(FAMILY_TILE_SIZE)
-            .pointerInput(familyId, circleCenters, circleSums) {
+            .size(tileSize)
+            .pointerInput(familyId, circleCenters, canAccept) {
                 detectDragGestures(
                     onDragEnd = {
                         val releasedCenter = baseTopLeft + dragOffset + Offset(itemSize.width / 2f, itemSize.height / 2f)
                         val nearestIndex = circleCenters.indices.minByOrNull { (releasedCenter - circleCenters[it]).getDistance() }
                         val distance = nearestIndex?.let { (releasedCenter - circleCenters[it]).getDistance() } ?: Float.MAX_VALUE
-                        val fits = nearestIndex != null && circleSums[nearestIndex] + headcount <= circleTargets[nearestIndex]
+                        val fits = nearestIndex != null && canAccept(nearestIndex)
                         if (nearestIndex != null && distance <= snapRadiusPx && fits) {
                             val target = circleCenters[nearestIndex] - releasedCenter
                             scope.launch {

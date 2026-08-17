@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,8 +39,8 @@ import com.bibleadventures.game.puzzles.sudoku.SudokuGameState
 import com.bibleadventures.game.puzzles.sudoku.SudokuOutcome
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.SudokuIconDef
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -78,11 +79,20 @@ private fun EstherMessengerSudokuContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || sudokuState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = sudokuState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(innerPadding)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -108,23 +118,29 @@ private fun EstherMessengerSudokuContent(
 
             MessengerTracker(completedRowCount = sudokuState.completedRows.size, totalRows = sudokuState.size)
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-            ) {
-                for (row in 0 until sudokuState.size) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        for (col in 0 until sudokuState.size) {
-                            SudokuCell(
-                                row = row,
-                                col = col,
-                                value = sudokuState.valueAt(row, col),
-                                isGiven = sudokuState.givens.containsKey(row to col),
-                                isSelected = selectedCell == (row to col),
-                                onClick = { onCellSelected(row, col) },
-                                modifier = Modifier.weight(1f).aspectRatio(1f),
-                            )
+            // The grid is inherently square (N equal rows of N equal columns), so
+            // weight(1f, fill = true) + AspectRatioFitBox(ratio = 1f) treats the
+            // *whole grid* as one fitted square — hands it exactly the space left
+            // over after every other (naturally-sized) sibling in this Column
+            // (including the icon palette below), shrinking on cramped viewports
+            // instead of overflowing. Each Row's own weight(1f) then divides that
+            // already-square box evenly, which is what makes each individual cell
+            // come out square too — no per-cell aspectRatio needed on top of that.
+            AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize().padding(top = 12.dp)) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    for (row in 0 until sudokuState.size) {
+                        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            for (col in 0 until sudokuState.size) {
+                                SudokuCell(
+                                    row = row,
+                                    col = col,
+                                    value = sudokuState.valueAt(row, col),
+                                    isGiven = sudokuState.givens.containsKey(row to col),
+                                    isSelected = selectedCell == (row to col),
+                                    onClick = { onCellSelected(row, col) },
+                                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                                )
+                            }
                         }
                     }
                 }
@@ -149,14 +165,6 @@ private fun EstherMessengerSudokuContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (sudokuState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

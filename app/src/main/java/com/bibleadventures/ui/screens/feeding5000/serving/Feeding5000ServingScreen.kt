@@ -6,14 +6,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -44,8 +42,8 @@ import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
 import com.bibleadventures.game.stories.Feeding5000Content
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.feeding5000.Feeding5000ViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -92,7 +90,16 @@ private fun Feeding5000ServingContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || gridMazeState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = gridMazeState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -136,22 +143,23 @@ private fun Feeding5000ServingContent(
             // Non-interactive: an 8x8 grid can't give each cell a legible 48dp tap
             // target on a phone screen, which is exactly why movement is via the
             // D-pad below, not tap-on-tile — same reasoning as every other
-            // gridmaze chapter.
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-            ) {
-                gridMazeState.grid.forEachIndexed { rowIndex, rowTiles ->
-                    Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                        rowTiles.forEachIndexed { colIndex, tile ->
-                            val position = GridPosition(rowIndex, colIndex)
-                            ServingGridCell(
-                                tile = tile,
-                                isPlayer = gridMazeState.playerPosition == position,
-                                isServed = position in gridMazeState.collectedPositions,
-                                modifier = Modifier.weight(1f).fillMaxSize(),
-                            )
+            // gridmaze chapter. weight(1f, fill = true) hands this element exactly
+            // the space left over after every other (naturally-sized) sibling in
+            // this Column, and AspectRatioFitBox letterbox-fits within that
+            // bounded box, so nothing here ever needs to scroll.
+            AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    gridMazeState.grid.forEachIndexed { rowIndex, rowTiles ->
+                        Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                            rowTiles.forEachIndexed { colIndex, tile ->
+                                val position = GridPosition(rowIndex, colIndex)
+                                ServingGridCell(
+                                    tile = tile,
+                                    isPlayer = gridMazeState.playerPosition == position,
+                                    isServed = position in gridMazeState.collectedPositions,
+                                    modifier = Modifier.weight(1f).fillMaxSize(),
+                                )
+                            }
                         }
                     }
                 }
@@ -167,14 +175,6 @@ private fun Feeding5000ServingContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (gridMazeState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.widthIn(max = 320.dp).padding(top = 16.dp),
                 )
             }
         }

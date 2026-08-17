@@ -46,6 +46,7 @@ class GoodSamaritanFlowTest {
     fun completingGoodSamaritan_awardsStarsAndUnlocksDanielOnTheWorldMap() {
         val activity = composeTestRule.activity
         val continueLabel = activity.getString(R.string.action_continue)
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
         completeNoahsArk(continueLabel)
@@ -81,11 +82,12 @@ class GoodSamaritanFlowTest {
 
             val helpingBeatShown = composeTestRule.onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()
             if (helpingBeatShown) {
+                // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
                 composeTestRule.onNodeWithText(continueLabel).performClick()
             }
         }
 
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 3: Lesson.
         composeTestRule.onNodeWithText(activity.getString(R.string.good_samaritan_lesson_title)).assertExists()
@@ -104,6 +106,7 @@ class GoodSamaritanFlowTest {
     /** Walks Noah's Ark end to end (mirrors NoahsArkFlowTest) so David & Goliath unlocks. */
     private fun completeNoahsArk(continueLabel: String) {
         val activity = composeTestRule.activity
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
 
@@ -113,14 +116,14 @@ class GoodSamaritanFlowTest {
         NoahsArkContent.animals.forEach { animal ->
             composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         NoahsArkContent.animals.forEach { animal ->
             val name = activity.getString(animal.nameRes)
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
             composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Organize the Ark context
 
@@ -130,12 +133,12 @@ class GoodSamaritanFlowTest {
             val categoryLabel = activity.getString(categoryLabelRes)
             dragOntoText(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetText = categoryLabel)
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         NoahsArkContent.hiddenItems.forEach { item ->
             composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Lesson
 
@@ -145,6 +148,7 @@ class GoodSamaritanFlowTest {
     /** Walks David and Goliath end to end (mirrors DavidGoliathFlowTest) so Good Samaritan unlocks. */
     private fun completeDavidGoliath(continueLabel: String) {
         val activity = composeTestRule.activity
+        val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_david_goliath_title)).performClick()
 
@@ -156,14 +160,14 @@ class GoodSamaritanFlowTest {
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
             composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Choose the Stones context
 
         DavidGoliathContent.stones.forEach { stone ->
             composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)).performClick()
         }
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(continueLabel).performClick() // Sling Practice context
 
@@ -181,12 +185,12 @@ class GoodSamaritanFlowTest {
             moveLeftLabelRes = R.string.david_goliath_dodge_move_left_content_description,
             moveRightLabelRes = R.string.david_goliath_dodge_move_right_content_description,
         )
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         completeSlingPractice()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.feedback_great_job)).assertExists()
-        composeTestRule.onNodeWithText(continueLabel).performClick()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_lesson_title)).assertExists()
         composeTestRule.onNodeWithText(continueLabel).performClick()

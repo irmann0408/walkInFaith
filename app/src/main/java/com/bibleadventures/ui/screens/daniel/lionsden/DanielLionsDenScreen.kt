@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -52,8 +51,8 @@ import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.MathOperator
 import com.bibleadventures.game.stories.MathProblem
 import com.bibleadventures.ui.LocalReducedMotion
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -117,7 +116,16 @@ private fun DanielLionsDenContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || lionsDenState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = lionsDenState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -150,48 +158,52 @@ private fun DanielLionsDenContent(
                 Text(text = feedback, style = MaterialTheme.typography.titleLarge)
             }
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .scale(burstScale.value),
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.bg_daniel_den),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
+            // weight(1f, fill = true) hands this element exactly the space left
+            // over after every other (naturally-sized) sibling in this Column —
+            // including the answer-choice row below, which stays a plain,
+            // natural-sized sibling — and AspectRatioFitBox letterbox-fits within
+            // that bounded box, so nothing here ever needs to scroll. The nested
+            // BoxWithConstraints re-reads the fitted box's own size so the light
+            // positions below can still be placed as fractions of it.
+            AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+                BoxWithConstraints(modifier = Modifier.fillMaxSize().scale(burstScale.value)) {
+                    Image(
+                        painter = painterResource(R.drawable.bg_daniel_den),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
 
-                val lionIcon = if (lionsDenState.isComplete) R.drawable.ic_lion_calm else R.drawable.ic_lion_pacing
-                val lionsDescription = stringResource(R.string.daniel_lions_den_lions_content_description)
-                Row(
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp),
-                ) {
-                    Image(painter = painterResource(lionIcon), contentDescription = lionsDescription, modifier = Modifier.size(72.dp))
-                    Image(painter = painterResource(lionIcon), contentDescription = null, modifier = Modifier.size(72.dp))
-                }
+                    val lionIcon = if (lionsDenState.isComplete) R.drawable.ic_lion_calm else R.drawable.ic_lion_pacing
+                    val lionsDescription = stringResource(R.string.daniel_lions_den_lions_content_description)
+                    Row(
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    ) {
+                        Image(painter = painterResource(lionIcon), contentDescription = lionsDescription, modifier = Modifier.size(72.dp))
+                        Image(painter = painterResource(lionIcon), contentDescription = null, modifier = Modifier.size(72.dp))
+                    }
 
-                val litPositions = DanielContent.lionsDenLightPositions.take(lionsDenState.currentStepIndex)
-                if (litPositions.size > 1) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        for (i in 0 until litPositions.size - 1) {
-                            drawLine(
-                                color = Color(0xFFFFD54A),
-                                start = Offset(size.width * litPositions[i].x, size.height * litPositions[i].y),
-                                end = Offset(size.width * litPositions[i + 1].x, size.height * litPositions[i + 1].y),
-                                strokeWidth = 6f,
-                            )
+                    val litPositions = DanielContent.lionsDenLightPositions.take(lionsDenState.currentStepIndex)
+                    if (litPositions.size > 1) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            for (i in 0 until litPositions.size - 1) {
+                                drawLine(
+                                    color = Color(0xFFFFD54A),
+                                    start = Offset(size.width * litPositions[i].x, size.height * litPositions[i].y),
+                                    end = Offset(size.width * litPositions[i + 1].x, size.height * litPositions[i + 1].y),
+                                    strokeWidth = 6f,
+                                )
+                            }
                         }
                     }
-                }
 
-                DanielContent.lionsDenLightPositions.forEachIndexed { index, position ->
-                    LightPoint(
-                        isLit = index < lionsDenState.currentStepIndex,
-                        modifier = Modifier.offset(x = maxWidth * position.x - 24.dp, y = maxHeight * position.y - 24.dp),
-                    )
+                    DanielContent.lionsDenLightPositions.forEachIndexed { index, position ->
+                        LightPoint(
+                            isLit = index < lionsDenState.currentStepIndex,
+                            modifier = Modifier.offset(x = maxWidth * position.x - 24.dp, y = maxHeight * position.y - 24.dp),
+                        )
+                    }
                 }
             }
 
@@ -227,14 +239,6 @@ private fun DanielLionsDenContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (lionsDenState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

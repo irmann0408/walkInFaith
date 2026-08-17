@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,8 +38,8 @@ import com.bibleadventures.game.puzzles.rhythmlane.NoteJudgment
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.JesusCalmsStormContent
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.isActive
@@ -129,7 +128,16 @@ private fun JesusCalmsStormPeaceBeStillContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -159,6 +167,11 @@ private fun JesusCalmsStormPeaceBeStillContent(
             }
 
             if (!isComplete) {
+                // weight(1f, fill = true) hands this Row exactly the space left over
+                // after every other (naturally-sized) sibling in this Column, and
+                // each cell's own AspectRatioFitBox letterbox-fits its word button
+                // within its width slice and the row's bounded height, so nothing
+                // here ever needs to scroll.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -168,13 +181,15 @@ private fun JesusCalmsStormPeaceBeStillContent(
                 ) {
                     val expectedLane = peaceBeStillState.chart.notes.getOrNull(peaceBeStillState.hits)?.lane
                     repeat(LANE_COUNT) { lane ->
-                        WordLane(
-                            wordRes = wordLabels[lane],
-                            isApproaching = lane == expectedLane &&
-                                isApproaching(peaceBeStillState.chart, lane, peaceBeStillState.judgedNoteKeys, elapsedMs),
-                            onTapped = { onWordTapped(lane, elapsedMs) },
-                            modifier = Modifier.weight(1f).fillMaxSize(),
-                        )
+                        AspectRatioFitBox(ratio = 0.7f, modifier = Modifier.weight(1f).fillMaxSize()) {
+                            WordLane(
+                                wordRes = wordLabels[lane],
+                                isApproaching = lane == expectedLane &&
+                                    isApproaching(peaceBeStillState.chart, lane, peaceBeStillState.judgedNoteKeys, elapsedMs),
+                                onTapped = { onWordTapped(lane, elapsedMs) },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
                     }
                 }
             }
@@ -184,14 +199,6 @@ private fun JesusCalmsStormPeaceBeStillContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }
@@ -207,7 +214,6 @@ private fun WordLane(wordRes: Int, isApproaching: Boolean, onTapped: () -> Unit,
 
     Box(
         modifier = modifier
-            .aspectRatio(0.7f)
             .clip(RoundedCornerShape(16.dp))
             .background(backgroundColor)
             .clickable(onClickLabel = word, onClick = onTapped)

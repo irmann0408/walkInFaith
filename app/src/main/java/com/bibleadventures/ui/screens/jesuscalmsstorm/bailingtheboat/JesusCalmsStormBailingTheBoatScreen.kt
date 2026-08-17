@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -54,9 +53,9 @@ import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.JesusCalmsStormContent
 import com.bibleadventures.ui.LocalReducedMotion
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
 import com.bibleadventures.ui.components.CharacterPreview
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.isActive
@@ -136,7 +135,16 @@ private fun JesusCalmsStormBailingTheBoatContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -181,43 +189,46 @@ private fun JesusCalmsStormBailingTheBoatContent(
             }
 
             if (!isComplete) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                // weight(1f, fill = true) hands this element exactly the space left
+                // over after every other (naturally-sized) sibling in this Column —
+                // including LaneMoveControls below — and AspectRatioFitBox
+                // letterbox-fits within that bounded box, so nothing here ever
+                // needs to scroll.
+                AspectRatioFitBox(
+                    ratio = 1.6f,
+                    modifier = Modifier.weight(1f, fill = true).fillMaxSize().padding(top = 8.dp),
                 ) {
-                    Box(modifier = Modifier.fillMaxWidth().aspectRatio(1.6f)) {
-                        Image(
-                            painter = painterResource(R.drawable.bg_jesus_calms_storm_storm),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().weight(1f, fill = true),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                repeat(LANE_COUNT) { lane ->
-                                    FallingWaveLane(
-                                        lane = lane,
-                                        chart = bailingState.chart,
-                                        judgedNoteKeys = bailingState.judgedNoteKeys,
-                                        elapsedMs = elapsedMs,
-                                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                                    )
-                                }
+                    Image(
+                        painter = painterResource(R.drawable.bg_jesus_calms_storm_storm),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().weight(1f, fill = true),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            repeat(LANE_COUNT) { lane ->
+                                FallingWaveLane(
+                                    lane = lane,
+                                    chart = bailingState.chart,
+                                    judgedNoteKeys = bailingState.judgedNoteKeys,
+                                    elapsedMs = elapsedMs,
+                                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                                )
                             }
-
-                            SingleCharacterTrack(
-                                characterLane = characterLane,
-                                character = character,
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            )
                         }
-                    }
 
-                    LaneMoveControls(onLaneMoved = onLaneMoved, modifier = Modifier.padding(top = 12.dp))
+                        SingleCharacterTrack(
+                            characterLane = characterLane,
+                            character = character,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        )
+                    }
                 }
+
+                LaneMoveControls(onLaneMoved = onLaneMoved, modifier = Modifier.padding(top = 12.dp))
             }
 
             if (previouslyCompleted && !isComplete) {
@@ -225,14 +236,6 @@ private fun JesusCalmsStormBailingTheBoatContent(
                     text = stringResource(R.string.puzzle_already_completed_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            if (isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

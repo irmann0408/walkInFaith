@@ -12,6 +12,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +50,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -58,8 +60,7 @@ import com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState
 import com.bibleadventures.game.puzzles.stackbuild.StackBuildOutcome
 import com.bibleadventures.game.stories.JesusCalmsStormContent
 import com.bibleadventures.ui.LocalReducedMotion
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.jesuscalmsstorm.JesusCalmsStormViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.launch
@@ -143,7 +144,16 @@ private fun JesusCalmsStormLoadingTheBoatContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || loadingState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = loadingState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -202,25 +212,40 @@ private fun JesusCalmsStormLoadingTheBoatContent(
                 }
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                remainingItemIds.chunked(3).forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    ) {
-                        row.forEach { itemId ->
-                            key(itemId) {
-                                DraggableBoatItem(
-                                    itemId = itemId,
-                                    weight = itemWeights.getValue(itemId),
-                                    isNextExpected = itemId == loadingState.nextExpectedId,
-                                    dropZoneCenter = dropZoneCenter,
-                                    snapRadiusPx = snapRadiusPx,
-                                    onSnapped = onItemPlaced,
-                                )
+            // Every remaining item is visible at once. weight(1f, fill = true)
+            // hands this region exactly the space left over after every other
+            // sibling above claims its natural size, and BoxWithConstraints reads
+            // that resolved space to compute an item size that makes the whole
+            // tray fit — shrinking below ITEM_SIZE only when there isn't room for
+            // it, never overflowing. Drag/drop detection reads live positions via
+            // onGloballyPositioned, so a smaller item size doesn't affect it.
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f, fill = true).padding(top = 16.dp)) {
+                val columns = 3
+                val rows = ((remainingItemIds.size + columns - 1) / columns).coerceAtLeast(1)
+                val spacing = 8.dp
+                val traySize = minOf(
+                    (maxWidth - spacing * (columns - 1)) / columns,
+                    (maxHeight - spacing * (rows - 1)) / rows,
+                ).coerceIn(48.dp, ITEM_SIZE)
+
+                Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                    remainingItemIds.chunked(columns).forEach { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally),
+                        ) {
+                            row.forEach { itemId ->
+                                key(itemId) {
+                                    DraggableBoatItem(
+                                        itemId = itemId,
+                                        weight = itemWeights.getValue(itemId),
+                                        tileSize = traySize,
+                                        isNextExpected = itemId == loadingState.nextExpectedId,
+                                        dropZoneCenter = dropZoneCenter,
+                                        snapRadiusPx = snapRadiusPx,
+                                        onSnapped = onItemPlaced,
+                                    )
+                                }
                             }
                         }
                     }
@@ -234,14 +259,6 @@ private fun JesusCalmsStormLoadingTheBoatContent(
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
-
-            if (loadingState.isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
-            }
         }
     }
 }
@@ -250,6 +267,7 @@ private fun JesusCalmsStormLoadingTheBoatContent(
 private fun DraggableBoatItem(
     itemId: String,
     weight: Int,
+    tileSize: Dp,
     isNextExpected: Boolean,
     dropZoneCenter: Offset,
     snapRadiusPx: Float,
@@ -273,7 +291,7 @@ private fun DraggableBoatItem(
             .offset {
                 IntOffset((dragOffset.x + snapOffset.value.x).roundToInt(), (dragOffset.y + snapOffset.value.y).roundToInt())
             }
-            .size(ITEM_SIZE)
+            .size(tileSize)
             .pointerInput(itemId, isNextExpected, dropZoneCenter) {
                 detectDragGestures(
                     onDragEnd = {
@@ -315,7 +333,7 @@ private fun DraggableBoatItem(
         Image(
             painter = painterResource(itemIconRes(itemId)),
             contentDescription = null,
-            modifier = Modifier.size(56.dp).scale(scaleAnim.value),
+            modifier = Modifier.size(tileSize * (56f / 64f)).scale(scaleAnim.value),
         )
         WeightBadge(weight = weight, modifier = Modifier.align(Alignment.TopEnd))
     }

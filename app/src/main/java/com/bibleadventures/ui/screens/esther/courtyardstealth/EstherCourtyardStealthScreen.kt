@@ -6,14 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -40,8 +37,8 @@ import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.stealth.StealthGameState
 import com.bibleadventures.game.puzzles.stealth.StealthOutcome
 import com.bibleadventures.game.puzzles.stealth.StealthTileType
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 
@@ -76,7 +73,16 @@ private fun EstherCourtyardStealthContent(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || stealthState.isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = stealthState.isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -105,22 +111,24 @@ private fun EstherCourtyardStealthContent(
             }
 
             // Non-interactive grid, same reasoning as GoodSamaritanExploreScreen:
-            // movement is via the D-pad below, not tap-on-tile.
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false)
-                    .aspectRatio(3f / 5f),
-            ) {
-                stealthState.grid.forEachIndexed { rowIndex, rowTiles ->
-                    Row(modifier = Modifier.weight(1f)) {
-                        rowTiles.forEachIndexed { colIndex, tile ->
-                            CourtyardCell(
-                                tile = tile,
-                                isPlayer = stealthState.playerPosition == GridPosition(rowIndex, colIndex),
-                                isGuard = GridPosition(rowIndex, colIndex) in stealthState.watchedCells,
-                                modifier = Modifier.weight(1f).fillMaxSize(),
-                            )
+            // movement is via the D-pad below, not tap-on-tile. weight(1f, fill = true)
+            // hands this element exactly the space left over after every other
+            // (naturally-sized) sibling in this Column, and AspectRatioFitBox
+            // letterbox-fits within that bounded box — shrinking on cramped
+            // viewports instead of overflowing, so nothing here ever needs to
+            // scroll.
+            AspectRatioFitBox(ratio = 3f / 5f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    stealthState.grid.forEachIndexed { rowIndex, rowTiles ->
+                        Row(modifier = Modifier.weight(1f)) {
+                            rowTiles.forEachIndexed { colIndex, tile ->
+                                CourtyardCell(
+                                    tile = tile,
+                                    isPlayer = stealthState.playerPosition == GridPosition(rowIndex, colIndex),
+                                    isGuard = GridPosition(rowIndex, colIndex) in stealthState.watchedCells,
+                                    modifier = Modifier.weight(1f).fillMaxSize(),
+                                )
+                            }
                         }
                     }
                 }
@@ -138,19 +146,6 @@ private fun EstherCourtyardStealthContent(
                 DirectionalPad(
                     onDirectionPressed = onDirectionPressed,
                     modifier = Modifier.padding(top = 16.dp),
-                )
-                if (previouslyCompleted) {
-                    AdventureMenuButton(
-                        text = stringResource(R.string.action_continue),
-                        onClick = onContinue,
-                        modifier = Modifier.widthIn(max = 320.dp).padding(top = 8.dp),
-                    )
-                }
-            } else {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.widthIn(max = 320.dp).padding(top = 16.dp),
                 )
             }
         }

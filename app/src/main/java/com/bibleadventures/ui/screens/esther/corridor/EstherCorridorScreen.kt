@@ -41,8 +41,7 @@ import com.bibleadventures.game.puzzles.rhythmlane.NoteJudgment
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
 import com.bibleadventures.game.stories.EstherContent
-import com.bibleadventures.ui.components.AdventureMenuButton
-import com.bibleadventures.ui.components.BackToMainMenuTopBar
+import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.esther.EstherViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.isActive
@@ -51,6 +50,14 @@ private const val LANE_COUNT = 3
 private val NOTE_SIZE = 40.dp
 private const val TRAVEL_DURATION_MS = 1500L
 private const val NOTE_GRACE_MS = 300L
+
+// The hit zone keeps a small fixed height (already a reasonable tap
+// target) — the falling-note track above it takes whatever's left via
+// weight(1f) instead of a fixed dp budget, since the lane Row itself is
+// now sized to exactly the space left over after title/instructions/
+// progress-meter claim theirs (see the lane Row's own weight(1f, fill =
+// true) below).
+private val HIT_ZONE_HEIGHT = 64.dp
 
 /**
  * A 3-lane, downward-scrolling rhythm mini-game — Beatstar-inspired, tap
@@ -125,7 +132,16 @@ private fun EstherCorridorContent(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { if (previouslyCompleted) BackToMainMenuTopBar(onBackToMainMenu) },
+        topBar = {
+            if (previouslyCompleted || isComplete) {
+                PuzzleTopBar(
+                    showBackButton = previouslyCompleted,
+                    onBackToMainMenu = onBackToMainMenu,
+                    showNextButton = isComplete || previouslyCompleted,
+                    onNext = onContinue,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -171,6 +187,9 @@ private fun EstherCorridorContent(
             }
 
             if (!isComplete) {
+                // weight(1f, fill = true) hands this Row exactly the space left over
+                // after title/instructions/progress-meter claim theirs — never more,
+                // never less — so the lanes inside it always fit without scrolling.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -198,14 +217,6 @@ private fun EstherCorridorContent(
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
-
-            if (isComplete || previouslyCompleted) {
-                AdventureMenuButton(
-                    text = stringResource(R.string.action_continue),
-                    onClick = onContinue,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
-            }
         }
     }
 }
@@ -226,7 +237,7 @@ private fun NoteLane(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f, fill = true),
+                .weight(1f),
         ) {
             val trackHeight = maxHeight
             visibleNotes(chart, lane, judgedNoteKeys, elapsedMs).forEach { msUntilHit ->
@@ -244,7 +255,7 @@ private fun NoteLane(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(HIT_ZONE_HEIGHT)
                 .padding(top = 8.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
