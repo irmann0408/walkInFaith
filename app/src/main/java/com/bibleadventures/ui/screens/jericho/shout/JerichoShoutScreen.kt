@@ -5,13 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -108,12 +108,37 @@ private fun JerichoShoutContent(
                 modifier = Modifier.padding(top = 8.dp),
             )
 
-            Image(
-                painter = painterResource(if (isComplete) R.drawable.ic_jericho_wall_fallen else R.drawable.ic_jericho_wall_intact),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(120.dp).padding(vertical = 16.dp),
-            )
+            // Three copies of the same wall, tiled edge to edge (no gap): the
+            // left two crumble with the rest of the city once the shout is
+            // complete, but the section marked by Rahab's scarlet cord (the
+            // rightmost, ic_jericho_wall_safe) never swaps to rubble at all —
+            // Joshua 2:18-21. Each Image keeps the drawables' own 96:72 aspect
+            // ratio so ContentScale.Fit doesn't add any letterboxing between
+            // tiles, and weight(1f) splits the available width three ways
+            // instead of a hardcoded size, so this still fits any screen width.
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+                val crumblingWallPainter = painterResource(
+                    if (isComplete) R.drawable.ic_jericho_wall_fallen else R.drawable.ic_jericho_wall_intact,
+                )
+                Image(
+                    painter = crumblingWallPainter,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.weight(1f).aspectRatio(96f / 72f),
+                )
+                Image(
+                    painter = crumblingWallPainter,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.weight(1f).aspectRatio(96f / 72f),
+                )
+                Image(
+                    painter = painterResource(R.drawable.ic_jericho_wall_safe),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.weight(1f).aspectRatio(96f / 72f),
+                )
+            }
 
             val progressFraction = (shoutTaps.toFloat() / requiredTaps).coerceIn(0f, 1f)
             Box(

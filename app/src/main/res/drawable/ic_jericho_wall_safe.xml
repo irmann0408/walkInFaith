@@ -3,11 +3,14 @@
     android:height="72dp"
     android:viewportWidth="96"
     android:viewportHeight="72">
-    <!-- Body spans the full viewport width (no left/right margin) so 3 tiled copies read as one continuous wall with no seam. -->
+    <!-- Rahab's section of the wall (Joshua 2:18-21) — marked by the scarlet cord, this one never has a "fallen" counterpart; it's always rendered from this one drawable, regardless of shout progress.
+         Body spans the full viewport width so it tiles flush against the wall to its left, with no seam. -->
     <path android:fillColor="#FFB0A48C" android:pathData="M0,61 L0,16 L96,16 L96,61 Z" />
     <path android:fillColor="#FF8C7F66" android:pathData="M0,27 L96,27 L96,31 L0,31 Z" />
     <path android:fillColor="#FF8C7F66" android:pathData="M0,44 L96,44 L96,48 L0,48 Z" />
     <path android:fillColor="#FF8C7F66" android:pathData="M24,16 L28,16 L28,61 L24,61 Z" />
     <path android:fillColor="#FF8C7F66" android:pathData="M48,16 L52,16 L52,61 L48,61 Z" />
     <path android:fillColor="#FF8C7F66" android:pathData="M72,16 L76,16 L76,61 L72,61 Z" />
+    <path android:fillColor="#FFD32F2F" android:pathData="M82,16 C86,22 78,30 82,36 C86,42 78,50 82,56 L86,56 C90,50 82,42 86,36 C90,30 82,22 86,16 Z" />
+    <path android:fillColor="#FFB71C1C" android:pathData="M84,59 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
 </vector>

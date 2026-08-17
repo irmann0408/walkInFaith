@@ -1,12 +1,21 @@
 # Project Status
 
-Last updated: 2026-08-17 (every remaining bottom-of-screen "Continue"
+Last updated: 2026-08-17 (Jericho's Shout finale puzzle now shows 3
+full-size wall tiles side by side with no seam between them — the left
+two swap to rubble as before, but the rightmost tile, marked by a red
+rope (Rahab's scarlet cord, Joshua 2:18-21), always renders intact and
+never crumbles. Took 3 iterations to land, each corrected from on-device
+feedback — see "Round 6 — Jericho Shout: wider wall, tripled, with
+Rahab's cord surviving the collapse" further down, including a real bug
+where vector art authored with its own decorative margins doesn't tile
+seamlessly even at zero layout-level spacing. Before that: every
+remaining bottom-of-screen "Continue"
 button — chapter intros, lessons, choice screens, and the shared
 pre-puzzle `StoryBeatScreen`, 25 production files — now uses the same
 top-bar "Next Page" pattern the 32 puzzle screens gained in the round
 just before this one. A direct, mechanical repeat of that round's
 pattern; see "Round 5 — unify remaining 'Continue' buttons into the
-'Next Page' top-bar pattern" further down. Immediately before that: all
+'Next Page' top-bar pattern" further down. Before that: all
 32 puzzle-mini-game screens redesigned to shrink-to-fit their content
 instead of scrolling — Cross the Courtyard was the worst offender,
 reported directly by the user after 3 earlier rounds had only moved
@@ -3521,6 +3530,67 @@ investigation before starting.
   preference from Round 4, the full instrumented suite was not run this
   round either; verification was `installDebug` plus manual on-device
   testing, which the user confirmed directly ("everything looks good").
+
+### Round 6 — Jericho Shout: wider wall, tripled, with Rahab's cord surviving the collapse
+
+The Battle of Jericho's finale puzzle (`JerichoShoutScreen.kt`) swaps a
+single wall image from intact to fallen once the tap counter
+(`shoutTaps`, out of `JerichoContent.SHOUT_REQUIRED_TAPS`) completes —
+no animation, no shared engine, just two vector drawables
+(`ic_jericho_wall_intact.xml`/`ic_jericho_wall_fallen.xml`) swapped
+outright, confirmed self-contained to this one screen before touching
+anything. The user asked for the wall to read as wider/taller, and for
+one section — Rahab's, marked by the red scarlet cord (Joshua
+2:18-21) — to visibly *not* crumble with the rest of the city.
+
+Landed in three iterations, each corrected directly from the user's
+on-device feedback:
+1. First pass widened/heightened the single wall's own vector viewport
+   (64×64 → 96×72) and added a red rope baked into both the intact and
+   fallen drawables at the same position — reasoning that an identical
+   shape in the same spot across a full-image swap would read as "the
+   part that didn't crumble." **Wrong**: with only one wall, the user
+   reported it looked like the *entire* wall vanished except the rope —
+   there's a real difference between "one thread that survives" and "an
+   entire safe section of wall still standing."
+2. Second pass split the wall into 3 narrower side-by-side segments
+   (viewport 32×72 each) — 2 plain segments that swap intact/fallen
+   together, 1 "safe" segment (`ic_jericho_wall_segment_safe.xml`) that
+   always renders intact and never has a fallen counterpart at all. The
+   user liked this *logic* but not this iteration's smaller, plainer art
+   style, and wanted visible gaps between the 3 images removed.
+3. Final version: reverted to the richer full-size wall art (96×72
+   viewport, the same brick/mortar detail as the very first pass) for
+   all 3 tiles, laid out via `Row(Modifier.fillMaxWidth())` with three
+   `Image`s each on `Modifier.weight(1f).aspectRatio(96f / 72f)` — no
+   `spacedBy`, splitting the available width evenly with zero Compose-
+   level gap between tiles. **A second real bug found live**: even at
+   zero layout spacing, a visible seam remained between tiles — root
+   cause was the vector art itself, not the layout: the wall/rubble
+   shapes only spanned the *middle* portion of their own 96-wide
+   viewport (a 12-unit decorative margin on each side, intentional for a
+   single standalone wall), so adjacent tiles' empty margins showed up
+   as a gap even with the Images touching exactly. Fixed by extending
+   every shape (wall body, mortar lines, rubble) to span the *full*
+   viewport width (`0` to `96`) in all three drawables, so tiled copies
+   now render as one continuous wall with no seam — a general lesson:
+   **art authored to be shown standalone (with its own margins) cannot
+   be assumed tileable; tiling requires the shape itself to reach the
+   viewport edges, no amount of layout-level `spacing = 0` fixes a gap
+   baked into the source art.**
+
+Final files: `ic_jericho_wall_intact.xml`/`ic_jericho_wall_fallen.xml`
+(plain, full-width, used for the left two wall tiles, still swapped on
+`isComplete` exactly as before) and a new `ic_jericho_wall_safe.xml`
+(full-width wall + red rope + darker knot, rendered unconditionally for
+the third/rightmost tile — no `isComplete` check at all, so it can never
+crumble). `JerichoShoutScreen.kt`'s only Kotlin change: the single
+`Image` became a 3-`Image` `Row`; `shoutTaps`/`isComplete`/the progress
+bar/tap button are all untouched. No changes to `JerichoContent.kt`,
+`JerichoViewModel.kt`, or any shared puzzle engine.
+- `./gradlew build -x connectedAndroidTest` green; `installDebug` +
+  on-device check confirmed by the user ("looks good") after the final
+  no-seam fix.
 
 ## Next tasks
 

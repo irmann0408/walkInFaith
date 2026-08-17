@@ -1,12 +1,11 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="64dp"
-    android:height="64dp"
-    android:viewportWidth="64"
-    android:viewportHeight="64">
-    <!-- The same wall, collapsed into rubble — shape-changed from ic_jericho_wall_intact, never color-only. -->
-    <path android:fillColor="#FFB0A48C" android:pathData="M4,54 L4,44 L20,38 L20,54 Z" />
-    <path android:fillColor="#FFB0A48C" android:pathData="M24,54 L24,46 L40,50 L40,54 Z" />
-    <path android:fillColor="#FFB0A48C" android:pathData="M44,54 L44,42 L60,48 L60,54 Z" />
-    <path android:fillColor="#FF8C7F66" android:pathData="M10,44 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
-    <path android:fillColor="#FF8C7F66" android:pathData="M50,40 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+    android:width="96dp"
+    android:height="72dp"
+    android:viewportWidth="96"
+    android:viewportHeight="72">
+    <!-- The same wall, collapsed into rubble — shape-changed from ic_jericho_wall_intact, never color-only.
+         Spans the full viewport width so 3 tiled copies read as one continuous rubble field with no seam. -->
+    <path android:fillColor="#FFB0A48C" android:pathData="M0,61 L0,48 L48,40 L96,48 L96,61 Z" />
+    <path android:fillColor="#FF8C7F66" android:pathData="M24,54 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path android:fillColor="#FF8C7F66" android:pathData="M72,52 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
 </vector>
