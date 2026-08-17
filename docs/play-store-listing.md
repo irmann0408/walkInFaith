@@ -87,9 +87,8 @@ irmann0408@gmail.com
 ## Store listing graphics checklist
 
 - [x] App icon (512×512) — `app-icon/play-store-icon-512.png`
-- [ ] Feature graphic (1024×500) — not yet made; needs actual graphic
-      design (could reuse the app icon's ark scene, cropped/extended
-      wider, or a simple banner with the app name over a similar warm
-      illustration style)
-- [ ] Phone screenshots (min 2, recommend 4–8) — see
-      "Capture store-ready screenshots" step, not yet done
+- [x] Feature graphic (1024×500) — `store-graphics/feature-graphic.png`,
+      generated from the real app icon art (its sampled color palette +
+      the icon itself as a medallion) rather than a separately-drawn
+      illustration — see `store-graphics/generate_feature_graphic.py`
+- [x] Phone screenshots — `store-screenshots/` (6 captured)
