@@ -29,15 +29,6 @@ it — don't update it automatically.
       rather than a redrawn/mismatched style — samples its actual color palette,
       places the icon as a medallion next to the app name/tagline). User-approved.
 
-### Still open
-- [ ] Create the app listing, upload the AAB, paste in the drafted copy from
-      `docs/play-store-listing.md`, upload the icon
-      (`app-icon/play-store-icon-512.png`), feature graphic
-      (`store-graphics/feature-graphic.png`), and screenshots (`store-screenshots/`)
-- [ ] Fill out the content rating questionnaire and Data Safety form in Play Console
-      (answers guidance already drafted in `docs/play-store-listing.md` — "no data
-      collected" across the board, matches the app's actual empty-permissions manifest)
-- [ ] Accept Google Play Families Policy declarations (this is a children's app)
 - [x] **Toolchain upgraded to meet Play's Aug 31, 2026 target-API deadline** —
       checked live policy: new app submissions must target API 36+ starting that
       date. Upgraded AGP 8.5.2→9.3.0, Gradle 8.7→9.5.0, Kotlin 1.9.24→2.4.10,
@@ -47,6 +38,44 @@ it — don't update it automatically.
       library deps), `targetSdk`→36 (`minSdk` stays 24). Full build, unit tests,
       and instrumented suite (22/22) all green; signed release AAB/APK rebuilt
       with the same keystore identity confirmed unchanged.
+- [x] App created in Play Console (package `com.bibleadventures`) and store listing
+      filled in — title shortened to **"Bible Adventures"** (the full "Bible
+      Adventures: Walk in Faith" is 31 characters, one over Play's 30-character
+      title limit; the full name still lives in the feature graphic and
+      description copy), category **Education**, icon/feature graphic/6
+      screenshots uploaded, short/full description pasted from
+      `docs/play-store-listing.md`
+- [x] Content rating questionnaire completed — first pass came back **ESRB
+      Teen** unexpectedly (traced to the violence/fear questions being answered
+      more generously than the app's actual content warrants — nothing is
+      depicted as violent, the Bible stories' conflict beats are conveyed
+      through gentle narration only), corrected to **None** for violence/fear/
+      language, re-submitted → back to the lowest tier, which unlocked
+      under-13 age brackets in Target audience
+- [x] Data Safety form: "No data collected" across the board
+- [x] App access: "All functionality available without restrictions"
+- [x] Ads: declared no ads; Advertising ID: declared not used
+- [ ] **AI asset declaration** — asked whether any bundled art is AI-generated.
+      The feature graphic is confirmed *not* AI-generated (plain Python/Pillow
+      composition, no generative model). Still need to confirm/declare for
+      `app-icon/play-store-icon-512.png` (and, if still bundled in the AAB, the
+      gated-off Illustrated character art) — provenance not yet confirmed.
+- [ ] **Teacher Approved program** — prompted during setup; recommended opting
+      in (strong fit: no ads/IAP/data collection, gentle non-competitive
+      gameplay) but doesn't block the main review either way — confirm final
+      choice.
+- [ ] External marketing toggle — recommended leaving on (default, no
+      downside) — confirm final choice.
+- [ ] **Closed testing requirement (new developer account)** — Play requires a
+      closed test before Production access unlocks. Track created, submitted
+      with **2 testers** so far (accepted) and currently **in review** by
+      Google (closed-test releases get a lighter review than Production, before
+      testers can install). Once it clears, testers can opt in and the ~14-day
+      clock starts. **Only 2 testers added so far — the actual promotion-to-
+      Production requirement is likely higher (commonly ~12); check the
+      "Production access"/testing status page in Play Console for the exact
+      live number needed and round up the tester list if short**, so this
+      doesn't stall out after the 14 days are already spent.
 - [ ] Submit for review; respond to any Google review feedback
 
 ## v2.0 Plan
