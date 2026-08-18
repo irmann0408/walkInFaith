@@ -107,5 +107,18 @@ Fully built and working, currently gated off for v1.0. To bring back:
       backgrounds are still simple flat vector shapes (Noah's Ark chapter and others).
       Same `*-art/` staging-folder workflow used for the character/icon art could be
       reused here.
+- [ ] **Idea, parked**: use narrated scene video from the user's separate storybook
+      app (`D:\dev\code\irmann\bibleStory`, same native Android/Kotlin/Compose stack,
+      Media3/ExoPlayer) in place of this app's on-device TTS narration — at least for
+      chapters with matching content. Currently only 2 of 8 chapters have built assets
+      there (Noah's Ark: 7 clips, David and Goliath: 8 clips; ~43MB total, 1280x720
+      MP4 + separate per-scene narration MP3s); the other 6 have none yet. This app has
+      no video-playback infra today. Recommended approach when resumed: a scoped pilot
+      on just those 2 chapters rather than an all-or-nothing swap; also check
+      provenance/licensing of the bibleStory assets (likely AI-generated, tool
+      unconfirmed) before anything from it ships in this publicly-distributed app. Full
+      writeup in the conversation this came from. Parked because the user is still
+      building out more stories in `bibleStory` while this app's Play Store closed
+      testing is in progress — revisit once both are further along.
 - [ ] No other concrete backlog items are currently queued — next work beyond the
       above should come from a fresh round of playtesting or a new feature request.
