@@ -3991,3 +3991,23 @@ preview (see above) — no further UI work on it for now. Open items:
   the 5,000's math quizzes, and nothing else) made it safe to change the
   engine itself rather than working around it per-chapter, keeping the fix
   in one place instead of three near-identical patches.
+- **Character art moved from one flattened image per (appearance,
+  hairstyle, clothing) combination to 3 stacked layers (body, costume,
+  hair).** The flat-image model (70 images: 2 appearances × 5 hairstyles ×
+  7 colors) meant any future posture would need 70 more images. Layering
+  means a new hairstyle needs 2 new images (works with every costume color
+  for free) and a new costume color needs 2 new images (works with every
+  hairstyle for free). Body and costume share one fixed pixel canvas per
+  appearance (576×1024 girl, 256×1024 boy) and render as a plain
+  `fillMaxSize()`; hair doesn't share that canvas's proportions, so each
+  (`Hairstyle`, `Appearance`) pair carries its own scale + (x, y) offset,
+  stored as fractions of that same canvas in `CharacterPreview.kt`'s
+  `HairFit` lookup. Those numbers came from an iterative Python/PIL
+  fitting process (composite real art, view the result, nudge by eye) —
+  not a formula — so a new hairstyle needs its own pass through that same
+  process, not a plugged-in calculation. `ClothingColor`'s enum constant
+  names (`TUNIC_BLUE`, `ROBE_RED`, `VEST_YELLOW`, etc.) predate this
+  system and no longer describe a real garment-type distinction (both
+  genders now use one gender-specific costume shape per color) — kept
+  unchanged anyway per the persisted-enum-name rule above, just
+  reinterpreted in code as 7 plain color slots.
