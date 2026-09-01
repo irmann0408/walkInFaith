@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,9 +33,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.puzzles.matching.MatchItem
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.puzzles.matching.MatchingGameState
+import com.bibleadventures.ui.components.CharacterCallout
 import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -53,9 +54,11 @@ fun NoahsArkMatchingScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
 
     NoahsArkMatchingContent(
         matchingState = uiState.matchingState,
+        characterCustomization = characterCustomization,
         onItemTapped = viewModel::onMatchItemTapped,
         onContinue = onContinue,
         onBackToMainMenu = onBackToMainMenu,
@@ -67,6 +70,7 @@ fun NoahsArkMatchingScreen(
 @Composable
 private fun NoahsArkMatchingContent(
     matchingState: MatchingGameState,
+    characterCustomization: CharacterCustomization,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
     onBackToMainMenu: () -> Unit,
@@ -106,10 +110,7 @@ private fun NoahsArkMatchingContent(
             val feedback = when (matchingState.lastOutcome) {
                 MatchOutcome.CORRECT -> stringResource(R.string.feedback_great_job)
                 MatchOutcome.TRY_AGAIN -> stringResource(R.string.feedback_try_another_one)
-                MatchOutcome.NONE -> ""
-            }
-            Box(modifier = Modifier.height(32.dp)) {
-                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
+                MatchOutcome.NONE -> null
             }
 
             // A static wrapped grid, not a lazily-virtualized one — every tile stays in
@@ -146,6 +147,12 @@ private fun NoahsArkMatchingContent(
                         }
                     }
                 }
+
+                CharacterCallout(
+                    characterCustomization = characterCustomization,
+                    message = feedback,
+                    modifier = Modifier.align(Alignment.BottomStart),
+                )
             }
 
             if (previouslyCompleted && !matchingState.isComplete) {
@@ -188,6 +195,7 @@ private fun NoahsArkMatchingPreview() {
     BibleAdventuresTheme {
         NoahsArkMatchingContent(
             matchingState = MatchingGameState(items = emptyList()),
+            characterCustomization = CharacterCustomization(),
             onItemTapped = {},
             onContinue = {},
             onBackToMainMenu = {},

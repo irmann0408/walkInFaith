@@ -7,10 +7,9 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.dragsort.DragSortGame
-import com.bibleadventures.game.puzzles.dragsort.DragSortGameState
-import com.bibleadventures.game.puzzles.dragsort.SortCategory
-import com.bibleadventures.game.puzzles.dragsort.SortableItem
+import com.bibleadventures.game.puzzles.groupfill.FamilyGroup
+import com.bibleadventures.game.puzzles.groupfill.GroupFillGame
+import com.bibleadventures.game.puzzles.groupfill.GroupFillGameState
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGame
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
@@ -30,6 +29,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 data class NoahsArkRewardResult(val stars: Int)
 
@@ -37,14 +37,16 @@ data class NoahsArkRewardResult(val stars: Int)
 enum class DecoyTapOutcome { NONE, DECOY_TAPPED }
 
 data class NoahsArkUiState(
-    val foundAnimalIds: Set<String> = emptySet(),
     val matchingState: MatchingGameState,
-    val dragSortState: DragSortGameState,
+    /** "Load the Ark" — drag numbered supply baskets onto 3 decks until each hits its exact capacity. */
+    val groupFillState: GroupFillGameState,
+    /** Cosmetic only (basket id -> supply kind id): which icon a basket renders, unrelated to the arithmetic. */
+    val loadArkBasketSupplyKinds: Map<String, String>,
+    /** "Find the Tools" — 10 fixed tap targets baked into one background scene image. */
     val hiddenObjectState: HiddenObjectGameState,
     val reward: NoahsArkRewardResult? = null,
-    val lastFindAnimalsDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
-    /** Ids (real + decoy), shuffled once per fresh game so the layout isn't the same every time. */
-    val findAnimalsOrder: List<String> = emptyList(),
+    /** Last tap on "Find the Tools" that landed outside every tool hotspot. */
+    val lastFindToolsWrongTapOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
 )
 
 class NoahsArkViewModel(
@@ -73,13 +75,9 @@ class NoahsArkViewModel(
             initialValue = emptySet(),
         )
 
-    fun onAnimalFound(animalId: String) {
-        _uiState.update { it.copy(foundAnimalIds = it.foundAnimalIds + animalId) }
-    }
-
-    /** Never penalized, never blocks progress — the decoy just stays tappable. */
-    fun onFindAnimalsDecoyTapped() {
-        _uiState.update { it.copy(lastFindAnimalsDecoyOutcome = DecoyTapOutcome.DECOY_TAPPED) }
+    /** A tap on "Find the Tools" that landed outside every tool hotspot — never penalized, never blocks progress. */
+    fun onFindToolsBackgroundTapped() {
+        _uiState.update { it.copy(lastFindToolsWrongTapOutcome = DecoyTapOutcome.DECOY_TAPPED) }
     }
 
     fun onMatchItemTapped(itemId: String) {
@@ -92,15 +90,26 @@ class NoahsArkViewModel(
         }
     }
 
-    fun onSortItemDropped(itemId: String, categoryKey: String) {
+    /** Called only once the screen has confirmed a drag ended over a given deck — not on every drag. */
+    fun onBasketDropped(basketId: String, deckIndex: Int) {
         _uiState.update { current ->
-            current.copy(dragSortState = DragSortGame.onItemDroppedOnCategory(current.dragSortState, itemId, categoryKey))
+            val next = GroupFillGame.onFamilyDropped(current.groupFillState, basketId, deckIndex)
+            if (next.placedFamilyIds.size > current.groupFillState.placedFamilyIds.size) {
+                audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+            }
+            current.copy(groupFillState = next)
         }
     }
 
     fun onHiddenItemTapped(itemId: String) {
         _uiState.update { current ->
-            current.copy(hiddenObjectState = HiddenObjectGame.onItemTapped(current.hiddenObjectState, itemId))
+            current.copy(
+                hiddenObjectState = HiddenObjectGame.onItemTapped(current.hiddenObjectState, itemId),
+                // Clears any lingering "That's not a tool!" bubble from an earlier
+                // wrong tap — a correct tap right after should never leave stale
+                // wrong-answer feedback on screen.
+                lastFindToolsWrongTapOutcome = DecoyTapOutcome.NONE,
+            )
         }
     }
 
@@ -128,6 +137,7 @@ class NoahsArkViewModel(
     }
 
     private fun createInitialState(): NoahsArkUiState {
+        val random = Random.Default
         val matchItems = NoahsArkContent.animals.flatMap { animal ->
             listOf(
                 MatchItem(
@@ -145,27 +155,48 @@ class NoahsArkViewModel(
             )
         }.shuffled()
 
-        // Shuffled once per fresh game (like matchItems above), not on every
-        // recomposition — order stays put for the rest of that playthrough.
-        val sortableItems = NoahsArkContent.sortableItems.shuffled().map {
-            SortableItem(id = it.id, iconRes = it.iconRes, contentDescriptionRes = it.nameRes, categoryKey = it.categoryKey)
-        }
-        val sortCategories = NoahsArkContent.sortCategories.map { SortCategory(key = it.key, labelRes = it.labelRes) }
+        val (loadArkBaskets, loadArkBasketSupplyKinds) = newLoadArkBaskets(random)
 
-        // Positions are hand-placed to fit the background and avoid overlap, so only
-        // which item lands on which position is shuffled, not the positions themselves.
-        val shuffledHiddenPositions = NoahsArkContent.hiddenItems.map { it.position }.shuffled()
-        val hiddenItems = NoahsArkContent.hiddenItems.mapIndexed { index, def ->
-            HiddenItem(id = def.id, position = shuffledHiddenPositions[index], iconRes = def.iconRes, contentDescriptionRes = def.nameRes)
+        // Unlike a typical hidden-object scene, these positions are NOT interchangeable —
+        // each tool is baked into one fixed spot in the background art itself, so nothing
+        // here is shuffled.
+        val findToolsItems = NoahsArkContent.findToolsHotspots.map {
+            HiddenItem(id = it.id, position = it.position, iconRes = it.iconRes, contentDescriptionRes = it.nameRes)
         }
-
-        val findAnimalsOrder = (NoahsArkContent.animals.map { it.id } + NoahsArkContent.findAnimalsDecoys.map { it.id }).shuffled()
 
         return NoahsArkUiState(
             matchingState = MatchingGameState(items = matchItems),
-            dragSortState = DragSortGameState(items = sortableItems, categories = sortCategories),
-            hiddenObjectState = HiddenObjectGameState(items = hiddenItems),
-            findAnimalsOrder = findAnimalsOrder,
+            groupFillState = GroupFillGameState(
+                families = loadArkBaskets,
+                circleTargets = NoahsArkContent.loadArkDeckTargets,
+            ),
+            loadArkBasketSupplyKinds = loadArkBasketSupplyKinds,
+            hiddenObjectState = HiddenObjectGameState(items = findToolsItems),
         )
+    }
+
+    /**
+     * Splits each of [NoahsArkContent.loadArkDeckTargets] into 3-5 random
+     * baskets that sum exactly to it (same "build the puzzle from its own
+     * solution" generator Feeding the 5000 uses for its seating circles —
+     * see [GroupFillGame.randomSolvablePartition]), pools and shuffles them
+     * across decks so the tray order never hints which deck a basket
+     * belongs to, and independently assigns each basket one of
+     * [NoahsArkContent.loadArkSupplyKinds] for its icon — purely cosmetic,
+     * unrelated to the arithmetic the engine actually checks.
+     */
+    private fun newLoadArkBaskets(random: Random): Pair<List<FamilyGroup>, Map<String, String>> {
+        val baskets = mutableListOf<FamilyGroup>()
+        NoahsArkContent.loadArkDeckTargets.forEachIndexed { deckIndex, target ->
+            GroupFillGame.randomSolvablePartition(target, minParts = 3, maxParts = 5, random).forEachIndexed { partIndex, count ->
+                baskets += FamilyGroup(id = "basket_${deckIndex}_$partIndex", headcount = count)
+            }
+        }
+        val shuffledBaskets = baskets.shuffled(random)
+        val supplyKinds = NoahsArkContent.loadArkSupplyKinds.map { it.id }
+        val basketSupplyKinds = shuffledBaskets.mapIndexed { index, basket ->
+            basket.id to supplyKinds[index % supplyKinds.size]
+        }.toMap()
+        return shuffledBaskets to basketSupplyKinds
     }
 }

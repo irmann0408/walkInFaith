@@ -44,7 +44,7 @@ private const val SLING_SHIELD_TOP_EDGE_RIGHT_RATIO = 52f / 64f
  * chapters before they were consolidated back into one per playtesting
  * feedback (splitting them felt disjointed, and the banquet jigsaw
  * mini-game — a repeat of `dragsort`, the same engine Organize the Ark
- * uses — was dropped for being both redundant and too easy).
+ * used at the time — was dropped for being both redundant and too easy).
  */
 class EstherFlowTest {
 

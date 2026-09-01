@@ -332,27 +332,11 @@ class Feeding5000ViewModel(
     private fun newGroupFillFamilies(random: Random = Random.Default): List<FamilyGroup> {
         val families = mutableListOf<FamilyGroup>()
         Feeding5000Content.groupFillCircleTargets.forEachIndexed { circleIndex, target ->
-            randomPartition(target, minParts = 3, maxParts = 5, random).forEachIndexed { partIndex, headcount ->
+            GroupFillGame.randomSolvablePartition(target, minParts = 3, maxParts = 5, random).forEachIndexed { partIndex, headcount ->
                 families += FamilyGroup(id = "family_${circleIndex}_$partIndex", headcount = headcount)
             }
         }
         return families.shuffled(random)
-    }
-
-    /** Splits [target] into a random number (within [minParts]..[maxParts]) of positive integers summing exactly to it. */
-    private fun randomPartition(target: Int, minParts: Int, maxParts: Int, random: Random): List<Int> {
-        val partCount = random.nextInt(minParts, maxParts + 1).coerceAtMost(target)
-        val parts = mutableListOf<Int>()
-        var remaining = target
-        repeat(partCount - 1) {
-            val partsLeftAfterThis = partCount - parts.size - 1
-            val maxThisPart = remaining - partsLeftAfterThis
-            val thisPart = random.nextInt(1, maxThisPart + 1)
-            parts += thisPart
-            remaining -= thisPart
-        }
-        parts += remaining
-        return parts
     }
 
     /**

@@ -8,8 +8,9 @@ enum class GroupFillOutcome { NONE, ADDED, REJECTED_OVERSHOOT, REJECTED_UNREACHA
 
 /**
  * Drag [families] into one of several seating circles, each with an exact
- * numeric [circleTargets] to reach — unlike [com.bibleadventures.game.puzzles.dragsort.DragSortGameState]
- * (static category match) or [com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState]
+ * numeric [circleTargets] to reach — unlike a static category match
+ * (any of several fixed, order-independent bins with no numeric target) or
+ * [com.bibleadventures.game.puzzles.stackbuild.StackBuildGameState]
  * (strict order), correctness here depends on a *running sum*: a family
  * fits a circle only if it doesn't push that circle's total past its
  * target. Whether a drop lands on a given circle at all is screen-side

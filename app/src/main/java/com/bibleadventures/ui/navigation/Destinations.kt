@@ -16,14 +16,16 @@ sealed class Destination(val route: String) {
 
     /** Nested graph — every scene shares one graph-scoped `NoahsArkViewModel`. */
     sealed class NoahsArk(route: String) : Destination(route) {
-        data object Intro : NoahsArk("noahs_ark/intro")
-        data object FindAnimalsContext : NoahsArk("noahs_ark/find_animals_context")
-        data object FindAnimals : NoahsArk("noahs_ark/find_animals")
+        data object NoahIntroVideo : NoahsArk("noahs_ark/noah_intro_video")
+        data object FindTools : NoahsArk("noahs_ark/find_tools")
+        data object BuildingArkVideo : NoahsArk("noahs_ark/building_ark_video")
         data object AnimalMatching : NoahsArk("noahs_ark/animal_matching")
-        data object OrganizeArkContext : NoahsArk("noahs_ark/organize_ark_context")
+        data object AnimalsEnteringVideo : NoahsArk("noahs_ark/animals_entering_video")
         data object OrganizeArk : NoahsArk("noahs_ark/organize_ark")
-        data object FindMissingItems : NoahsArk("noahs_ark/find_missing_items")
-        data object Lesson : NoahsArk("noahs_ark/lesson")
+        data object GreatFloodVideo : NoahsArk("noahs_ark/great_flood_video")
+        data object DoveAndLandVideo : NoahsArk("noahs_ark/dove_and_land_video")
+        data object RainbowPromiseVideo : NoahsArk("noahs_ark/rainbow_promise_video")
+        data object LessonVideo : NoahsArk("noahs_ark/lesson_video")
         data object Reward : NoahsArk("noahs_ark/reward")
 
         companion object {

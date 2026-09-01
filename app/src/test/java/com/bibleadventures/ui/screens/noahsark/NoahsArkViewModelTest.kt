@@ -30,54 +30,70 @@ class NoahsArkViewModelTest {
     ) = NoahsArkViewModel(ProgressionService(repository), repository, audioController)
 
     @Test
-    fun `initial state has one matching pair per animal, all sortable items including the decoy, and all hidden items`() {
+    fun `initial state has one matching pair per animal, load-ark baskets solvable per deck, and all tool hotspots`() {
         val viewModel = createViewModel()
         val state = viewModel.uiState.value
 
         assertEquals(16, state.matchingState.items.size)
-        assertEquals(7, state.dragSortState.items.size)
-        assertEquals(6, state.hiddenObjectState.items.size)
-        assertTrue(state.foundAnimalIds.isEmpty())
+        assertEquals(NoahsArkContent.loadArkDeckTargets, state.groupFillState.circleTargets)
+        assertEquals(10, state.hiddenObjectState.items.size)
     }
 
     @Test
-    fun `findAnimalsOrder is shuffled but still contains every real item and decoy exactly once`() {
+    fun `every load-ark basket sums exactly to its own deck's target, and every basket has a supply kind`() {
         val state = createViewModel().uiState.value
 
-        val expectedFindAnimalsIds = (NoahsArkContent.animals.map { it.id } + NoahsArkContent.findAnimalsDecoys.map { it.id }).toSet()
-
-        assertEquals(expectedFindAnimalsIds, state.findAnimalsOrder.toSet())
-        assertEquals(expectedFindAnimalsIds.size, state.findAnimalsOrder.size)
+        NoahsArkContent.loadArkDeckTargets.forEachIndexed { deckIndex, target ->
+            val deckBaskets = state.groupFillState.families.filter { it.id.startsWith("basket_${deckIndex}_") }
+            assertEquals(target, deckBaskets.sumOf { it.headcount })
+        }
+        val basketIds = state.groupFillState.families.map { it.id }.toSet()
+        assertEquals(basketIds, state.loadArkBasketSupplyKinds.keys)
+        assertTrue(state.loadArkBasketSupplyKinds.values.all { kindId -> NoahsArkContent.loadArkSupplyKinds.any { it.id == kindId } })
     }
 
     @Test
-    fun `hiddenObjectState items are shuffled onto the fixed positions without losing any item or position`() {
+    fun `onBasketDropped places a basket that fits its own deck, and plays a collected sound`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
+        val firstBasketId = viewModel.uiState.value.groupFillState.remainingFamilyIds.first()
+        val deckIndex = firstBasketId.substringAfter("basket_").substringBefore("_").toInt()
+
+        viewModel.onBasketDropped(firstBasketId, deckIndex)
+
+        assertTrue(firstBasketId in viewModel.uiState.value.groupFillState.placedFamilyIds)
+        assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
+    }
+
+    @Test
+    fun `hiddenObjectState items are the fixed find-tools hotspots, positions and ids unchanged`() {
         val state = createViewModel().uiState.value
 
-        val expectedIds = NoahsArkContent.hiddenItems.map { it.id }.toSet()
-        val expectedPositions = NoahsArkContent.hiddenItems.map { it.position }.toSet()
+        val expectedIds = NoahsArkContent.findToolsHotspots.map { it.id }.toSet()
+        val expectedPositions = NoahsArkContent.findToolsHotspots.map { it.position }.toSet()
 
         assertEquals(expectedIds, state.hiddenObjectState.items.map { it.id }.toSet())
         assertEquals(expectedPositions, state.hiddenObjectState.items.map { it.position }.toSet())
     }
 
     @Test
-    fun `onAnimalFound adds the animal to foundAnimalIds`() {
+    fun `onHiddenItemTapped marks the tapped tool hotspot as found`() {
         val viewModel = createViewModel()
+        val firstHotspotId = viewModel.uiState.value.hiddenObjectState.items.first().id
 
-        viewModel.onAnimalFound("lion")
+        viewModel.onHiddenItemTapped(firstHotspotId)
 
-        assertTrue("lion" in viewModel.uiState.value.foundAnimalIds)
+        assertTrue(firstHotspotId in viewModel.uiState.value.hiddenObjectState.foundIds)
     }
 
     @Test
-    fun `onFindAnimalsDecoyTapped sets the decoy outcome without touching foundAnimalIds`() {
+    fun `onFindToolsBackgroundTapped sets the wrong-tap outcome without marking any tool found`() {
         val viewModel = createViewModel()
 
-        viewModel.onFindAnimalsDecoyTapped()
+        viewModel.onFindToolsBackgroundTapped()
 
-        assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastFindAnimalsDecoyOutcome)
-        assertTrue(viewModel.uiState.value.foundAnimalIds.isEmpty())
+        assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastFindToolsWrongTapOutcome)
+        assertTrue(viewModel.uiState.value.hiddenObjectState.foundIds.isEmpty())
     }
 
     @Test

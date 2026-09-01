@@ -25,9 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bibleadventures.R
 import com.bibleadventures.character.CharacterOptionCatalog
-import com.bibleadventures.domain.model.CHARACTER_STYLE_ILLUSTRATED_ENABLED
 import com.bibleadventures.domain.model.CharacterCustomization
-import com.bibleadventures.domain.model.CharacterStyle
 import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.CharacterPreview
 import com.bibleadventures.ui.screens.character.components.OptionPicker
@@ -46,9 +44,7 @@ fun CharacterScreen(
         onBack = onBack,
         onAppearanceSelected = viewModel::onAppearanceSelected,
         onHairstyleSelected = viewModel::onHairstyleSelected,
-        onSkinToneSelected = viewModel::onSkinToneSelected,
         onClothingSelected = viewModel::onClothingSelected,
-        onCharacterStyleSelected = viewModel::onCharacterStyleSelected,
         modifier = modifier,
     )
 }
@@ -60,9 +56,7 @@ private fun CharacterContent(
     onBack: () -> Unit,
     onAppearanceSelected: (com.bibleadventures.domain.model.Appearance) -> Unit,
     onHairstyleSelected: (com.bibleadventures.domain.model.Hairstyle) -> Unit,
-    onSkinToneSelected: (com.bibleadventures.domain.model.SkinTone) -> Unit,
-    onClothingSelected: (com.bibleadventures.domain.model.Clothing) -> Unit,
-    onCharacterStyleSelected: (com.bibleadventures.domain.model.CharacterStyle) -> Unit,
+    onClothingSelected: (com.bibleadventures.domain.model.ClothingColor) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -96,12 +90,6 @@ private fun CharacterContent(
                     CharacterPreview(customization = customization)
                 }
             }
-            // Character Style (Classic/Illustrated) picker parked for v2.0 —
-            // the underlying CharacterStyle enum, CharacterPreview's
-            // Illustrated rendering branch, and all art files stay intact;
-            // only this picker row is hidden, so characterStyle can never
-            // leave its CLASSIC default for a fresh install. Re-enable by
-            // restoring this item block (see docs/PROJECT_STATUS.md).
             item {
                 OptionPicker(
                     title = stringResource(R.string.character_section_appearance),
@@ -112,9 +100,6 @@ private fun CharacterContent(
                 )
             }
             item {
-                // Hairstyle has real art for every value in both styles now
-                // (Illustrated has a full render per hairstyle, Classic
-                // draws it directly) — shown unconditionally.
                 OptionPicker(
                     title = stringResource(R.string.character_section_hairstyle),
                     options = CharacterOptionCatalog.hairstyles.map { it.value },
@@ -122,26 +107,6 @@ private fun CharacterContent(
                     label = { value -> CharacterOptionCatalog.hairstyles.first { it.value == value }.let { stringResource(it.labelRes) } },
                     onOptionSelected = onHairstyleSelected,
                 )
-            }
-            // Effectively-Classic check, not a raw equality check: a profile
-            // saved before CHARACTER_STYLE_ILLUSTRATED_ENABLED existed could
-            // still have characterStyle = ILLUSTRATED persisted even though
-            // the picker that could set it is hidden — Skin Tone must still
-            // show for those devices too, matching CharacterPreview's own
-            // gate, or they'd be stuck with neither Skin Tone nor real
-            // Illustrated art.
-            if (customization.characterStyle == CharacterStyle.CLASSIC || !CHARACTER_STYLE_ILLUSTRATED_ENABLED) {
-                item {
-                    // Skin Tone has no illustrated art variants yet — Classic only.
-                    OptionPicker(
-                        title = stringResource(R.string.character_section_skin_tone),
-                        options = CharacterOptionCatalog.skinTones.map { it.value },
-                        selectedOption = customization.skinTone,
-                        label = { value -> CharacterOptionCatalog.skinTones.first { it.value == value }.let { stringResource(it.labelRes) } },
-                        swatchColor = { value -> CharacterOptionCatalog.skinTones.first { it.value == value }.swatchColor },
-                        onOptionSelected = onSkinToneSelected,
-                    )
-                }
             }
             item {
                 OptionPicker(
@@ -167,9 +132,7 @@ private fun CharacterScreenPreview() {
             onBack = {},
             onAppearanceSelected = {},
             onHairstyleSelected = {},
-            onSkinToneSelected = {},
             onClothingSelected = {},
-            onCharacterStyleSelected = {},
         )
     }
 }

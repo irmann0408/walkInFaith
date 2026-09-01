@@ -2,9 +2,9 @@ package com.bibleadventures.game.puzzles.stackbuild
 
 /**
  * Whether a drop was close enough to count (a "gentle snap" radius check)
- * is screen-side geometry, not this engine's concern — same split this app
- * already uses for `dragsort` (screen hit-tests against category bounds,
- * engine only validates the resolved category). The screen only calls
+ * is screen-side geometry, not this engine's concern — same split every
+ * drag-based engine in this app uses (screen hit-tests the drop target,
+ * engine only validates the resolved target). The screen only calls
  * [onItemPlaced] once it has already decided a drop counts; this engine
  * then decides whether it was the *right* item — placing anything other
  * than [StackBuildGameState.nextExpectedId] is never a failure, just

@@ -18,3 +18,7 @@ keystore.properties
 /keystore/
 *.jks
 *.keystore
+
+# Local editor/tooling config — machine-specific, not project config
+.claude/
+.vscode/

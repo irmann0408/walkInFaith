@@ -80,27 +80,39 @@ it — don't update it automatically.
 
 ## v2.0 Plan
 
-### Illustrated character style — re-enable
-Fully built and working, currently gated off for v1.0. To bring back:
-- [ ] Flip `CHARACTER_STYLE_ILLUSTRATED_ENABLED` to `true` in
-      `app/src/main/java/com/bibleadventures/domain/model/CharacterCustomization.kt`
-- [ ] Restore the removed "Character Style" `OptionPicker` row in
-      `app/src/main/java/com/bibleadventures/ui/screens/character/CharacterScreen.kt`'s
-      `CharacterContent` (the spot is marked with a comment pointing back at this)
-- [ ] Re-test: `./gradlew build`, full instrumented suite, on-device spot check of
-      style switching + all 5 clothing colors × 4 hairstyles × 2 appearances
+### Illustrated character style — done, but differently than originally planned
+The original plan here was "re-enable Illustrated as a style choice alongside
+Classic." Instead, a full new art set arrived (70 images: boy/girl × 7 colors
+— added Brown and Pink — × 5 hairstyles — added Long — via `character-art/`)
+and, per explicit direction, **Illustrated fully replaced Classic** rather
+than being offered as a second option:
+- [x] `CharacterStyle` enum, `CHARACTER_STYLE_ILLUSTRATED_ENABLED` gate, and
+      all Classic Canvas-drawing code removed from `CharacterPreview.kt` —
+      illustrated art is now the only rendering path, unconditionally.
+- [x] `SkinTone` removed too (Classic was its only consumer; illustrated art
+      has no separable skin-tone layer, so the concept became fully dead).
+- [x] `Hairstyle` gained `LONG`; `Clothing` (renamed `ClothingColor` — safe,
+      enum type names aren't persisted, only constant names are, and those
+      were kept unchanged) gained `BROWN`/`PINK`.
+- [x] All 70 new images copied into `app/src/main/res/drawable/` as
+      `character_<boy|girl>_<color>_<hairstyle>.png`; the old 40-image set
+      removed. `CharacterScreen.kt`'s Skin Tone and Character Style pickers
+      removed entirely (only Appearance/Hairstyle/Clothing remain).
+      `./gradlew build` green; user confirmed on-device it looks good.
+- [ ] The `character-art/` staging folder's old files are still showing as
+      deleted in git status (never committed to `res/drawable/` cleanup) —
+      confirm with the user before committing/pushing this change.
 
-### Known gaps in the Illustrated art, if addressing before/alongside re-enabling
-- [ ] Skin Tone has no illustrated art variants — Classic-only currently. Either
-      commission tone variants or decide Illustrated mode intentionally has one fixed
-      skin tone per appearance.
-- [ ] The girl Robe-family art (all 5 colors) shows the character holding a
-      knife-shaped prop alongside a stick — currently being treated as "a stick" per
-      an explicit call, but a redone, unambiguous asset would resolve this cleanly if
-      it becomes available.
-- [ ] Only 5 clothing colors × 2 appearances × 4 hairstyles exist for Illustrated mode
-      (boy always tunic, girl always robe) — no additional outfits/colors/shapes
-      planned unless specifically requested.
+### Known gaps in the new art
+- [ ] The girl's art still shows the character holding a stick/prop in hand
+      (carried over concern from the previous art set — re-check against the
+      new renders before treating this as resolved).
+- [ ] Boy art is a notably different aspect ratio (256×1024, ~1:4) than girl
+      art (576×1024, ~9:16) — `CharacterPreview`'s fixed 160dp square preview
+      box will letterbox the boy image more heavily (narrower on screen) than
+      the girl image. Not a bug (Compose's default `ContentScale.Fit`
+      preserves aspect ratio correctly either way), but worth an on-device
+      look to confirm it reads fine rather than looking oddly small.
 
 ### Other open-ended future work (not scoped to v2.0 specifically)
 - [ ] Replace the rest of the app's placeholder art — animals, supplies, badges,

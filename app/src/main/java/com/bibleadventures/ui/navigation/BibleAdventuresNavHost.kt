@@ -24,6 +24,7 @@ import com.bibleadventures.game.stories.JesusCalmsStormContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.AppViewModelProvider
 import com.bibleadventures.ui.components.StoryBeatScreen
+import com.bibleadventures.ui.components.StoryVideoScreen
 import com.bibleadventures.ui.screens.badges.BadgesScreen
 import com.bibleadventures.ui.screens.character.CharacterScreen
 import com.bibleadventures.ui.screens.comingsoon.ComingSoonScreen
@@ -92,11 +93,8 @@ import com.bibleadventures.ui.screens.jesuscalmsstorm.peacebestill.JesusCalmsSto
 import com.bibleadventures.ui.screens.jesuscalmsstorm.reachingjesus.JesusCalmsStormReachingJesusScreen
 import com.bibleadventures.ui.screens.mainmenu.MainMenuScreen
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
-import com.bibleadventures.ui.screens.noahsark.findanimals.NoahsArkFindAnimalsScreen
-import com.bibleadventures.ui.screens.noahsark.intro.NoahsArkIntroScreen
-import com.bibleadventures.ui.screens.noahsark.lesson.NoahsArkLessonScreen
+import com.bibleadventures.ui.screens.noahsark.findtools.NoahsArkFindToolsScreen
 import com.bibleadventures.ui.screens.noahsark.matching.NoahsArkMatchingScreen
-import com.bibleadventures.ui.screens.noahsark.missingitems.NoahsArkMissingItemsScreen
 import com.bibleadventures.ui.screens.noahsark.organizeark.NoahsArkOrganizeArkScreen
 import com.bibleadventures.ui.screens.noahsark.reward.NoahsArkRewardScreen
 import com.bibleadventures.ui.screens.parentarea.ParentAreaScreen
@@ -155,7 +153,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                 onChapterSelected = { chapterId ->
                     // Only chapters with real gameplay built so far get a real destination.
                     if (chapterId == ChapterId.NOAHS_ARK) {
-                        navController.navigate(Destination.NoahsArk.Intro.route)
+                        navController.navigate(Destination.NoahsArk.NoahIntroVideo.route)
                     } else if (chapterId == ChapterId.DAVID_GOLIATH) {
                         navController.navigate(Destination.DavidGoliath.Intro.route)
                     } else if (chapterId == ChapterId.GOOD_SAMARITAN) {
@@ -201,35 +199,46 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
 
 private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
-        startDestination = Destination.NoahsArk.Intro.route,
+        startDestination = Destination.NoahsArk.NoahIntroVideo.route,
         route = Destination.NoahsArk.GRAPH_ROUTE,
     ) {
-        composable(Destination.NoahsArk.Intro.route) { entry ->
+        composable(Destination.NoahsArk.NoahIntroVideo.route) { entry ->
             val viewModel = navController.noahsArkViewModel(entry)
-            NoahsArkIntroScreen(
-                viewModel = viewModel,
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.noahs_ark_warning_mandate,
+                narrationRes = R.raw.noahs_ark_warning_mandate_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.noahs_ark_reflection_noah_intro,
                 onContinue = {
-                    viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.NoahsArk.FindAnimalsContext.route)
+                    viewModel.onSceneCompleted("noah_intro_video")
+                    navController.navigate(Destination.NoahsArk.FindTools.route)
                 },
             )
         }
-        composable(Destination.NoahsArk.FindAnimalsContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.noahs_ark_find_animals_context_title,
-                lineRes = NoahsArkContent.findAnimalsContextLines,
-                onContinue = { navController.navigate(Destination.NoahsArk.FindAnimals.route) },
-            )
-        }
-        composable(Destination.NoahsArk.FindAnimals.route) { entry ->
+        composable(Destination.NoahsArk.FindTools.route) { entry ->
             val viewModel = navController.noahsArkViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            NoahsArkFindAnimalsScreen(
+            NoahsArkFindToolsScreen(
                 viewModel = viewModel,
-                previouslyCompleted = "find_animals" in previouslyCompletedSceneIds,
+                previouslyCompleted = "find_tools" in previouslyCompletedSceneIds,
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
-                    viewModel.onSceneCompleted("find_animals")
+                    viewModel.onSceneCompleted("find_tools")
+                    navController.navigate(Destination.NoahsArk.BuildingArkVideo.route)
+                },
+            )
+        }
+        composable(Destination.NoahsArk.BuildingArkVideo.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.noahs_ark_building_ark,
+                narrationRes = R.raw.noahs_ark_building_ark_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.noahs_ark_reflection_building_ark,
+                onContinue = {
+                    viewModel.onSceneCompleted("building_ark_video")
                     navController.navigate(Destination.NoahsArk.AnimalMatching.route)
                 },
             )
@@ -243,15 +252,22 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("animal_matching")
-                    navController.navigate(Destination.NoahsArk.OrganizeArkContext.route)
+                    navController.navigate(Destination.NoahsArk.AnimalsEnteringVideo.route)
                 },
             )
         }
-        composable(Destination.NoahsArk.OrganizeArkContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.noahs_ark_organize_context_title,
-                lineRes = NoahsArkContent.organizeArkContextLines,
-                onContinue = { navController.navigate(Destination.NoahsArk.OrganizeArk.route) },
+        composable(Destination.NoahsArk.AnimalsEnteringVideo.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.noahs_ark_animals_two_by_two,
+                narrationRes = R.raw.noahs_ark_animals_two_by_two_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.noahs_ark_reflection_animals_entering,
+                onContinue = {
+                    viewModel.onSceneCompleted("animals_entering_video")
+                    navController.navigate(Destination.NoahsArk.OrganizeArk.route)
+                },
             )
         }
         composable(Destination.NoahsArk.OrganizeArk.route) { entry ->
@@ -263,28 +279,62 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("organize_ark")
-                    navController.navigate(Destination.NoahsArk.FindMissingItems.route)
+                    navController.navigate(Destination.NoahsArk.GreatFloodVideo.route)
                 },
             )
         }
-        composable(Destination.NoahsArk.FindMissingItems.route) { entry ->
+        composable(Destination.NoahsArk.GreatFloodVideo.route) { entry ->
             val viewModel = navController.noahsArkViewModel(entry)
-            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            NoahsArkMissingItemsScreen(
-                viewModel = viewModel,
-                previouslyCompleted = "find_missing_items" in previouslyCompletedSceneIds,
-                onBackToMainMenu = onBackToMainMenu,
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.noahs_ark_great_flood,
+                narrationRes = R.raw.noahs_ark_great_flood_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.noahs_ark_reflection_great_flood,
                 onContinue = {
-                    viewModel.onSceneCompleted("find_missing_items")
-                    navController.navigate(Destination.NoahsArk.Lesson.route)
+                    viewModel.onSceneCompleted("great_flood_video")
+                    navController.navigate(Destination.NoahsArk.DoveAndLandVideo.route)
                 },
             )
         }
-        composable(Destination.NoahsArk.Lesson.route) { entry ->
+        composable(Destination.NoahsArk.DoveAndLandVideo.route) { entry ->
             val viewModel = navController.noahsArkViewModel(entry)
-            NoahsArkLessonScreen(
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.noahs_ark_dove_and_land,
+                narrationRes = R.raw.noahs_ark_dove_and_land_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.noahs_ark_reflection_dove_and_land,
                 onContinue = {
-                    viewModel.onSceneCompleted("lesson")
+                    viewModel.onSceneCompleted("dove_and_land_video")
+                    navController.navigate(Destination.NoahsArk.RainbowPromiseVideo.route)
+                },
+            )
+        }
+        composable(Destination.NoahsArk.RainbowPromiseVideo.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.noahs_ark_rainbow_promise,
+                narrationRes = R.raw.noahs_ark_rainbow_promise_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.noahs_ark_reflection_rainbow_promise,
+                onContinue = {
+                    viewModel.onSceneCompleted("rainbow_promise_video")
+                    navController.navigate(Destination.NoahsArk.LessonVideo.route)
+                },
+            )
+        }
+        composable(Destination.NoahsArk.LessonVideo.route) { entry ->
+            val viewModel = navController.noahsArkViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.noahs_ark_thanks_be_to_god,
+                narrationRes = R.raw.noahs_ark_thanks_be_to_god_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.noahs_ark_reflection_lesson,
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson_video")
                     navController.navigate(Destination.NoahsArk.Reward.route)
                 },
             )

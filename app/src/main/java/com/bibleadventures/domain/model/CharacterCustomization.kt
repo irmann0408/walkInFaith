@@ -6,36 +6,20 @@ import kotlinx.serialization.Serializable
 enum class Appearance { BOY, GIRL }
 
 @Serializable
-enum class Hairstyle { SHORT, CURLY, BRAIDED, PONYTAIL }
-
-@Serializable
-enum class SkinTone { TONE_1, TONE_2, TONE_3, TONE_4 }
-
-@Serializable
-enum class Clothing { TUNIC_BLUE, TUNIC_GREEN, ROBE_RED, VEST_YELLOW, ROBE_PURPLE }
+enum class Hairstyle { SHORT, CURLY, BRAIDED, PONYTAIL, LONG }
 
 /**
- * `CLASSIC` is the original Compose `Canvas`-drawn placeholder look, driven
- * by [Hairstyle]/[SkinTone]/[Clothing]. `ILLUSTRATED` renders real static
- * art per [Appearance]/[Clothing] combination instead — that art has no
- * separable hair/skin-tone layers, so [Hairstyle]/[SkinTone] are ignored in
- * this style (see `ui/components/CharacterPreview.kt`).
+ * Named after the original Classic-style clothing pieces (a `TUNIC`/`ROBE`/
+ * `VEST` per color) from when this app had two rendering styles — Classic
+ * was removed once real illustrated art replaced it, but these constant
+ * names are persisted by name in save data, so they're kept as-is rather
+ * than renamed to avoid silently losing existing players' clothing choice.
+ * `BROWN`/`PINK` were added after Classic's removal and are named by color
+ * only, since "clothing type" no longer has any rendering meaning — every
+ * appearance always wears its one illustrated outfit shape, just recolored.
  */
 @Serializable
-enum class CharacterStyle { CLASSIC, ILLUSTRATED }
-
-/**
- * Build-time gate for [CharacterStyle.ILLUSTRATED] — v1.0 ships Classic
- * only (the picker that could select Illustrated is hidden, see
- * `ui/screens/character/CharacterScreen.kt`), but a profile saved on a
- * device that explored Illustrated before this gate existed would still
- * have `characterStyle = ILLUSTRATED` persisted. Every place that reads
- * `characterStyle` must check this flag too, not just whether the picker
- * is reachable, so those devices render Classic exactly like a fresh
- * install rather than being stuck on stale Illustrated state with no way
- * back. Flip to `true` (and restore the picker row) for v2.0.
- */
-const val CHARACTER_STYLE_ILLUSTRATED_ENABLED = false
+enum class ClothingColor { TUNIC_BLUE, TUNIC_GREEN, ROBE_RED, VEST_YELLOW, ROBE_PURPLE, BROWN, PINK }
 
 /**
  * Player's chosen appearance. Intentionally simple for the MVP (spec
@@ -46,7 +30,5 @@ const val CHARACTER_STYLE_ILLUSTRATED_ENABLED = false
 data class CharacterCustomization(
     val appearance: Appearance = Appearance.BOY,
     val hairstyle: Hairstyle = Hairstyle.SHORT,
-    val skinTone: SkinTone = SkinTone.TONE_1,
-    val clothing: Clothing = Clothing.TUNIC_BLUE,
-    val characterStyle: CharacterStyle = CharacterStyle.CLASSIC,
+    val clothing: ClothingColor = ClothingColor.TUNIC_BLUE,
 )

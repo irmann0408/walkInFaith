@@ -27,9 +27,9 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 /**
  * A brief narrative/verse beat shown before a puzzle scene, giving the player
  * context for what they're about to do (and, implicitly, what doesn't belong)
- * before any decoy items show up. Deliberately lighter than the chapter's full
- * [com.bibleadventures.ui.screens.noahsark.intro.NoahsArkIntroScreen] — no
- * character render, just a title, a couple of lines, and a top-bar Next Page.
+ * before any decoy items show up. Deliberately lighter than a full narrated
+ * video scene ([StoryVideoScreen]) — no character render, just a title, a
+ * couple of lines, and a top-bar Next Page.
  *
  * Narrates its lines once via [LocalAudioController] on first composition
  * (respects the Settings narration toggle internally) — this one shared
@@ -97,10 +97,10 @@ fun StoryBeatScreen(
 private fun StoryBeatScreenPreview() {
     BibleAdventuresTheme {
         StoryBeatScreen(
-            titleRes = R.string.noahs_ark_find_animals_context_title,
+            titleRes = R.string.jericho_rahab_house_context_title,
             lineRes = listOf(
-                R.string.noahs_ark_find_animals_context_line_1,
-                R.string.noahs_ark_find_animals_context_line_2,
+                R.string.jericho_rahab_house_context_line_1,
+                R.string.jericho_rahab_house_context_line_2,
             ),
             onContinue = {},
         )

@@ -1,11 +1,25 @@
 package com.bibleadventures.game.puzzles.groupfill
 
+import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GroupFillGameTest {
+
+    @Test
+    fun `randomSolvablePartition sums exactly to target with part count within bounds, all parts positive`() {
+        val random = Random(seed = 42)
+        repeat(200) {
+            val target = random.nextInt(3, 30)
+            val parts = GroupFillGame.randomSolvablePartition(target, minParts = 3, maxParts = 5, random)
+
+            assertEquals(target, parts.sum())
+            assertTrue(parts.size in 3..5)
+            assertTrue(parts.all { it > 0 })
+        }
+    }
 
     private fun twoCircleState(): GroupFillGameState = GroupFillGameState(
         families = listOf(

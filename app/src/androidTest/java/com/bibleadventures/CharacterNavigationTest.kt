@@ -16,11 +16,10 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * This test asserts on the Hairstyle picker, which only renders when
- * `CharacterStyle.CLASSIC` is selected (the default) — reset the save file
- * before/after so a persisted `ILLUSTRATED` choice from manual on-device
- * testing (which hides that picker) can't make this fail, same pattern as
- * `WorldMapNavigationTest`'s reset for the same shared-save-file reason.
+ * This test asserts on the Hairstyle picker — reset the save file before/
+ * after since this app's single save file persists real state across test
+ * runs, same pattern as `WorldMapNavigationTest`'s reset for the same
+ * shared-save-file reason.
  */
 class CharacterNavigationTest {
 

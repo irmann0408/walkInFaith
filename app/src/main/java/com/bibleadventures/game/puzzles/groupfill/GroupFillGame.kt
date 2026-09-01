@@ -1,5 +1,7 @@
 package com.bibleadventures.game.puzzles.groupfill
 
+import kotlin.random.Random
+
 /**
  * Pure transition logic — no Compose/Android dependency. An overshoot is
  * never a failure state: the family just doesn't fit *this* circle, the
@@ -7,6 +9,29 @@ package com.bibleadventures.game.puzzles.groupfill
  * here instead, no progress is ever lost.
  */
 object GroupFillGame {
+    /**
+     * Splits [target] into a random number (within [minParts]..[maxParts])
+     * of positive integers summing exactly to it — "build the puzzle from
+     * its own solution", the same principle as `SlidingPuzzleGame.newShuffled`.
+     * Shared by every chapter that seeds a [GroupFillGameState] fresh each
+     * playthrough, so the generation logic lives once, next to the engine
+     * it feeds.
+     */
+    fun randomSolvablePartition(target: Int, minParts: Int, maxParts: Int, random: Random): List<Int> {
+        val partCount = random.nextInt(minParts, maxParts + 1).coerceAtMost(target)
+        val parts = mutableListOf<Int>()
+        var remaining = target
+        repeat(partCount - 1) {
+            val partsLeftAfterThis = partCount - parts.size - 1
+            val maxThisPart = remaining - partsLeftAfterThis
+            val thisPart = random.nextInt(1, maxThisPart + 1)
+            parts += thisPart
+            remaining -= thisPart
+        }
+        parts += remaining
+        return parts
+    }
+
     /**
      * Whether dropping [familyId] into [circleIndex] would actually be
      * accepted by [onFamilyDropped] — lets the screen check *before*

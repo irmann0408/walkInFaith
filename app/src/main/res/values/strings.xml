@@ -48,14 +48,9 @@
 
     <string name="character_screen_title">Choose Your Character</string>
     <string name="character_preview_content_description">Your character</string>
-    <string name="character_section_style">Character Style</string>
     <string name="character_section_appearance">Appearance</string>
     <string name="character_section_hairstyle">Hairstyle</string>
-    <string name="character_section_skin_tone">Skin Tone</string>
     <string name="character_section_clothing">Clothing</string>
-
-    <string name="character_style_classic">Classic</string>
-    <string name="character_style_illustrated">Illustrated</string>
 
     <string name="character_option_boy">Boy</string>
     <string name="character_option_girl">Girl</string>
@@ -64,17 +59,15 @@
     <string name="character_hairstyle_curly">Curly</string>
     <string name="character_hairstyle_braided">Braided</string>
     <string name="character_hairstyle_ponytail">Ponytail</string>
+    <string name="character_hairstyle_long">Long</string>
 
-    <string name="character_skin_tone_1">Skin Tone 1</string>
-    <string name="character_skin_tone_2">Skin Tone 2</string>
-    <string name="character_skin_tone_3">Skin Tone 3</string>
-    <string name="character_skin_tone_4">Skin Tone 4</string>
-
-    <string name="character_clothing_tunic_blue">Blue Tunic</string>
-    <string name="character_clothing_tunic_green">Green Tunic</string>
-    <string name="character_clothing_robe_red">Red Robe</string>
-    <string name="character_clothing_vest_yellow">Yellow Vest</string>
-    <string name="character_clothing_robe_purple">Purple Robe</string>
+    <string name="character_clothing_tunic_blue">Blue</string>
+    <string name="character_clothing_tunic_green">Green</string>
+    <string name="character_clothing_robe_red">Red</string>
+    <string name="character_clothing_vest_yellow">Yellow</string>
+    <string name="character_clothing_robe_purple">Purple</string>
+    <string name="character_clothing_brown">Brown</string>
+    <string name="character_clothing_pink">Pink</string>
 
     <string name="character_option_selected_content_description">%1$s, selected</string>
 
@@ -126,6 +119,8 @@
     <string name="badge_ark_builder_description">Helped Noah build the ark and gather every animal, two by two.</string>
     <string name="scripture_genesis_6_22_title">Noah\'s Obedience</string>
     <string name="scripture_genesis_6_22_text">"And Noah did so; according to all that God commanded him, so he did."</string>
+    <string name="scripture_genesis_9_13_title">God\'s Rainbow Promise</string>
+    <string name="scripture_genesis_9_13_text">"I have set my rainbow in the clouds, and it will be the sign of the covenant between me and the earth."</string>
 
     <string name="badge_brave_heart_title">Brave Heart</string>
     <string name="badge_brave_heart_description">Faced a giant with courage and trust in God.</string>
@@ -179,13 +174,14 @@
 
     <string name="action_continue">Continue</string>
     <string name="action_replay_narration">Read this aloud again</string>
+    <string name="action_replay_scene">Play again</string>
     <string name="action_return_to_map">Return to Map</string>
     <string name="puzzle_already_completed_hint">You\'ve already solved this puzzle! Tap Next Page to move on, or play it again.</string>
     <string name="feedback_great_job">Great job!</string>
     <string name="feedback_try_another_one">Try another one!</string>
-    <string name="feedback_not_an_animal">That\'s not an animal!</string>
     <string name="feedback_doesnt_belong">That doesn\'t belong on the ark!</string>
     <string name="feedback_not_a_stone">That\'s not a stone!</string>
+    <string name="feedback_not_a_tool">That\'s not a tool!</string>
 
     <!-- Shared across every D-pad grid-maze screen (game/puzzles/gridmaze) — a live-region announcement plus visible feedback text after each move, not per-chapter since it's purely functional, not narrative. -->
     <string name="grid_maze_feedback_blocked">Blocked — try a different direction.</string>
@@ -213,8 +209,13 @@
     <string name="supply_meat">Roasted Meat</string>
 
     <string name="decoy_rock">Rock</string>
-    <string name="decoy_hammer">Hammer</string>
     <string name="decoy_boot">Old Boot</string>
+
+    <string name="tool_axe">Axe</string>
+    <string name="tool_chisel">Chisel</string>
+    <string name="tool_hammer">Hammer</string>
+    <string name="tool_nail">Nail</string>
+    <string name="tool_wood_saw">Wood Saw</string>
 
     <string name="stone_1">Smooth Stone</string>
     <string name="stone_2">River Stone</string>
@@ -222,35 +223,28 @@
     <string name="stone_4">Grey Stone</string>
     <string name="stone_5">Speckled Stone</string>
 
-    <string name="sort_category_animals">Animals</string>
-    <string name="sort_category_food">Food</string>
-    <string name="sort_category_supplies">Supplies</string>
-
-    <string name="noahs_ark_intro_line_1">Noah trusted God and followed His instructions.</string>
-    <string name="noahs_ark_intro_line_2">Will you help Noah get everyone safely aboard the ark?</string>
-
-    <string name="noahs_ark_find_animals_context_title">Two By Two</string>
-    <string name="noahs_ark_find_animals_context_line_1">The rain is coming, and Noah needs every animal safely aboard the ark.</string>
-    <string name="noahs_ark_find_animals_context_line_2">Look around and find each animal — leave anything that isn\'t an animal behind.</string>
-
-    <string name="noahs_ark_find_animals_title">Find the Animals</string>
-    <string name="noahs_ark_find_animals_instructions">Tap each animal to bring it to the ark.</string>
+    <string name="noahs_ark_find_tools_title">Find the Tools</string>
+    <string name="noahs_ark_find_tools_instructions">Tap each tool hidden in the picture.</string>
 
     <string name="noahs_ark_matching_title">Match the Animal Pairs</string>
     <string name="noahs_ark_matching_instructions">Tap two animals that match.</string>
 
-    <string name="noahs_ark_organize_context_title">A Place for Everything</string>
-    <string name="noahs_ark_organize_context_line_1">Everything on the ark has its own place — animals, food, and supplies.</string>
-    <string name="noahs_ark_organize_context_line_2">Put each item where it belongs, and leave behind anything that isn\'t needed.</string>
-
     <string name="noahs_ark_organize_title">Organize the Ark</string>
-    <string name="noahs_ark_organize_instructions">Drag each item into the right area.</string>
+    <string name="noahs_ark_organize_instructions">Drag each basket onto a deck — but only if it fits exactly. Some baskets belong on a different deck.</string>
+    <string name="noahs_ark_load_ark_deck_lower">Lower Deck</string>
+    <string name="noahs_ark_load_ark_deck_middle">Middle Deck</string>
+    <string name="noahs_ark_load_ark_deck_upper">Upper Deck</string>
+    <string name="noahs_ark_load_ark_sum_label">%1$d of %2$d</string>
+    <string name="noahs_ark_load_ark_progress_label">%1$d of %2$d decks loaded</string>
+    <string name="noahs_ark_load_ark_basket_content_description">Basket of %1$d</string>
 
-    <string name="noahs_ark_missing_items_title">Find the Missing Items</string>
-    <string name="noahs_ark_missing_items_instructions">Everything Noah packed is hiding somewhere in here — look closely and tap to find it all!</string>
-
-    <string name="noahs_ark_lesson_title">What did we learn?</string>
-    <string name="noahs_ark_lesson_text">God wants us to trust Him and follow what is right.</string>
+    <string name="noahs_ark_reflection_noah_intro">We can obey God, even before it makes sense.</string>
+    <string name="noahs_ark_reflection_building_ark">We can keep going, even when a job feels big.</string>
+    <string name="noahs_ark_reflection_animals_entering">We can trust God to take care of every little thing.</string>
+    <string name="noahs_ark_reflection_great_flood">We can feel safe with God, even in a storm.</string>
+    <string name="noahs_ark_reflection_dove_and_land">We can be patient, even when we\'re waiting for good news.</string>
+    <string name="noahs_ark_reflection_rainbow_promise">We can trust God, even when we have to wait.</string>
+    <string name="noahs_ark_reflection_lesson">We can thank God for keeping every promise.</string>
 
     <string name="david_goliath_intro_line_1">David was just a shepherd boy, but he trusted God with all his heart.</string>
     <string name="david_goliath_intro_line_2">One day a giant named Goliath challenged Israel\'s whole army — and David stepped forward.</string>
@@ -620,7 +614,7 @@
     <string name="jericho_rahab_saved_context_line_2">She and her family were kept safe, exactly as the spies had promised.</string>
 
     <string name="jericho_lesson_title">Obedience Over Force</string>
-    <string name="jericho_lesson_text">The people didn\'t fight to bring down the walls — they marched and trusted God\'s plan, even when it seemed strange. When we obey God, He can do things no strength of ours ever could.</string>
+    <string name="jericho_lesson_text">\'t fight to bring down the walls — they marched and trusted God\'s plan, even when it seemed strange. When we obey God, He can do things no strength of ours ever could.</string>
 
     <string name="feeding_5000_intro_line_1">A great crowd had followed Jesus into the hills to hear him teach and to be healed.</string>
     <string name="feeding_5000_intro_line_2">As the day grew late, the disciples realized there was no food anywhere nearby — and thousands of people were hungry.</string>

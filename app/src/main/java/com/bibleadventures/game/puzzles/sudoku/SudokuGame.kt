@@ -2,8 +2,8 @@ package com.bibleadventures.game.puzzles.sudoku
 
 /**
  * A conflicting placement (icon already used elsewhere in the same row or
- * column) is rejected and never committed — same non-committing pattern as
- * [com.bibleadventures.game.puzzles.dragsort.DragSortGame]'s NOT_SORTABLE.
+ * column) is rejected and never committed — the same non-committing pattern
+ * used throughout this app's puzzle engines for an invalid drop.
  * Re-filling an already-filled cell with a different icon is treated as a
  * correction, not a failure — the old value simply isn't counted against
  * itself when checking for a conflict.

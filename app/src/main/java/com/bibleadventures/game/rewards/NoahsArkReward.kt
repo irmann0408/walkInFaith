@@ -16,10 +16,10 @@ object NoahsArkReward {
     )
 
     val scriptureCard = ScriptureCard(
-        id = "GENESIS_6_22",
-        titleRes = R.string.scripture_genesis_6_22_title,
-        reference = "Genesis 6:22",
-        textRes = R.string.scripture_genesis_6_22_text,
+        id = "GENESIS_9_13",
+        titleRes = R.string.scripture_genesis_9_13_title,
+        reference = "Genesis 9:13",
+        textRes = R.string.scripture_genesis_9_13_text,
         chapterId = ChapterId.NOAHS_ARK,
     )
 }

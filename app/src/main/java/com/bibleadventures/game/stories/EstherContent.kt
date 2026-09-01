@@ -22,8 +22,8 @@ data class SudokuIconDef(val key: String, @DrawableRes val iconRes: Int, @String
  * This merges what were briefly 5 separate chapters (New Queen, Secret
  * Plot, Threat, Brave Approach, Banquets & Rescue) back into one, per
  * playtesting feedback that splitting them felt disjointed. The banquet
- * jigsaw mini-game (`dragsort`, the same engine Organize the Ark already
- * uses) is dropped entirely — a playtester found it a repeat and too easy.
+ * jigsaw mini-game (`dragsort`, the same engine Organize the Ark used at
+ * the time) is dropped entirely — a playtester found it a repeat and too easy.
  * Reveal Haman's Plot and its surrounding context cards (banquet prep, the
  * second banquet, Haman's downfall) were dropped too, per the user's
  * explicit request to tighten the chapter's tail end — Corridor now leads

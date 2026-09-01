@@ -4,12 +4,10 @@ import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.domain.model.Appearance
 import com.bibleadventures.domain.model.AudioSettings
 import com.bibleadventures.domain.model.ChapterId
-import com.bibleadventures.domain.model.CharacterStyle
-import com.bibleadventures.domain.model.Clothing
 import com.bibleadventures.domain.model.CharacterCustomization
+import com.bibleadventures.domain.model.ClothingColor
 import com.bibleadventures.domain.model.Hairstyle
 import com.bibleadventures.domain.model.PlayerProfile
-import com.bibleadventures.domain.model.SkinTone
 import com.bibleadventures.domain.repository.PlayerProfileRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -83,16 +81,8 @@ class CharacterViewModelTest {
         advanceUntilIdle()
         assertEquals(Hairstyle.BRAIDED, viewModel.uiState.value.customization.hairstyle)
 
-        viewModel.onSkinToneSelected(SkinTone.TONE_3)
+        viewModel.onClothingSelected(ClothingColor.ROBE_RED)
         advanceUntilIdle()
-        assertEquals(SkinTone.TONE_3, viewModel.uiState.value.customization.skinTone)
-
-        viewModel.onClothingSelected(Clothing.ROBE_RED)
-        advanceUntilIdle()
-        assertEquals(Clothing.ROBE_RED, viewModel.uiState.value.customization.clothing)
-
-        viewModel.onCharacterStyleSelected(CharacterStyle.ILLUSTRATED)
-        advanceUntilIdle()
-        assertEquals(CharacterStyle.ILLUSTRATED, viewModel.uiState.value.customization.characterStyle)
+        assertEquals(ClothingColor.ROBE_RED, viewModel.uiState.value.customization.clothing)
     }
 }
