@@ -18,17 +18,17 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
+import com.bibleadventures.completeDavidGoliath
+import com.bibleadventures.completeNoahsArk
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.stories.DanielContent
-import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.JerichoContent
-import com.bibleadventures.game.stories.NoahsArkContent
 import org.junit.Rule
 import org.junit.Test
 
@@ -79,8 +79,8 @@ class JerichoFlowTest {
         val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
-        completeNoahsArk()
-        completeDavidGoliath()
+        composeTestRule.completeNoahsArk()
+        composeTestRule.completeDavidGoliath()
         completeGoodSamaritan(continueLabel)
         completeDaniel()
         completeEsther()
@@ -168,103 +168,6 @@ class JerichoFlowTest {
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_feeding_5000_title)).assertExists()
     }
 
-    /** Walks Noah's Ark end to end (mirrors NoahsArkFlowTest) so David & Goliath unlocks. */
-    private fun completeNoahsArk() {
-        val activity = composeTestRule.activity
-        val nextPageLabel = activity.getString(R.string.action_next_page)
-
-        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_noahs_ark_title))
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Find Animals context
-
-        NoahsArkContent.animals.forEach { animal ->
-            composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        NoahsArkContent.animals.forEach { animal ->
-            val name = activity.getString(animal.nameRes)
-            composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
-            composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Organize the Ark context
-
-        NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->
-            val itemName = activity.getString(item.nameRes)
-            val categoryLabelRes = NoahsArkContent.sortCategories.first { it.key == item.categoryKey }.labelRes
-            val categoryLabel = activity.getString(categoryLabelRes)
-            dragOntoText(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetText = categoryLabel)
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        NoahsArkContent.hiddenItems.forEach { item ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Lesson
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
-    }
-
-    /** Walks David and Goliath end to end (mirrors DavidGoliathFlowTest) so Good Samaritan unlocks. */
-    private fun completeDavidGoliath() {
-        val activity = composeTestRule.activity
-        val nextPageLabel = activity.getString(R.string.action_next_page)
-
-        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_david_goliath_title))
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_david_goliath_title)).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Counting the Flock context
-
-        DavidGoliathContent.sheepCounts.forEach { count ->
-            val name = activity.getString(count.nameRes)
-            composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
-            composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Choose the Stones context
-
-        DavidGoliathContent.stones.forEach { stone ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)).performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Sling Practice context
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_choice_option_1)).performClick()
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Crossing the Valley context
-
-        completeLaneAvoid(
-            chart = DavidGoliathContent.crossingValleyChart,
-            requiredAvoids = DavidGoliathContent.CROSSING_VALLEY_REQUIRED_AVOIDS,
-            titleRes = R.string.david_goliath_dodge_title,
-            progressLabelRes = R.string.david_goliath_dodge_progress_label,
-            characterContentDescriptionRes = R.string.david_goliath_dodge_character_content_description,
-            moveLeftLabelRes = R.string.david_goliath_dodge_move_left_content_description,
-            moveRightLabelRes = R.string.david_goliath_dodge_move_right_content_description,
-        )
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        completeSlingPractice()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.feedback_great_job)).assertExists()
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
-        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
-    }
 
     /** Walks Good Samaritan end to end (mirrors GoodSamaritanFlowTest) so Daniel unlocks. */
     private fun completeGoodSamaritan(continueLabel: String) {
@@ -811,17 +714,6 @@ class JerichoFlowTest {
         return (0..requiredHits).first { candidateHits ->
             val label = activity.getString(R.string.david_goliath_sling_practice_progress_label, candidateHits, requiredHits)
             composeTestRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
-        }
-    }
-
-    private fun dragOntoText(itemNode: SemanticsNodeInteraction, targetText: String) {
-        val itemBounds = itemNode.fetchSemanticsNode().boundsInRoot
-        val targetBounds = composeTestRule.onNodeWithText(targetText).fetchSemanticsNode().boundsInRoot
-        val targetGlobalCenter = targetBounds.center
-        val localEnd = Offset(targetGlobalCenter.x - itemBounds.left, targetGlobalCenter.y - itemBounds.top)
-
-        itemNode.performTouchInput {
-            swipe(start = center, end = localEnd, durationMillis = 200)
         }
     }
 

@@ -1,25 +1,19 @@
 package com.bibleadventures.parentarea
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.center
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
+import com.bibleadventures.completeNoahsArk
 import com.bibleadventures.game.rewards.RewardCatalog
 import com.bibleadventures.game.stories.ChapterCatalog
-import com.bibleadventures.game.stories.NoahsArkContent
 import org.junit.Rule
 import org.junit.Test
 
@@ -28,9 +22,7 @@ import org.junit.Test
  * and doesn't leak the answer, a correct one unlocks), the progress
  * summary reflecting a real completed chapter, the Settings shortcut, the
  * privacy dialog, and Reset Progress (cancel leaves progress untouched,
- * confirm actually clears it and re-locks the World Map). Duplicates
- * `completeNoahsArk`/`dragOntoText` per this app's per-file flow-test-
- * helper convention (see `DavidGoliathFlowTest`, etc.).
+ * confirm actually clears it and re-locks the World Map).
  */
 class ParentAreaFlowTest {
 
@@ -41,7 +33,8 @@ class ParentAreaFlowTest {
     fun parentArea_gateSummaryAndResetProgressAllWorkEndToEnd() {
         val activity = composeTestRule.activity
 
-        completeNoahsArk()
+        composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
+        composeTestRule.completeNoahsArk()
 
         // completeNoahsArk() ends on the World Map — back to Main Menu -> Parent Area.
         composeTestRule.onNodeWithContentDescription(activity.getString(R.string.action_back)).performClick()
@@ -123,58 +116,5 @@ class ParentAreaFlowTest {
         val actual = node.config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
         val earned = actual.substringBefore(" / ").trim().toInt()
         assert(earned >= minimum) { "Expected stat \"$tag\" to read at least \"$minimum / $total\" but was \"$actual\"" }
-    }
-
-    private fun completeNoahsArk() {
-        val activity = composeTestRule.activity
-        val nextPageLabel = activity.getString(R.string.action_next_page)
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Find Animals context
-
-        NoahsArkContent.animals.forEach { animal ->
-            composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        NoahsArkContent.animals.forEach { animal ->
-            val name = activity.getString(animal.nameRes)
-            composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
-            composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Organize the Ark context
-
-        NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->
-            val itemName = activity.getString(item.nameRes)
-            val categoryLabelRes = NoahsArkContent.sortCategories.first { it.key == item.categoryKey }.labelRes
-            val categoryLabel = activity.getString(categoryLabelRes)
-            dragOntoText(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetText = categoryLabel)
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        NoahsArkContent.hiddenItems.forEach { item ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Lesson
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
-    }
-
-    private fun dragOntoText(itemNode: SemanticsNodeInteraction, targetText: String) {
-        val itemBounds = itemNode.fetchSemanticsNode().boundsInRoot
-        val targetBounds = composeTestRule.onNodeWithText(targetText).fetchSemanticsNode().boundsInRoot
-        val targetGlobalCenter = targetBounds.center
-        val localEnd = Offset(targetGlobalCenter.x - itemBounds.left, targetGlobalCenter.y - itemBounds.top)
-
-        itemNode.performTouchInput {
-            swipe(start = center, end = localEnd, durationMillis = 200)
-        }
     }
 }

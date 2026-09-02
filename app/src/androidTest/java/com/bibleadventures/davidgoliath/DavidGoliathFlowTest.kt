@@ -13,12 +13,15 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
+import com.bibleadventures.completeNoahsArk
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.stories.DavidGoliathContent
-import com.bibleadventures.game.stories.NoahsArkContent
 import org.junit.Rule
 import org.junit.Test
+
+private const val CONNECT_FOUR_COLUMN_COUNT = 7
+private const val CONNECT_FOUR_ROW_COUNT = 6
 
 // ic_goliath_shield.xml's silhouette is narrower than its own bounding box —
 // its visible top edge (where the mark's line sits, and what the hit-test
@@ -46,18 +49,15 @@ class DavidGoliathFlowTest {
         val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
-        completeNoahsArk()
+        composeTestRule.completeNoahsArk()
 
         // World Map -> David & Goliath (now unlocked).
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_david_goliath_title)).performClick()
 
-        // Scene 1: Intro.
+        // Scene 1: Intro video (Faithful Shepherd).
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 1b: Counting the Flock context card.
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        // Scene 1c: Count the Sheep — flip every numeral/sheep-group pair.
+        // Scene 1b: Count the Sheep — flip every numeral/sheep-group pair.
         DavidGoliathContent.sheepCounts.forEach { count ->
             val name = activity.getString(count.nameRes)
             composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
@@ -65,26 +65,27 @@ class DavidGoliathFlowTest {
         }
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 1d: Choose the Stones context card.
+        // Scene 2: Giant's Challenge video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 2: Choose the Stones. The decoy (an old boot) is deliberately left untapped.
-        DavidGoliathContent.stones.forEach { stone ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(stone.nameRes)).performClick()
-        }
+        // Scene 3: David Arrives video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 2b: Sling Practice context card.
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        // Scene 3: Choice — any option is valid.
+        // Scene 4: Choice — any option is valid.
         composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_choice_option_1)).performClick()
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 3b: Crossing the Valley context card.
+        // Scene 5: Heavy Armor video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 3c: Cross the Valley — steer David out of each rock's lane
+        // Scene 6: Choose the Stones — a Connect Four match against a simple AI opponent.
+        completeChooseStones()
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
+
+        // Scene 7: Five Smooth Stones video.
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
+
+        // Scene 8: Cross the Valley — steer David out of each rock's lane
         // before it lands (rhythmlane avoid semantics, requires 3 avoids).
         completeLaneAvoid(
             chart = DavidGoliathContent.crossingValleyChart,
@@ -97,18 +98,20 @@ class DavidGoliathFlowTest {
         )
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 4: Sling Practice — 3 real hits required, the shield relocates
+        // Scene 9: Sling Practice — 3 real hits required, the shield relocates
         // to a random different zone after each one.
         completeSlingPractice()
 
         composeTestRule.onNodeWithText(activity.getString(R.string.feedback_great_job)).assertExists()
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 5: Lesson.
-        composeTestRule.onNodeWithText(activity.getString(R.string.david_goliath_lesson_title)).assertExists()
+        // Scene 10: Victory video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 6: Reward.
+        // Scene 11: Lesson video (Glory to God).
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
+
+        // Scene 12: Reward.
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.badge_brave_heart_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
@@ -116,48 +119,6 @@ class DavidGoliathFlowTest {
         // Back on the World Map: David & Goliath completed, Good Samaritan unlocked.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_good_samaritan_title)).assertExists()
-    }
-
-    /** Walks Noah's Ark end to end (mirrors NoahsArkFlowTest) so David & Goliath unlocks. */
-    private fun completeNoahsArk() {
-        val activity = composeTestRule.activity
-        val nextPageLabel = activity.getString(R.string.action_next_page)
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_noahs_ark_title)).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Find Animals context
-
-        NoahsArkContent.animals.forEach { animal ->
-            composeTestRule.onAllNodesWithContentDescription(activity.getString(animal.nameRes))[0].performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        NoahsArkContent.animals.forEach { animal ->
-            val name = activity.getString(animal.nameRes)
-            composeTestRule.onAllNodesWithContentDescription(name)[0].performClick()
-            composeTestRule.onAllNodesWithContentDescription(name)[1].performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Organize the Ark context
-
-        NoahsArkContent.sortableItems.filter { it.categoryKey != null }.forEach { item ->
-            val itemName = activity.getString(item.nameRes)
-            val categoryLabelRes = NoahsArkContent.sortCategories.first { it.key == item.categoryKey }.labelRes
-            val categoryLabel = activity.getString(categoryLabelRes)
-            dragOntoText(itemNode = composeTestRule.onNodeWithContentDescription(itemName), targetText = categoryLabel)
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        NoahsArkContent.hiddenItems.forEach { item ->
-            composeTestRule.onNodeWithContentDescription(activity.getString(item.nameRes)).performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Lesson
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
     }
 
     /**
@@ -303,15 +264,95 @@ class DavidGoliathFlowTest {
         }
     }
 
-    private fun dragOntoText(itemNode: SemanticsNodeInteraction, targetText: String) {
-        val itemBounds = itemNode.fetchSemanticsNode().boundsInRoot
-        val targetBounds = composeTestRule.onNodeWithText(targetText).fetchSemanticsNode().boundsInRoot
-        val targetGlobalCenter = targetBounds.center
-        val localEnd = Offset(targetGlobalCenter.x - itemBounds.left, targetGlobalCenter.y - itemBounds.top)
+    /**
+     * "Choose the Stones" is the one puzzle in the app with a real loss
+     * condition (an AI opponent) — a single fixed column-tap script loses to
+     * it every time (verified separately: a blind policy's win rate is 0%,
+     * since the AI blocks any predictable line before it completes). Reading
+     * each cell's own live content description (see `ConnectFourCell` in
+     * `DavidGoliathChooseStonesScreen.kt`) lets this mirror the AI's own
+     * win-then-block-then-center heuristic from the player's side, which
+     * wins roughly 60% of matches in isolation — retried here across up to
+     * [maxAttempts] full matches (a loss/draw leaves the board on screen
+     * until "Try Again" is tapped, per the user's on-device feedback that an
+     * auto-reset felt like it was taking the board away from them) drives
+     * the chance of never winning to effectively zero.
+     */
+    private fun completeChooseStones(maxAttempts: Int = 20, maxTurnsPerAttempt: Int = 30) {
+        val activity = composeTestRule.activity
+        val playerWonLabel = activity.getString(R.string.david_goliath_choose_stones_player_won)
+        val opponentWonLabel = activity.getString(R.string.david_goliath_choose_stones_opponent_won)
+        val drawLabel = activity.getString(R.string.david_goliath_choose_stones_draw)
+        val yourTurnLabel = activity.getString(R.string.david_goliath_choose_stones_your_turn)
+        val tryAgainLabel = activity.getString(R.string.david_goliath_choose_stones_try_again)
 
-        itemNode.performTouchInput {
-            swipe(start = center, end = localEnd, durationMillis = 200)
+        for (attempt in 0 until maxAttempts) {
+            turns@ for (turn in 0 until maxTurnsPerAttempt) {
+                if (composeTestRule.onAllNodesWithText(playerWonLabel).fetchSemanticsNodes().isNotEmpty()) return
+                if (composeTestRule.onAllNodesWithText(opponentWonLabel).fetchSemanticsNodes().isNotEmpty() ||
+                    composeTestRule.onAllNodesWithText(drawLabel).fetchSemanticsNodes().isNotEmpty()
+                ) {
+                    composeTestRule.onNodeWithText(tryAgainLabel).performClick()
+                    break@turns
+                }
+                if (composeTestRule.onAllNodesWithText(yourTurnLabel).fetchSemanticsNodes().isNotEmpty()) {
+                    val column = chooseConnectFourColumn()
+                    val columnLabel = activity.getString(R.string.david_goliath_choose_stones_column_content_description, column + 1)
+                    composeTestRule.onNodeWithContentDescription(columnLabel).performClick()
+                }
+                composeTestRule.waitForIdle()
+            }
         }
+        composeTestRule.onNodeWithText(playerWonLabel).assertExists()
+    }
+
+    private enum class ConnectFourTestSlot { EMPTY, PLAYER, OPPONENT }
+
+    private fun connectFourCell(column: Int, row: Int): ConnectFourTestSlot {
+        val activity = composeTestRule.activity
+        val emptyLabel = activity.getString(
+            R.string.david_goliath_choose_stones_cell_content_description,
+            column + 1, row + 1, activity.getString(R.string.david_goliath_choose_stones_cell_empty),
+        )
+        if (composeTestRule.onAllNodesWithContentDescription(emptyLabel).fetchSemanticsNodes().isNotEmpty()) return ConnectFourTestSlot.EMPTY
+        val playerLabel = activity.getString(
+            R.string.david_goliath_choose_stones_cell_content_description,
+            column + 1, row + 1, activity.getString(R.string.david_goliath_choose_stones_cell_player),
+        )
+        if (composeTestRule.onAllNodesWithContentDescription(playerLabel).fetchSemanticsNodes().isNotEmpty()) return ConnectFourTestSlot.PLAYER
+        return ConnectFourTestSlot.OPPONENT
+    }
+
+    private fun connectFourLowestEmptyRow(column: Int): Int? =
+        (0 until CONNECT_FOUR_ROW_COUNT).firstOrNull { row -> connectFourCell(column, row) == ConnectFourTestSlot.EMPTY }
+
+    private fun connectFourWouldWin(column: Int, slot: ConnectFourTestSlot): Boolean {
+        val row = connectFourLowestEmptyRow(column) ?: return false
+        fun cellAt(c: Int, r: Int): ConnectFourTestSlot = if (c == column && r == row) slot else connectFourCell(c, r)
+
+        return listOf(0 to 1, 1 to 0, 1 to 1, 1 to -1).any { (dr, dc) ->
+            var count = 1
+            var r = row + dr
+            var c = column + dc
+            while (r in 0 until CONNECT_FOUR_ROW_COUNT && c in 0 until CONNECT_FOUR_COLUMN_COUNT && cellAt(c, r) == slot) {
+                count++; r += dr; c += dc
+            }
+            r = row - dr
+            c = column - dc
+            while (r in 0 until CONNECT_FOUR_ROW_COUNT && c in 0 until CONNECT_FOUR_COLUMN_COUNT && cellAt(c, r) == slot) {
+                count++; r -= dr; c -= dc
+            }
+            count >= 4
+        }
+    }
+
+    /** Mirrors ConnectFourGame's own AI heuristic (win, else block, else center-ish) from the player's side. */
+    private fun chooseConnectFourColumn(): Int {
+        val validColumns = (0 until CONNECT_FOUR_COLUMN_COUNT).filter { connectFourLowestEmptyRow(it) != null }
+        validColumns.firstOrNull { connectFourWouldWin(it, ConnectFourTestSlot.PLAYER) }?.let { return it }
+        validColumns.firstOrNull { connectFourWouldWin(it, ConnectFourTestSlot.OPPONENT) }?.let { return it }
+        val center = (CONNECT_FOUR_COLUMN_COUNT - 1) / 2
+        return validColumns.minBy { kotlin.math.abs(it - center) }
     }
 
     private fun dragOntoContentDescription(itemNode: SemanticsNodeInteraction, targetContentDescription: String) {
