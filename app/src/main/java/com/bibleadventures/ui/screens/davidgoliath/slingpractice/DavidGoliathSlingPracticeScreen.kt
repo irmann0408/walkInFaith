@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -41,9 +42,12 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotOutcome
 import com.bibleadventures.ui.components.AspectRatioFitBox
+import com.bibleadventures.ui.components.CharacterCallout
+import com.bibleadventures.ui.components.Posture
 import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.davidgoliath.ShieldZone
@@ -117,10 +121,12 @@ fun DavidGoliathSlingPracticeScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
 
     DavidGoliathSlingPracticeContent(
         slingshotState = uiState.slingshotState,
         shieldZone = uiState.shieldZone,
+        characterCustomization = characterCustomization,
         onStoneReleased = viewModel::onStoneReleased,
         onContinue = onContinue,
         onBackToMainMenu = onBackToMainMenu,
@@ -133,6 +139,7 @@ fun DavidGoliathSlingPracticeScreen(
 private fun DavidGoliathSlingPracticeContent(
     slingshotState: SlingshotGameState,
     shieldZone: ShieldZone,
+    characterCustomization: CharacterCustomization,
     onStoneReleased: (aimedPosition: Float, markPosition: Float, shieldMinFraction: Float, shieldMaxFraction: Float) -> Unit,
     onContinue: () -> Unit,
     onBackToMainMenu: () -> Unit,
@@ -325,6 +332,14 @@ private fun DavidGoliathSlingPracticeContent(
             }
             }
 
+            CharacterCallout(
+                characterCustomization = characterCustomization,
+                message = null,
+                posture = if (slingshotState.lastOutcome == SlingshotOutcome.HIT) Posture.THUMBS_UP else Posture.STANDING,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                bubbleBelow = true,
+            )
+
             if (previouslyCompleted && !slingshotState.isComplete) {
                 Text(
                     text = stringResource(R.string.puzzle_already_completed_hint),
@@ -343,6 +358,7 @@ private fun DavidGoliathSlingPracticePreview() {
         DavidGoliathSlingPracticeContent(
             slingshotState = SlingshotGameState(),
             shieldZone = ShieldZone.LEFT,
+            characterCustomization = CharacterCustomization(),
             onStoneReleased = { _, _, _, _ -> },
             onContinue = {},
             onBackToMainMenu = {},

@@ -1,6 +1,5 @@
 package com.bibleadventures.ui.screens.davidgoliath
 
-import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bibleadventures.audio.AudioController
@@ -8,9 +7,9 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
-import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGame
-import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
+import com.bibleadventures.game.puzzles.connectfour.ConnectFourGame
+import com.bibleadventures.game.puzzles.connectfour.ConnectFourGameState
+import com.bibleadventures.game.puzzles.connectfour.ConnectFourOutcome
 import com.bibleadventures.game.puzzles.matching.MatchItem
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.puzzles.matching.MatchingGame
@@ -24,7 +23,6 @@ import com.bibleadventures.game.rewards.DavidGoliathReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.progress.ProgressionService
-import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -50,13 +48,11 @@ private const val CROSSING_VALLEY_LANE_COUNT = 3
 enum class ShieldZone { LEFT, MIDDLE, RIGHT }
 
 data class DavidGoliathUiState(
-    val hiddenObjectState: HiddenObjectGameState,
-    /** Shuffled in with the stones each fresh game, same as the stones' own positions. */
-    val riverbedDecoyPosition: Offset = Offset.Zero,
+    /** "Choose the Stones" — David already has 1 stone; find 4 more by connecting 4 in a row. */
+    val connectFourState: ConnectFourGameState = ConnectFourGame.newGame(),
     val slingshotState: SlingshotGameState = SlingshotGameState(),
     val selectedChoiceId: String? = null,
     val reward: DavidGoliathRewardResult? = null,
-    val lastRiverbedDecoyOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
     val sheepCountingState: MatchingGameState,
     val crossingValleyState: RhythmLaneGameState = RhythmLaneGameState(
         chart = DavidGoliathContent.crossingValleyChart,
@@ -94,15 +90,28 @@ class DavidGoliathViewModel(
             initialValue = emptySet(),
         )
 
-    fun onStoneFound(stoneId: String) {
+    fun onConnectFourColumnTapped(column: Int) {
         _uiState.update { current ->
-            current.copy(hiddenObjectState = HiddenObjectGame.onItemTapped(current.hiddenObjectState, stoneId))
+            val next = ConnectFourGame.onPlayerColumnTapped(current.connectFourState, column)
+            if (next.outcome == ConnectFourOutcome.PLAYER_WON) {
+                audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+            }
+            current.copy(connectFourState = next)
         }
     }
 
-    /** Never penalized, never blocks progress — the decoy just stays tappable. */
-    fun onRiverbedDecoyTapped() {
-        _uiState.update { it.copy(lastRiverbedDecoyOutcome = DecoyTapOutcome.DECOY_TAPPED) }
+    /** Called by the screen after a short "thinking" delay once it's the opponent's turn. */
+    fun onConnectFourOpponentMove() {
+        _uiState.update { current -> current.copy(connectFourState = ConnectFourGame.onOpponentMove(current.connectFourState)) }
+    }
+
+    /**
+     * A loss or a draw is never a dead end — the screen shows a gentle
+     * message for a moment, then calls this to start a fresh round.
+     * Winning is the only outcome that completes the scene.
+     */
+    fun onConnectFourReset() {
+        _uiState.update { it.copy(connectFourState = ConnectFourGame.newGame()) }
     }
 
     fun onChoiceSelected(choiceId: String) {
@@ -190,17 +199,6 @@ class DavidGoliathViewModel(
     }
 
     private fun createInitialState(): DavidGoliathUiState {
-        // The 5 stones + the riverbed decoy share one shuffled pool of hand-placed
-        // positions, so the decoy doesn't always land in the same spot either —
-        // same technique NoahsArkViewModel uses for its hidden items.
-        val allSpots = DavidGoliathContent.stones + DavidGoliathContent.riverbedDecoy
-        val shuffledPositions = allSpots.map { it.position }.shuffled()
-
-        val hiddenItems = DavidGoliathContent.stones.mapIndexed { index, def ->
-            HiddenItem(id = def.id, position = shuffledPositions[index], iconRes = def.iconRes, contentDescriptionRes = def.nameRes)
-        }
-        val decoyPosition = shuffledPositions[DavidGoliathContent.stones.size]
-
         val sheepCountingItems = DavidGoliathContent.sheepCounts.flatMap { def ->
             listOf(
                 MatchItem(id = "numeral_${def.count}", iconRes = def.numeralIconRes, contentDescriptionRes = def.nameRes, pairKey = "${def.count}"),
@@ -209,8 +207,6 @@ class DavidGoliathViewModel(
         }.shuffled()
 
         return DavidGoliathUiState(
-            hiddenObjectState = HiddenObjectGameState(items = hiddenItems),
-            riverbedDecoyPosition = decoyPosition,
             sheepCountingState = MatchingGameState(items = sheepCountingItems),
         )
     }

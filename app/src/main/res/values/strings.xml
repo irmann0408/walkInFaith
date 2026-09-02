@@ -180,7 +180,6 @@
     <string name="feedback_great_job">Great job!</string>
     <string name="feedback_try_another_one">Try another one!</string>
     <string name="feedback_doesnt_belong">That doesn\'t belong on the ark!</string>
-    <string name="feedback_not_a_stone">That\'s not a stone!</string>
     <string name="feedback_not_a_tool">That\'s not a tool!</string>
 
     <!-- Shared across every D-pad grid-maze screen (game/puzzles/gridmaze) — a live-region announcement plus visible feedback text after each move, not per-chapter since it's purely functional, not narrative. -->
@@ -209,19 +208,12 @@
     <string name="supply_meat">Roasted Meat</string>
 
     <string name="decoy_rock">Rock</string>
-    <string name="decoy_boot">Old Boot</string>
 
     <string name="tool_axe">Axe</string>
     <string name="tool_chisel">Chisel</string>
     <string name="tool_hammer">Hammer</string>
     <string name="tool_nail">Nail</string>
     <string name="tool_wood_saw">Wood Saw</string>
-
-    <string name="stone_1">Smooth Stone</string>
-    <string name="stone_2">River Stone</string>
-    <string name="stone_3">Round Stone</string>
-    <string name="stone_4">Grey Stone</string>
-    <string name="stone_5">Speckled Stone</string>
 
     <string name="noahs_ark_find_tools_title">Find the Tools</string>
     <string name="noahs_ark_find_tools_instructions">Tap each tool hidden in the picture.</string>
@@ -246,12 +238,13 @@
     <string name="noahs_ark_reflection_rainbow_promise">We can trust God, even when we have to wait.</string>
     <string name="noahs_ark_reflection_lesson">We can thank God for keeping every promise.</string>
 
-    <string name="david_goliath_intro_line_1">David was just a shepherd boy, but he trusted God with all his heart.</string>
-    <string name="david_goliath_intro_line_2">One day a giant named Goliath challenged Israel\'s whole army — and David stepped forward.</string>
-
-    <string name="david_goliath_sheep_counting_context_title">Counting the Flock</string>
-    <string name="david_goliath_sheep_counting_context_line_1">Before he could leave, David counted his sheep to make sure they were all safe.</string>
-    <string name="david_goliath_sheep_counting_context_line_2">Help him match each number to the right group of sheep.</string>
+    <string name="david_goliath_reflection_faithful_shepherd">We can be faithful in small jobs, even when no one is watching.</string>
+    <string name="david_goliath_reflection_giants_challenge">We can stay calm, even when trouble looks bigger than us.</string>
+    <string name="david_goliath_reflection_david_arrives">We can speak up for what\'s right, even if others feel afraid.</string>
+    <string name="david_goliath_reflection_heavy_armor">We can be brave just being who God made us to be.</string>
+    <string name="david_goliath_reflection_five_smooth_stones">We can trust that God can use small, simple things.</string>
+    <string name="david_goliath_reflection_victory">We can be strong, because the battle belongs to God.</string>
+    <string name="david_goliath_reflection_glory_to_god">We can give God the credit when good things happen.</string>
 
     <string name="david_goliath_sheep_counting_title">Count the Sheep</string>
     <string name="david_goliath_sheep_counting_instructions">Flip the cards to match each number with its group of sheep.</string>
@@ -261,10 +254,6 @@
     <string name="david_goliath_sheep_count_4">4 Sheep</string>
     <string name="david_goliath_sheep_count_5">5 Sheep</string>
 
-    <string name="david_goliath_dodge_context_title">Crossing the Valley</string>
-    <string name="david_goliath_dodge_context_line_1">David hurried across the Valley of Elah toward Goliath.</string>
-    <string name="david_goliath_dodge_context_line_2">Loose rocks tumbled down the hillside — help him step out of the way.</string>
-
     <string name="david_goliath_dodge_title">Cross the Valley</string>
     <string name="david_goliath_dodge_instructions">Use the arrows to move David out of the way before each rock lands.</string>
     <string name="david_goliath_dodge_progress_label">Avoided %1$d of %2$d rocks</string>
@@ -273,16 +262,19 @@
     <string name="david_goliath_dodge_move_right_content_description">Move David right</string>
     <string name="david_goliath_dodge_rock_content_description">Rolling rock</string>
 
-    <string name="david_goliath_choose_stones_context_title">Down by the Stream</string>
-    <string name="david_goliath_choose_stones_context_line_1">Before facing Goliath, David went down to a stream near the battlefield.</string>
-    <string name="david_goliath_choose_stones_context_line_2">Help him find five smooth stones hidden among the rocks.</string>
-
     <string name="david_goliath_choose_stones_title">Choose the Stones</string>
-    <string name="david_goliath_choose_stones_instructions">Look closely and tap to find five smooth stones for David\'s sling.</string>
-
-    <string name="david_goliath_sling_practice_context_title">Goliath\'s Challenge</string>
-    <string name="david_goliath_sling_practice_context_line_1">Goliath towered over the battlefield, mocking David and his God.</string>
-    <string name="david_goliath_sling_practice_context_line_2">David answered with courage, not fear.</string>
+    <string name="david_goliath_choose_stones_instructions">David already has one stone. Drop stones to connect four in a row — across, up and down, or on a diagonal — before Goliath does!</string>
+    <string name="david_goliath_choose_stones_player_won">You found your stones! David is ready.</string>
+    <string name="david_goliath_choose_stones_opponent_won">So close! Let\'s try again.</string>
+    <string name="david_goliath_choose_stones_draw">A tie! One more round.</string>
+    <string name="david_goliath_choose_stones_your_turn">Your turn — drop a stone!</string>
+    <string name="david_goliath_choose_stones_opponent_turn">Goliath\'s turn…</string>
+    <string name="david_goliath_choose_stones_try_again">Try Again</string>
+    <string name="david_goliath_choose_stones_column_content_description">Drop a stone in column %1$d</string>
+    <string name="david_goliath_choose_stones_cell_content_description">Column %1$d, row %2$d, %3$s</string>
+    <string name="david_goliath_choose_stones_cell_empty">empty</string>
+    <string name="david_goliath_choose_stones_cell_player">your stone</string>
+    <string name="david_goliath_choose_stones_cell_opponent">opponent stone</string>
 
     <string name="david_goliath_choice_title">What Will David Say?</string>
     <string name="david_goliath_choice_instructions">Choose a brave response for David.</string>
@@ -302,9 +294,6 @@
     <string name="david_goliath_sling_shield_zone_middle">middle</string>
     <string name="david_goliath_sling_shield_zone_right">right</string>
     <string name="david_goliath_sling_stone_content_description">David\'s stone. Drag to aim, then let go.</string>
-
-    <string name="david_goliath_lesson_title">Courage and Trusting God</string>
-    <string name="david_goliath_lesson_text">David wasn\'t the biggest or the strongest, but he trusted God more than he feared Goliath. When we feel scared, we can remember God is with us too.</string>
 
     <string name="good_samaritan_intro_line_1">A man was traveling the dangerous road from Jerusalem to Jericho when robbers attacked him and left him hurt beside the road.</string>
     <string name="good_samaritan_intro_line_2">Others walked right past him. Will you stop and help, like the Good Samaritan did?</string>

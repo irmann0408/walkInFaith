@@ -15,7 +15,6 @@ import androidx.navigation.compose.rememberNavController
 import com.bibleadventures.R
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.stories.DanielContent
-import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.game.stories.GoodSamaritanContent
@@ -40,8 +39,6 @@ import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.davidgoliath.choice.DavidGoliathChoiceScreen
 import com.bibleadventures.ui.screens.davidgoliath.choosestones.DavidGoliathChooseStonesScreen
 import com.bibleadventures.ui.screens.davidgoliath.dodge.DavidGoliathDodgeScreen
-import com.bibleadventures.ui.screens.davidgoliath.intro.DavidGoliathIntroScreen
-import com.bibleadventures.ui.screens.davidgoliath.lesson.DavidGoliathLessonScreen
 import com.bibleadventures.ui.screens.davidgoliath.reward.DavidGoliathRewardScreen
 import com.bibleadventures.ui.screens.davidgoliath.sheepcounting.DavidGoliathSheepCountingScreen
 import com.bibleadventures.ui.screens.davidgoliath.slingpractice.DavidGoliathSlingPracticeScreen
@@ -155,7 +152,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                     if (chapterId == ChapterId.NOAHS_ARK) {
                         navController.navigate(Destination.NoahsArk.NoahIntroVideo.route)
                     } else if (chapterId == ChapterId.DAVID_GOLIATH) {
-                        navController.navigate(Destination.DavidGoliath.Intro.route)
+                        navController.navigate(Destination.DavidGoliath.IntroVideo.route)
                     } else if (chapterId == ChapterId.GOOD_SAMARITAN) {
                         navController.navigate(Destination.GoodSamaritan.Intro.route)
                     } else if (chapterId == ChapterId.DANIEL) {
@@ -363,24 +360,21 @@ private fun NavHostController.noahsArkViewModel(entry: NavBackStackEntry): Noahs
 
 private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
-        startDestination = Destination.DavidGoliath.Intro.route,
+        startDestination = Destination.DavidGoliath.IntroVideo.route,
         route = Destination.DavidGoliath.GRAPH_ROUTE,
     ) {
-        composable(Destination.DavidGoliath.Intro.route) { entry ->
+        composable(Destination.DavidGoliath.IntroVideo.route) { entry ->
             val viewModel = navController.davidGoliathViewModel(entry)
-            DavidGoliathIntroScreen(
-                viewModel = viewModel,
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.david_goliath_faithful_shepherd,
+                narrationRes = R.raw.david_goliath_faithful_shepherd_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.david_goliath_reflection_faithful_shepherd,
                 onContinue = {
-                    viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.DavidGoliath.SheepCountingContext.route)
+                    viewModel.onSceneCompleted("intro_video")
+                    navController.navigate(Destination.DavidGoliath.SheepCounting.route)
                 },
-            )
-        }
-        composable(Destination.DavidGoliath.SheepCountingContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.david_goliath_sheep_counting_context_title,
-                lineRes = DavidGoliathContent.sheepCountingContextLines,
-                onContinue = { navController.navigate(Destination.DavidGoliath.SheepCounting.route) },
             )
         }
         composable(Destination.DavidGoliath.SheepCounting.route) { entry ->
@@ -392,15 +386,60 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("sheep_counting")
-                    navController.navigate(Destination.DavidGoliath.ChooseStonesContext.route)
+                    navController.navigate(Destination.DavidGoliath.GiantsChallengeVideo.route)
                 },
             )
         }
-        composable(Destination.DavidGoliath.ChooseStonesContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.david_goliath_choose_stones_context_title,
-                lineRes = DavidGoliathContent.chooseStonesContextLines,
-                onContinue = { navController.navigate(Destination.DavidGoliath.ChooseStones.route) },
+        composable(Destination.DavidGoliath.GiantsChallengeVideo.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.david_goliath_giants_challenge,
+                narrationRes = R.raw.david_goliath_giants_challenge_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.david_goliath_reflection_giants_challenge,
+                onContinue = {
+                    viewModel.onSceneCompleted("giants_challenge_video")
+                    navController.navigate(Destination.DavidGoliath.DavidArrivesVideo.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.DavidArrivesVideo.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.david_goliath_david_arrives,
+                narrationRes = R.raw.david_goliath_david_arrives_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.david_goliath_reflection_david_arrives,
+                onContinue = {
+                    viewModel.onSceneCompleted("david_arrives_video")
+                    navController.navigate(Destination.DavidGoliath.Choice.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.Choice.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            DavidGoliathChoiceScreen(
+                viewModel = viewModel,
+                onContinue = {
+                    viewModel.onSceneCompleted("choice")
+                    navController.navigate(Destination.DavidGoliath.HeavyArmorVideo.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.HeavyArmorVideo.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.david_goliath_heavy_armor,
+                narrationRes = R.raw.david_goliath_heavy_armor_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.david_goliath_reflection_heavy_armor,
+                onContinue = {
+                    viewModel.onSceneCompleted("heavy_armor_video")
+                    navController.navigate(Destination.DavidGoliath.ChooseStones.route)
+                },
             )
         }
         composable(Destination.DavidGoliath.ChooseStones.route) { entry ->
@@ -412,32 +451,22 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("choose_stones")
-                    navController.navigate(Destination.DavidGoliath.SlingPracticeContext.route)
+                    navController.navigate(Destination.DavidGoliath.FiveSmoothStonesVideo.route)
                 },
             )
         }
-        composable(Destination.DavidGoliath.SlingPracticeContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.david_goliath_sling_practice_context_title,
-                lineRes = DavidGoliathContent.slingPracticeContextLines,
-                onContinue = { navController.navigate(Destination.DavidGoliath.Choice.route) },
-            )
-        }
-        composable(Destination.DavidGoliath.Choice.route) { entry ->
+        composable(Destination.DavidGoliath.FiveSmoothStonesVideo.route) { entry ->
             val viewModel = navController.davidGoliathViewModel(entry)
-            DavidGoliathChoiceScreen(
-                viewModel = viewModel,
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.david_goliath_five_smooth_stones,
+                narrationRes = R.raw.david_goliath_five_smooth_stones_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.david_goliath_reflection_five_smooth_stones,
                 onContinue = {
-                    viewModel.onSceneCompleted("choice")
-                    navController.navigate(Destination.DavidGoliath.DodgeContext.route)
+                    viewModel.onSceneCompleted("five_smooth_stones_video")
+                    navController.navigate(Destination.DavidGoliath.Dodge.route)
                 },
-            )
-        }
-        composable(Destination.DavidGoliath.DodgeContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.david_goliath_dodge_context_title,
-                lineRes = DavidGoliathContent.dodgeContextLines,
-                onContinue = { navController.navigate(Destination.DavidGoliath.Dodge.route) },
             )
         }
         composable(Destination.DavidGoliath.Dodge.route) { entry ->
@@ -462,15 +491,34 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("sling_practice")
-                    navController.navigate(Destination.DavidGoliath.Lesson.route)
+                    navController.navigate(Destination.DavidGoliath.VictoryVideo.route)
                 },
             )
         }
-        composable(Destination.DavidGoliath.Lesson.route) { entry ->
+        composable(Destination.DavidGoliath.VictoryVideo.route) { entry ->
             val viewModel = navController.davidGoliathViewModel(entry)
-            DavidGoliathLessonScreen(
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.david_goliath_victory,
+                narrationRes = R.raw.david_goliath_victory_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.david_goliath_reflection_victory,
                 onContinue = {
-                    viewModel.onSceneCompleted("lesson")
+                    viewModel.onSceneCompleted("victory_video")
+                    navController.navigate(Destination.DavidGoliath.LessonVideo.route)
+                },
+            )
+        }
+        composable(Destination.DavidGoliath.LessonVideo.route) { entry ->
+            val viewModel = navController.davidGoliathViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.david_goliath_glory_to_god,
+                narrationRes = R.raw.david_goliath_glory_to_god_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.david_goliath_reflection_glory_to_god,
+                onContinue = {
+                    viewModel.onSceneCompleted("lesson_video")
                     navController.navigate(Destination.DavidGoliath.Reward.route)
                 },
             )

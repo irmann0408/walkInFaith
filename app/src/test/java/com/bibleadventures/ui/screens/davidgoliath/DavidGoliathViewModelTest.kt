@@ -5,10 +5,11 @@ import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
+import com.bibleadventures.game.puzzles.connectfour.ConnectFourOutcome
+import com.bibleadventures.game.puzzles.connectfour.Slot
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.progress.ProgressionService
-import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -32,35 +33,65 @@ class DavidGoliathViewModelTest {
         audioController: FakeAudioController = FakeAudioController(),
     ) = DavidGoliathViewModel(ProgressionService(repository), repository, audioController)
 
+    // --- Choose the Stones (connectfour) ---
+
     @Test
-    fun `initial state has all 5 stones and a shuffled decoy position among the same hand-placed spots`() {
-        val state = createViewModel().uiState.value
+    fun `initial connect four state is an empty 7x6 board with the player to move`() {
+        val state = createViewModel().uiState.value.connectFourState
 
-        assertEquals(5, state.hiddenObjectState.items.size)
-        assertTrue(state.hiddenObjectState.foundIds.isEmpty())
-
-        val expectedPositions = (DavidGoliathContent.stones.map { it.position } + DavidGoliathContent.riverbedDecoy.position).toSet()
-        val actualPositions = (state.hiddenObjectState.items.map { it.position } + state.riverbedDecoyPosition).toSet()
-        assertEquals(expectedPositions, actualPositions)
+        assertEquals(7, state.columns)
+        assertEquals(6, state.rows)
+        assertTrue(state.grid.all { row -> row.all { it == Slot.EMPTY } })
+        assertTrue(state.isPlayerTurn)
+        assertEquals(ConnectFourOutcome.NONE, state.outcome)
     }
 
     @Test
-    fun `onStoneFound adds the stone to foundIds`() {
-        val viewModel = createViewModel()
+    fun `onConnectFourColumnTapped drops a player stone and hands the turn to the opponent, without a sound`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
 
-        viewModel.onStoneFound("stone_1")
+        viewModel.onConnectFourColumnTapped(0)
 
-        assertTrue("stone_1" in viewModel.uiState.value.hiddenObjectState.foundIds)
+        val state = viewModel.uiState.value.connectFourState
+        assertEquals(Slot.PLAYER, state.grid[0][0])
+        assertFalse(state.isPlayerTurn)
+        assertTrue(audioController.playedEffects.isEmpty())
     }
 
     @Test
-    fun `onRiverbedDecoyTapped sets the decoy outcome without touching found stones`() {
+    fun `onConnectFourColumnTapped is a no-op once it's the opponent's turn`() {
         val viewModel = createViewModel()
+        viewModel.onConnectFourColumnTapped(0)
+        val afterFirstDrop = viewModel.uiState.value.connectFourState
 
-        viewModel.onRiverbedDecoyTapped()
+        viewModel.onConnectFourColumnTapped(1)
 
-        assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastRiverbedDecoyOutcome)
-        assertTrue(viewModel.uiState.value.hiddenObjectState.foundIds.isEmpty())
+        assertEquals(afterFirstDrop, viewModel.uiState.value.connectFourState)
+    }
+
+    @Test
+    fun `onConnectFourOpponentMove is a no-op while it's still the player's turn`() {
+        val viewModel = createViewModel()
+        val initialState = viewModel.uiState.value.connectFourState
+
+        viewModel.onConnectFourOpponentMove()
+
+        assertEquals(initialState, viewModel.uiState.value.connectFourState)
+    }
+
+    @Test
+    fun `onConnectFourReset returns to a fresh board regardless of prior progress`() {
+        val viewModel = createViewModel()
+        viewModel.onConnectFourColumnTapped(0)
+        viewModel.onConnectFourOpponentMove()
+
+        viewModel.onConnectFourReset()
+
+        val state = viewModel.uiState.value.connectFourState
+        assertTrue(state.grid.all { row -> row.all { it == Slot.EMPTY } })
+        assertTrue(state.isPlayerTurn)
+        assertEquals(ConnectFourOutcome.NONE, state.outcome)
     }
 
     @Test

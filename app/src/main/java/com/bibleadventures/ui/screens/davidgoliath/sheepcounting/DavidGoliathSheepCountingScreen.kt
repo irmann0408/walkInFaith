@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,9 +33,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.puzzles.matching.MatchItem
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.puzzles.matching.MatchingGameState
+import com.bibleadventures.ui.components.CharacterCallout
+import com.bibleadventures.ui.components.Posture
 import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -60,9 +62,11 @@ fun DavidGoliathSheepCountingScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
 
     DavidGoliathSheepCountingContent(
         sheepCountingState = uiState.sheepCountingState,
+        characterCustomization = characterCustomization,
         onItemTapped = viewModel::onSheepCountingItemTapped,
         onContinue = onContinue,
         onBackToMainMenu = onBackToMainMenu,
@@ -74,6 +78,7 @@ fun DavidGoliathSheepCountingScreen(
 @Composable
 private fun DavidGoliathSheepCountingContent(
     sheepCountingState: MatchingGameState,
+    characterCustomization: CharacterCustomization,
     onItemTapped: (String) -> Unit,
     onContinue: () -> Unit,
     onBackToMainMenu: () -> Unit,
@@ -113,10 +118,7 @@ private fun DavidGoliathSheepCountingContent(
             val feedback = when (sheepCountingState.lastOutcome) {
                 MatchOutcome.CORRECT -> stringResource(R.string.feedback_great_job)
                 MatchOutcome.TRY_AGAIN -> stringResource(R.string.feedback_try_another_one)
-                MatchOutcome.NONE -> ""
-            }
-            Box(modifier = Modifier.height(32.dp)) {
-                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
+                MatchOutcome.NONE -> null
             }
 
             // weight(1f, fill = true) hands this region exactly the space left over
@@ -151,6 +153,13 @@ private fun DavidGoliathSheepCountingContent(
                         }
                     }
                 }
+
+                CharacterCallout(
+                    characterCustomization = characterCustomization,
+                    message = feedback,
+                    posture = if (sheepCountingState.lastOutcome == MatchOutcome.CORRECT) Posture.THUMBS_UP else Posture.STANDING,
+                    modifier = Modifier.align(Alignment.BottomStart),
+                )
             }
 
             if (previouslyCompleted && !sheepCountingState.isComplete) {
@@ -193,6 +202,7 @@ private fun DavidGoliathSheepCountingPreview() {
     BibleAdventuresTheme {
         DavidGoliathSheepCountingContent(
             sheepCountingState = MatchingGameState(items = emptyList()),
+            characterCustomization = CharacterCustomization(),
             onItemTapped = {},
             onContinue = {},
             onBackToMainMenu = {},

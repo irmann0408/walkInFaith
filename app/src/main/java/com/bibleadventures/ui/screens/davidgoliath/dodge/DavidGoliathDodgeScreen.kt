@@ -55,6 +55,7 @@ import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.AspectRatioFitBox
 import com.bibleadventures.ui.components.CharacterPreview
+import com.bibleadventures.ui.components.Posture
 import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -189,22 +190,32 @@ private fun DavidGoliathDodgeContent(
                 )
             }
 
-            if (!isComplete) {
-                // weight(1f, fill = true) hands this element exactly the space left
-                // over after every other (naturally-sized) sibling in this Column —
-                // including LaneMoveControls below — and AspectRatioFitBox
-                // letterbox-fits within that bounded box, so nothing here ever
-                // needs to scroll.
-                AspectRatioFitBox(
-                    ratio = 1.6f,
-                    modifier = Modifier.weight(1f, fill = true).fillMaxSize().padding(top = 8.dp),
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.bg_david_goliath_valley),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+            // weight(1f, fill = true) hands this element exactly the space left
+            // over after every other (naturally-sized) sibling in this Column —
+            // including LaneMoveControls below — and AspectRatioFitBox
+            // letterbox-fits within that bounded box, so nothing here ever
+            // needs to scroll. Stays visible after completion (rocks/controls
+            // hidden) so David's THUMBS_UP posture is the last thing shown.
+            AspectRatioFitBox(
+                ratio = 1.6f,
+                modifier = Modifier.weight(1f, fill = true).fillMaxSize().padding(top = 8.dp),
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.bg_david_goliath_valley),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                if (isComplete) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        SingleCharacterTrack(
+                            characterLane = characterLane,
+                            character = character,
+                            posture = Posture.THUMBS_UP,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                } else {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Row(
                             modifier = Modifier.fillMaxWidth().weight(1f, fill = true),
@@ -224,11 +235,14 @@ private fun DavidGoliathDodgeContent(
                         SingleCharacterTrack(
                             characterLane = characterLane,
                             character = character,
+                            posture = Posture.STANDING,
                             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         )
                     }
                 }
+            }
 
+            if (!isComplete) {
                 LaneMoveControls(onLaneMoved = onLaneMoved, modifier = Modifier.padding(top = 12.dp))
             }
 
@@ -270,7 +284,7 @@ private fun FallingRockLane(
 
 /** David, sliding to whichever of the 3 lanes [characterLane] names — same width as the [FallingRockLane] row above it, so his standing spot lines up under each lane. */
 @Composable
-private fun SingleCharacterTrack(characterLane: Int, character: CharacterCustomization, modifier: Modifier = Modifier) {
+private fun SingleCharacterTrack(characterLane: Int, character: CharacterCustomization, posture: Posture = Posture.STANDING, modifier: Modifier = Modifier) {
     val characterDescription = stringResource(R.string.david_goliath_dodge_character_content_description, characterLane + 1)
 
     val reducedMotion = LocalReducedMotion.current
@@ -287,7 +301,7 @@ private fun SingleCharacterTrack(characterLane: Int, character: CharacterCustomi
                 .align(Alignment.BottomStart)
                 .semantics { contentDescription = characterDescription },
         ) {
-            CharacterPreview(customization = character, modifier = Modifier.size(CHARACTER_SIZE))
+            CharacterPreview(customization = character, posture = posture, modifier = Modifier.size(CHARACTER_SIZE))
         }
     }
 }

@@ -587,6 +587,22 @@ correctness.
   button, app switcher, screen off) is unaffected — the Activity is
   merely stopped, not destroyed, so the write completes normally. Accepted
   trade-off, not fixed — see the architectural-decisions-log entry below.
+- **`connectedAndroidTest` (the whole `androidTest` source set) currently
+  fails to compile**, unrelated to the David & Goliath Connect Four work —
+  `NoahsArkContent.sortableItems`/`.hiddenItems`/`.sortCategories` were
+  removed when Organize the Ark and Find the Missing Items became video
+  scenes (Noah's Ark's earlier video restructure), but the shared
+  `completeNoahsArk()` helper duplicated across ~9 chapters' flow tests
+  (Daniel, Esther, Feeding the 5,000, Good Samaritan, Jericho, Jesus Calms
+  the Storm, Parent Area, Noah's Ark itself, David & Goliath) still calls
+  it to unlock past Noah's Ark first — none of these were updated when
+  Noah's Ark's own content changed. `DavidGoliathFlowTest.kt`'s own
+  David-and-Goliath-specific code (video/Choice/Connect Four/Dodge/Sling
+  sections) is internally consistent with the new API and compiles in
+  isolation — confirmed by filtering the compiler's error output down to
+  just that file, which only shows the shared-helper lines. Fixing this
+  needs its own pass across every affected chapter's test file, not a
+  David & Goliath-scoped fix.
 
 ### Milestone 5 — Progression
 Closed out the three items left after Noah's Ark: "Continue Adventure" wiring,
@@ -893,6 +909,77 @@ player saw and what the engine checked were different rectangles.
   hit-test generically (arbitrary shield bounds), and
   `DavidGoliathFlowTest.kt` still just drags to wherever the mark is frozen,
   which now correctly falls inside the correctly-rendered shield.
+
+### Chapter 2 addendum 7 — video restructure + Connect Four "Choose Stones"
+Reused Noah's Ark's video-narrated-scene pattern for a second chapter and
+replaced the old tap-to-find hidden-object "Choose the Stones" puzzle,
+judged too easy/babyish for the 7+ audience (same complaint that led to
+Noah's Ark's Organize the Ark being replaced).
+- 13 destinations, up from 12: `IntroVideo, SheepCounting,
+  GiantsChallengeVideo, DavidArrivesVideo, Choice, HeavyArmorVideo,
+  ChooseStones, FiveSmoothStonesVideo, Dodge, SlingPractice, VictoryVideo,
+  LessonVideo, Reward`. All 4 old narration-only `StoryBeatScreen` context
+  cards (`SheepCountingContext`, `ChooseStonesContext`,
+  `SlingPracticeContext`, `DodgeContext`) and the old TTS+`CharacterPreview`
+  `Intro`/`Lesson` screens are gone — the videos absorb that lead-in
+  context, exactly as Noah's Ark's restructure did. 7 video/narration pairs
+  copied from the sibling `bibleStory` project into `res/raw/` as
+  `david_goliath_<scene>(.mp4|_narration.mp3)`; `bibleStory`'s scene 6
+  ("Confrontation") is deliberately unused, skipped on the user's
+  instruction.
+- **New engine: `game/puzzles/connectfour`** — a real 7×6 Connect Four
+  board, player vs. a simple AI (win-if-possible, else block the player's
+  win, else prefer center-ish columns, else random among ties). This is
+  the app's **first mini-game with a genuine loss condition** — a
+  deliberate, user-confirmed exception to the standing "no failure states"
+  rule (spec section 9 / CLAUDE.md), flagged to the user before building.
+  Kept in the spirit of that rule anyway: a loss or draw shows a gentle
+  message and a "Try Again" button, with unlimited retries and no
+  game-over screen or lost progress. (An initial version auto-reset the
+  board after ~1.6s; changed to a manual button after on-device feedback
+  that auto-resetting felt like it was taking the board away before the
+  player was ready — see the addendum below.) Every other mini-game in
+  this app still has zero lose condition — treat this as a one-off, not a
+  precedent to reuse without asking again.
+- Personalization (`CharacterCallout`/`Posture.THUMBS_UP`) extended to all
+  4 David & Goliath puzzles, reusing Noah's Ark's exact components with no
+  new infrastructure: Sheep Counting and Choose Stones follow the Animal
+  Matching pattern (callout replaces the old standalone feedback `Text`,
+  inside the puzzle's grid area); Sling Practice keeps its existing
+  feedback text and adds a callout below the puzzle purely for the
+  character reaction; Crossing the Valley's character was already
+  rendered in-game (`CharacterPreview` sliding between lanes) so it just
+  gained a `posture` parameter switched to `THUMBS_UP` on completion,
+  rather than adding a second, redundant character.
+- `ConnectFourCell` carries its own per-cell content description (row,
+  column, occupant) separately from the clickable column's — not meant to
+  be read aloud in normal play, but it's what lets
+  `DavidGoliathFlowTest.completeChooseStones()` read the live board and
+  mirror the AI's own win/block/center heuristic from the player's side
+  (verified offline: a board-blind fixed tap sequence has a ~0% win rate
+  against this AI, since it reliably blocks any predictable line before
+  it completes, so genuine board-reading was required, not optional). That
+  reactive policy wins roughly 60% of matches in isolation; the test
+  retries up to 20 full matches, tapping "Try Again" after each loss/draw,
+  to drive the chance of never winning to effectively zero.
+
+### Chapter 2 addendum 8 — Choose Stones: on-device fixes to grid sizing and the auto-reset
+Two issues found testing Connect Four on-device:
+- The 7th (last) column rendered cramped and non-circular. Root cause:
+  `cellSize` was computed as `maxWidth / columns`, ignoring the
+  `spacedBy(4.dp)` gaps between columns — the actual row width (7 cells +
+  6 gaps) exceeded `maxWidth`, so the last column's cells were pushed
+  partly outside the `BoxWithConstraints`, clipping them into a
+  non-circular sliver. Fixed by subtracting the total gap width before
+  dividing, the same pattern already used by Sheep Counting's/Animal
+  Matching's own tile-size math (`(maxWidth - spacing * (n - 1)) / n`).
+- The board auto-reset ~1.6s after a loss or draw, which read as the game
+  taking the board away before the player had a chance to see it. Removed
+  the auto-reset `LaunchedEffect` entirely; a loss or draw now leaves the
+  finished board exactly as it landed, with a "Try Again" button the
+  player taps whenever they're ready. `DavidGoliathFlowTest`'s
+  `completeChooseStones()` helper updated to tap that button explicitly
+  instead of waiting out a delay.
 
 ### Chapter 3 — The Good Samaritan
 The third full chapter, unlocked automatically once David and Goliath is
@@ -3609,6 +3696,14 @@ preview (see above) — no further UI work on it for now. Open items:
 - No other concrete backlog items are currently open; next work should
   come from a fresh round of playtesting or a new milestone/feature
   request.
+- David & Goliath's video restructure + Connect Four "Choose Stones" is
+  implemented, unit-tested, and confirmed compiling (`./gradlew
+  compileDebugKotlin compileDebugUnitTestKotlin` both succeed; full
+  `testDebugUnitTest` and `lintDebug` both pass) — see "Chapter 2 addendum
+  7" above. Not yet verified on-device by the user.
+- The pre-existing `connectedAndroidTest` compile breakage (see "Known
+  issues" above) affects ~9 chapters' flow tests, not just David &
+  Goliath, and needs a dedicated fix pass across all of them.
 
 ## Architectural decisions log
 
@@ -4011,3 +4106,36 @@ preview (see above) — no further UI work on it for now. Open items:
   genders now use one gender-specific costume shape per color) — kept
   unchanged anyway per the persisted-enum-name rule above, just
   reinterpreted in code as 7 plain color slots.
+- **A mini-game engine can be given a genuine loss condition, but only as
+  an explicitly-flagged, user-confirmed one-off, and only if the loss
+  itself is designed to stay non-punishing.** `connectfour` (David &
+  Goliath's Connect Four "Choose Stones") is the first engine in this app
+  where the player can actually lose to an opponent — surfaced to the user
+  as a direct conflict with the standing "no failure states" rule before
+  any code was written, per the Good-Samaritan-bandit and
+  vision-cone-stealth precedents above (which redesigned *around* the
+  rule instead). The difference here: the user explicitly chose to keep a
+  real Player-vs-AI win/lose outcome rather than removing it, so the
+  mitigation moved from "redesign away the failure" to "make the failure
+  gentle" — auto-reset after a short delay, unlimited retries, no
+  game-over screen, no lost progress. Don't treat this as license to add
+  more lose-conditions elsewhere without the same explicit check-in; every
+  other mini-game in the app still has zero lose condition on purpose.
+- **A UI test can prove a board-game puzzle is winnable without ever
+  reading engine internals, by giving each rendered cell its own
+  content description and mirroring the AI's public heuristic from the
+  test side.** `DavidGoliathFlowTest.completeChooseStones()` first tried
+  several board-blind fixed column-tap policies (round-robin, center-out,
+  paired-stacking) against the real `ConnectFourGame` opponent offline —
+  all measured a 0% win rate over 2000 simulated matches, since the AI's
+  "block the player's immediate win" check defeats any predictable line
+  before it completes. A policy that mirrors the AI's own win-then-block-
+  then-center priority (reading the board through each cell's own
+  semantics content description, added to `ConnectFourCell` specifically
+  to make this possible) measured ~60% per-match wins in the same offline
+  simulation; retried across several full matches in the instrumented
+  test (each loss/draw auto-resets on its own) that becomes a near-certain
+  eventual win. When a puzzle has genuine opponent behavior instead of a
+  fixed solution, verify a test policy's win rate with an offline
+  simulation against the real engine before trusting it in an
+  instrumented test — don't assume a "reasonable-looking" policy works.
