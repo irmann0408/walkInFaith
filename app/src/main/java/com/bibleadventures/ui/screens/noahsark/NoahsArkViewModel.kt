@@ -47,6 +47,8 @@ data class NoahsArkUiState(
     val reward: NoahsArkRewardResult? = null,
     /** Last tap on "Find the Tools" that landed outside every tool hotspot. */
     val lastFindToolsWrongTapOutcome: DecoyTapOutcome = DecoyTapOutcome.NONE,
+    /** Whether the last "Find the Tools" tap actually found a tool — drives the character's thumbs-up reaction. */
+    val lastFindToolsTapWasCorrect: Boolean = false,
 )
 
 class NoahsArkViewModel(
@@ -77,7 +79,9 @@ class NoahsArkViewModel(
 
     /** A tap on "Find the Tools" that landed outside every tool hotspot — never penalized, never blocks progress. */
     fun onFindToolsBackgroundTapped() {
-        _uiState.update { it.copy(lastFindToolsWrongTapOutcome = DecoyTapOutcome.DECOY_TAPPED) }
+        _uiState.update {
+            it.copy(lastFindToolsWrongTapOutcome = DecoyTapOutcome.DECOY_TAPPED, lastFindToolsTapWasCorrect = false)
+        }
     }
 
     fun onMatchItemTapped(itemId: String) {
@@ -101,6 +105,7 @@ class NoahsArkViewModel(
         }
     }
 
+    /** Only ever called for a not-yet-found hotspot — the screen disables tapping an already-found one. */
     fun onHiddenItemTapped(itemId: String) {
         _uiState.update { current ->
             current.copy(
@@ -109,6 +114,7 @@ class NoahsArkViewModel(
                 // wrong tap — a correct tap right after should never leave stale
                 // wrong-answer feedback on screen.
                 lastFindToolsWrongTapOutcome = DecoyTapOutcome.NONE,
+                lastFindToolsTapWasCorrect = true,
             )
         }
     }

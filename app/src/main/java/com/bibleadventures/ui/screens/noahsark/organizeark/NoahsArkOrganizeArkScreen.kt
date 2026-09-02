@@ -63,6 +63,7 @@ import com.bibleadventures.game.puzzles.groupfill.GroupFillOutcome
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.CharacterCallout
+import com.bibleadventures.ui.components.Posture
 import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -243,9 +244,15 @@ private fun NoahsArkOrganizeArkContent(
                     }
                 }
 
+                val isPositiveOutcome = groupFillState.lastOutcome in setOf(
+                    GroupFillOutcome.ADDED,
+                    GroupFillOutcome.CIRCLE_COMPLETE,
+                    GroupFillOutcome.ALL_COMPLETE,
+                )
                 CharacterCallout(
                     characterCustomization = characterCustomization,
                     message = feedback,
+                    posture = if (isPositiveOutcome) Posture.THUMBS_UP else Posture.STANDING,
                     modifier = Modifier.align(Alignment.BottomStart),
                 )
             }

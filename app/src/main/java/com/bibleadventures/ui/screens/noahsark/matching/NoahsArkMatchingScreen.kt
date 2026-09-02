@@ -38,6 +38,7 @@ import com.bibleadventures.game.puzzles.matching.MatchItem
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
 import com.bibleadventures.game.puzzles.matching.MatchingGameState
 import com.bibleadventures.ui.components.CharacterCallout
+import com.bibleadventures.ui.components.Posture
 import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
@@ -151,6 +152,7 @@ private fun NoahsArkMatchingContent(
                 CharacterCallout(
                     characterCustomization = characterCustomization,
                     message = feedback,
+                    posture = if (matchingState.lastOutcome == MatchOutcome.CORRECT) Posture.THUMBS_UP else Posture.STANDING,
                     modifier = Modifier.align(Alignment.BottomStart),
                 )
             }

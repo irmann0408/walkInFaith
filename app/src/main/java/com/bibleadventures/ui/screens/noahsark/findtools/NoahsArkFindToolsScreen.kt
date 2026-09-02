@@ -36,6 +36,7 @@ import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.components.AspectRatioFitBox
 import com.bibleadventures.ui.components.CharacterCallout
+import com.bibleadventures.ui.components.Posture
 import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.noahsark.DecoyTapOutcome
 import com.bibleadventures.ui.screens.noahsark.NoahsArkViewModel
@@ -64,6 +65,7 @@ fun NoahsArkFindToolsScreen(
     NoahsArkFindToolsContent(
         hiddenObjectState = uiState.hiddenObjectState,
         wrongTapOutcome = uiState.lastFindToolsWrongTapOutcome,
+        tapWasCorrect = uiState.lastFindToolsTapWasCorrect,
         characterCustomization = characterCustomization,
         onItemTapped = viewModel::onHiddenItemTapped,
         onBackgroundTapped = viewModel::onFindToolsBackgroundTapped,
@@ -78,6 +80,7 @@ fun NoahsArkFindToolsScreen(
 private fun NoahsArkFindToolsContent(
     hiddenObjectState: HiddenObjectGameState,
     wrongTapOutcome: DecoyTapOutcome,
+    tapWasCorrect: Boolean,
     characterCustomization: CharacterCustomization,
     onItemTapped: (String) -> Unit,
     onBackgroundTapped: () -> Unit,
@@ -164,7 +167,7 @@ private fun NoahsArkFindToolsContent(
                     CharacterCallout(
                         characterCustomization = characterCustomization,
                         message = if (wrongTapOutcome == DecoyTapOutcome.DECOY_TAPPED) stringResource(R.string.feedback_not_a_tool) else null,
-                        bubbleBelow = true,
+                        posture = if (tapWasCorrect) Posture.THUMBS_UP else Posture.STANDING,
                         modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
                     )
                 }
@@ -188,6 +191,7 @@ private fun NoahsArkFindToolsPreview() {
         NoahsArkFindToolsContent(
             hiddenObjectState = HiddenObjectGameState(items = emptyList()),
             wrongTapOutcome = DecoyTapOutcome.NONE,
+            tapWasCorrect = false,
             characterCustomization = CharacterCustomization(),
             onItemTapped = {},
             onBackgroundTapped = {},

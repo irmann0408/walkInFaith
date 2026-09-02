@@ -23,14 +23,26 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import androidx.compose.ui.tooling.preview.Preview
 
 /**
- * Renders the player's chosen character as 3 stacked layers — body, costume,
- * then hair — instead of one flattened image per (appearance, hairstyle,
- * clothing) combination. That flat-image approach doesn't scale: a new
- * posture would need a fresh image for every one of the 70 combinations.
- * Layering means a new hairstyle only needs 2 new images (one per
- * appearance) that work with every existing costume color for free, and
- * likewise a new costume color only needs 2 new images that work with
- * every existing hairstyle.
+ * A momentary reaction pose, separate from [CharacterCustomization] since
+ * it's not something the player chooses/saves — just a transient signal a
+ * caller passes in for as long as it wants a reaction shown (e.g. Noah's
+ * Ark's puzzle screens switch to [THUMBS_UP] while their last feedback was
+ * positive). The standing costume/hair art was confirmed to still fit
+ * correctly over the [THUMBS_UP] body, so [CharacterPreview] layers the
+ * same costume and hair on top regardless of posture — only the body
+ * layer itself changes.
+ */
+enum class Posture { STANDING, THUMBS_UP }
+
+/**
+ * Renders the player's chosen character as up to 3 stacked layers — body,
+ * costume, then hair — instead of one flattened image per (appearance,
+ * hairstyle, clothing) combination. That flat-image approach doesn't
+ * scale: a new posture would need a fresh image for every one of the 70
+ * combinations. Layering means a new hairstyle only needs 2 new images
+ * (one per appearance) that work with every existing costume color for
+ * free, and likewise a new costume color only needs 2 new images that
+ * work with every existing hairstyle.
  *
  * The body and costume images share one fixed pixel canvas per appearance
  * (576×1024 for girls, 256×1024 for boys — see [bodyAspectRatio]) and are
@@ -52,6 +64,7 @@ import androidx.compose.ui.tooling.preview.Preview
 fun CharacterPreview(
     customization: CharacterCustomization,
     modifier: Modifier = Modifier,
+    posture: Posture = Posture.STANDING,
 ) {
     val contentDescription = stringResource(R.string.character_preview_content_description)
     val hairFit = hairFit(customization.appearance, customization.hairstyle)
@@ -64,7 +77,7 @@ fun CharacterPreview(
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             Image(
-                painter = painterResource(bodyRes(customization.appearance)),
+                painter = painterResource(bodyRes(customization.appearance, posture)),
                 contentDescription = null,
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier.fillMaxSize(),
@@ -94,9 +107,15 @@ private fun bodyAspectRatio(appearance: Appearance): Float = when (appearance) {
     Appearance.GIRL -> 576f / 1024f
 }
 
-private fun bodyRes(appearance: Appearance): Int = when (appearance) {
-    Appearance.BOY -> R.drawable.character_body_boy
-    Appearance.GIRL -> R.drawable.character_body_girl
+private fun bodyRes(appearance: Appearance, posture: Posture): Int = when (appearance) {
+    Appearance.BOY -> when (posture) {
+        Posture.STANDING -> R.drawable.character_body_boy
+        Posture.THUMBS_UP -> R.drawable.character_body_boy_thumbs_up
+    }
+    Appearance.GIRL -> when (posture) {
+        Posture.STANDING -> R.drawable.character_body_girl
+        Posture.THUMBS_UP -> R.drawable.character_body_girl_thumbs_up
+    }
 }
 
 /** Costume art fits the body exactly on both appearances except for a small vertical nudge the girl's robes still need. */

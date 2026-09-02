@@ -147,6 +147,11 @@ fun StoryVideoScreen(
                 CharacterCallout(
                     characterCustomization = characterCustomization,
                     message = if (reflectionRes != null && videoEnded) stringResource(reflectionRes) else null,
+                    // Reflection lines are full sentences, not short puzzle-feedback
+                    // phrases — they routinely wrap to 2+ lines, so the default
+                    // clearance (tuned for something like "Great job!") isn't
+                    // enough to keep the bubble from growing down into the character.
+                    bubbleAboveClearance = 76.dp,
                     modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
                 )
             }
