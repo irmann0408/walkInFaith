@@ -73,7 +73,9 @@ fun CharacterPreview(
                 painter = painterResource(costumeRes(customization.appearance, customization.clothing)),
                 contentDescription = null,
                 contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .offset(y = maxHeight * costumeOffsetYFraction(customization.appearance)),
             )
             Image(
                 painter = painterResource(hairFit.res),
@@ -95,6 +97,12 @@ private fun bodyAspectRatio(appearance: Appearance): Float = when (appearance) {
 private fun bodyRes(appearance: Appearance): Int = when (appearance) {
     Appearance.BOY -> R.drawable.character_body_boy
     Appearance.GIRL -> R.drawable.character_body_girl
+}
+
+/** Costume art fits the body exactly on both appearances except for a small vertical nudge the girl's robes still need. */
+private fun costumeOffsetYFraction(appearance: Appearance): Float = when (appearance) {
+    Appearance.BOY -> 0f
+    Appearance.GIRL -> -27f / 1024f
 }
 
 private fun costumeRes(appearance: Appearance, clothing: ClothingColor): Int = when (appearance) {
@@ -135,11 +143,11 @@ private data class HairFit(
 
 private fun hairFit(appearance: Appearance, hairstyle: Hairstyle): HairFit = when (appearance) {
     Appearance.GIRL -> when (hairstyle) {
-        Hairstyle.SHORT -> HairFit(R.drawable.character_hair_girl_short, 0.9363077f, 25f / 576f, -222f / 1024f)
-        Hairstyle.CURLY -> HairFit(R.drawable.character_hair_girl_curly, 0.9502793f, 13f / 576f, -134f / 1024f)
-        Hairstyle.BRAIDED -> HairFit(R.drawable.character_hair_girl_braided, 1.0104839f, -6f / 576f, -265f / 1024f)
-        Hairstyle.PONYTAIL -> HairFit(R.drawable.character_hair_girl_ponytail, 1.0132075f, 1f / 576f, -3f / 1024f)
-        Hairstyle.LONG -> HairFit(R.drawable.character_hair_girl_long, 1.0042904f, -4f / 576f, -5f / 1024f)
+        Hairstyle.SHORT -> HairFit(R.drawable.character_hair_girl_short, 1f, 0f, 0f)
+        Hairstyle.CURLY -> HairFit(R.drawable.character_hair_girl_curly, 1f, 0f, 0f)
+        Hairstyle.BRAIDED -> HairFit(R.drawable.character_hair_girl_braided, 1f, 0f, 0f)
+        Hairstyle.PONYTAIL -> HairFit(R.drawable.character_hair_girl_ponytail, 1f, 0f, 0f)
+        Hairstyle.LONG -> HairFit(R.drawable.character_hair_girl_long, 1f, 0f, 0f)
     }
     Appearance.BOY -> when (hairstyle) {
         Hairstyle.SHORT -> HairFit(R.drawable.character_hair_boy_short, 1f, 0f, 0f)
