@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -65,16 +66,19 @@ fun CharacterPreview(
             Image(
                 painter = painterResource(bodyRes(customization.appearance)),
                 contentDescription = null,
+                contentScale = ContentScale.FillBounds,
                 modifier = Modifier.fillMaxSize(),
             )
             Image(
                 painter = painterResource(costumeRes(customization.appearance, customization.clothing)),
                 contentDescription = null,
+                contentScale = ContentScale.FillBounds,
                 modifier = Modifier.fillMaxSize(),
             )
             Image(
                 painter = painterResource(hairFit.res),
                 contentDescription = null,
+                contentScale = ContentScale.FillBounds,
                 modifier = Modifier
                     .size(width = maxWidth * hairFit.scale, height = maxHeight * hairFit.scale)
                     .offset(x = maxWidth * hairFit.offsetXFraction, y = maxHeight * hairFit.offsetYFraction),
@@ -138,11 +142,11 @@ private fun hairFit(appearance: Appearance, hairstyle: Hairstyle): HairFit = whe
         Hairstyle.LONG -> HairFit(R.drawable.character_hair_girl_long, 1.0042904f, -4f / 576f, -5f / 1024f)
     }
     Appearance.BOY -> when (hairstyle) {
-        Hairstyle.SHORT -> HairFit(R.drawable.character_hair_boy_short, 1.0316742f, -6f / 256f, -138f / 1024f)
-        Hairstyle.CURLY -> HairFit(R.drawable.character_hair_boy_curly, 0.9870130f, 0f, -134f / 1024f)
-        Hairstyle.BRAIDED -> HairFit(R.drawable.character_hair_boy_braided, 0.9963415f, 0f, -38f / 1024f)
-        Hairstyle.PONYTAIL -> HairFit(R.drawable.character_hair_boy_ponytail, 1.0469388f, 1f / 256f, -176f / 1024f)
-        Hairstyle.LONG -> HairFit(R.drawable.character_hair_boy_long, 0.9686275f, 11f / 256f, -20f / 1024f)
+        Hairstyle.SHORT -> HairFit(R.drawable.character_hair_boy_short, 1f, 0f, 0f)
+        Hairstyle.CURLY -> HairFit(R.drawable.character_hair_boy_curly, 1f, 0f, 0f)
+        Hairstyle.BRAIDED -> HairFit(R.drawable.character_hair_boy_braided, 1f, 0f, 0f)
+        Hairstyle.PONYTAIL -> HairFit(R.drawable.character_hair_boy_ponytail, 1f, 0f, 0f)
+        Hairstyle.LONG -> HairFit(R.drawable.character_hair_boy_long, 1f, 0f, 0f)
     }
 }
 
