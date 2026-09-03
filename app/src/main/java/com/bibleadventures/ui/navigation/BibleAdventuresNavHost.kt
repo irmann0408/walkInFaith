@@ -38,7 +38,6 @@ import com.bibleadventures.ui.screens.daniel.stealth.DanielStealthScreen
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.davidgoliath.choice.DavidGoliathChoiceScreen
 import com.bibleadventures.ui.screens.davidgoliath.choosestones.DavidGoliathChooseStonesScreen
-import com.bibleadventures.ui.screens.davidgoliath.dodge.DavidGoliathDodgeScreen
 import com.bibleadventures.ui.screens.davidgoliath.reward.DavidGoliathRewardScreen
 import com.bibleadventures.ui.screens.davidgoliath.sheepcounting.DavidGoliathSheepCountingScreen
 import com.bibleadventures.ui.screens.davidgoliath.slingpractice.DavidGoliathSlingPracticeScreen
@@ -465,19 +464,6 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
                 reflectionRes = R.string.david_goliath_reflection_five_smooth_stones,
                 onContinue = {
                     viewModel.onSceneCompleted("five_smooth_stones_video")
-                    navController.navigate(Destination.DavidGoliath.Dodge.route)
-                },
-            )
-        }
-        composable(Destination.DavidGoliath.Dodge.route) { entry ->
-            val viewModel = navController.davidGoliathViewModel(entry)
-            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            DavidGoliathDodgeScreen(
-                viewModel = viewModel,
-                previouslyCompleted = "dodge" in previouslyCompletedSceneIds,
-                onBackToMainMenu = onBackToMainMenu,
-                onContinue = {
-                    viewModel.onSceneCompleted("dodge")
                     navController.navigate(Destination.DavidGoliath.SlingPractice.route)
                 },
             )

@@ -3,8 +3,6 @@ package com.bibleadventures.game.stories
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.bibleadventures.R
-import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
-import com.bibleadventures.game.puzzles.rhythmlane.RhythmNote
 
 data class ChoiceOptionDef(val id: String, @StringRes val textRes: Int, @StringRes val reactionTextRes: Int)
 
@@ -34,24 +32,4 @@ object DavidGoliathContent {
         SheepCountDef(5, R.drawable.ic_numeral_5, R.drawable.ic_sheep_group_5, R.string.david_goliath_sheep_count_5),
     )
 
-    /**
-     * Reuses `rhythmlane`'s lane-steering shape (established by Feeding the
-     * 5,000's Gathering the Leftovers) via the inverse `RhythmLaneGame.onLaneAvoided`
-     * — David steers himself OUT of a rolling rock's lane instead of into a
-     * falling item's lane. 7 required avoids (the 3-note chart loops
-     * forever, so this just takes a few more loop cycles, not more
-     * content), one rock per lane (lanes 1,0,2 in that order, so the very
-     * first rock lands in the character's default starting lane, forcing
-     * a real first move rather than an automatic free avoid); even 1000ms
-     * gaps give plenty of reaction time.
-     */
-    val crossingValleyChart = RhythmLaneChart(
-        notes = listOf(
-            RhythmNote("rock_1", lane = 1, hitTimeMs = 800),
-            RhythmNote("rock_2", lane = 0, hitTimeMs = 1800),
-            RhythmNote("rock_3", lane = 2, hitTimeMs = 2800),
-        ),
-        loopDurationMs = 3600,
-    )
-    const val CROSSING_VALLEY_REQUIRED_AVOIDS = 7
 }

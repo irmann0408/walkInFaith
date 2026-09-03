@@ -7,7 +7,7 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.connectfour.ConnectFourOutcome
 import com.bibleadventures.game.puzzles.connectfour.Slot
-import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
+import com.bibleadventures.game.puzzles.slingshot.Vector2
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,7 +16,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -123,78 +122,6 @@ class DavidGoliathViewModelTest {
         assertEquals(listOf(SoundEffect.MATCH_SUCCESS), audioController.playedEffects)
     }
 
-    // --- Crossing the Valley (rhythmlane, avoid semantics) ---
-
-    @Test
-    fun `onCrossingValleyLaneMoved clamps to the 3 lanes, never a failure`() {
-        val viewModel = createViewModel()
-
-        repeat(5) { viewModel.onCrossingValleyLaneMoved(-1) }
-        assertEquals(0, viewModel.uiState.value.characterLane)
-
-        repeat(5) { viewModel.onCrossingValleyLaneMoved(1) }
-        assertEquals(2, viewModel.uiState.value.characterLane)
-    }
-
-    @Test
-    fun `moving out of a rock's lane before it lands registers an avoid and plays a sound`() {
-        val audioController = FakeAudioController()
-        val viewModel = createViewModel(audioController = audioController)
-        val note = DavidGoliathContent.crossingValleyChart.notes.first()
-        val safeLane = (0..2).first { it != note.lane }
-
-        moveCrossingValleyLaneTo(viewModel, safeLane)
-        viewModel.onCrossingValleyTimeAdvanced(note.hitTimeMs)
-
-        assertEquals(1, viewModel.uiState.value.crossingValleyState.hits)
-        assertFalse(viewModel.uiState.value.crossingValleyState.isComplete)
-        assertEquals(listOf(SoundEffect.OBSTACLE_DODGED), audioController.playedEffects)
-    }
-
-    @Test
-    fun `staying in a rock's own lane when it lands does not register an avoid`() {
-        val viewModel = createViewModel()
-        val note = DavidGoliathContent.crossingValleyChart.notes.first()
-
-        moveCrossingValleyLaneTo(viewModel, note.lane)
-        viewModel.onCrossingValleyTimeAdvanced(note.hitTimeMs)
-
-        assertEquals(0, viewModel.uiState.value.crossingValleyState.hits)
-    }
-
-    @Test
-    fun `completing all 3 required avoids marks Crossing the Valley complete`() {
-        val viewModel = createViewModel()
-
-        completeCrossingValley(viewModel, DavidGoliathContent.crossingValleyChart, DavidGoliathContent.CROSSING_VALLEY_REQUIRED_AVOIDS)
-
-        assertTrue(viewModel.uiState.value.crossingValleyState.isComplete)
-    }
-
-    /** Mirrors Feeding5000ViewModelTest's `completeCatchingChart` — loops the chart as many times as needed, parking the character out of each note's lane before its exact hit time. */
-    private fun completeCrossingValley(viewModel: DavidGoliathViewModel, chart: RhythmLaneChart, requiredAvoids: Int) {
-        var hits = 0
-        var loopIndex = 0L
-        while (hits < requiredAvoids) {
-            chart.notes.forEach { note ->
-                if (hits < requiredAvoids) {
-                    val safeLane = (0..2).first { it != note.lane }
-                    moveCrossingValleyLaneTo(viewModel, safeLane)
-                    viewModel.onCrossingValleyTimeAdvanced(loopIndex * chart.loopDurationMs + note.hitTimeMs)
-                    hits++
-                }
-            }
-            loopIndex++
-        }
-    }
-
-    private fun moveCrossingValleyLaneTo(viewModel: DavidGoliathViewModel, targetLane: Int) {
-        while (viewModel.uiState.value.characterLane != targetLane) {
-            val delta = if (viewModel.uiState.value.characterLane < targetLane) 1 else -1
-            viewModel.onCrossingValleyLaneMoved(delta)
-        }
-    }
-
     @Test
     fun `onChoiceSelected records the chosen option id`() {
         val viewModel = createViewModel()
@@ -205,65 +132,65 @@ class DavidGoliathViewModelTest {
         assertEquals(optionId, viewModel.uiState.value.selectedChoiceId)
     }
 
+    // --- Sling Practice (slingshot, moving rat targets) ---
+
+    private val anchor = Vector2(0.5f, 0.9f)
+    private val pullDown = Vector2(0f, 0.3f) // pulled down -> launches straight up
+    private val pullUp = Vector2(0f, -0.3f) // pulled up, toward the rat -> launches away from it
+
     @Test
     fun `onStoneReleased plays a sound only on a hit`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
+        val rat = Vector2(0.5f, 0.2f)
 
-        viewModel.onStoneReleased(aimedPosition = 0.1f, markPosition = 0.9f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        viewModel.onStoneReleased(anchor, pullUp, rat)
         assertTrue(audioController.playedEffects.isEmpty())
 
-        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        viewModel.onStoneReleased(anchor, pullDown, rat)
         assertEquals(listOf(SoundEffect.TARGET_HIT), audioController.playedEffects)
     }
 
     @Test
-    fun `onStoneReleased does not play a sound when the aim matches the mark outside the shield`() {
+    fun `onStoneReleased does not play a sound on a miss`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
-        viewModel.onStoneReleased(aimedPosition = 0.15f, markPosition = 0.15f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        viewModel.onStoneReleased(anchor, pullUp, Vector2(0.5f, 0.2f))
 
         assertTrue(audioController.playedEffects.isEmpty())
     }
 
     @Test
-    fun `slingshotState requires 3 hits to complete, a miss between hits does not reset progress`() {
+    fun `slingshotState requires 5 real hits to complete — escaped rats are free and never count`() {
         val viewModel = createViewModel()
+        val rat = Vector2(0.5f, 0.2f)
 
-        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        viewModel.onStoneReleased(anchor, pullDown, rat)
         assertEquals(1, viewModel.uiState.value.slingshotState.hits)
         assertFalse(viewModel.uiState.value.slingshotState.isComplete)
 
-        viewModel.onStoneReleased(aimedPosition = 0.1f, markPosition = 0.9f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        // Escapes and a miss don't advance the hit count at all — the same
+        // 5th hit is still needed no matter how many rats got away first.
+        viewModel.onRatEscaped()
+        viewModel.onRatEscaped()
+        viewModel.onStoneReleased(anchor, pullUp, rat) // a miss
         assertEquals(1, viewModel.uiState.value.slingshotState.hits)
 
-        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
-        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        repeat(4) { viewModel.onStoneReleased(anchor, pullDown, rat) }
 
-        assertEquals(3, viewModel.uiState.value.slingshotState.hits)
+        assertEquals(5, viewModel.uiState.value.slingshotState.hits)
         assertTrue(viewModel.uiState.value.slingshotState.isComplete)
     }
 
     @Test
-    fun `a hit relocates the practice shield to a different zone than it was in`() {
-        val viewModel = createViewModel()
-        val startZone = viewModel.uiState.value.shieldZone
+    fun `onRatEscaped never plays a sound`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
 
-        viewModel.onStoneReleased(aimedPosition = 0.5f, markPosition = 0.5f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
+        viewModel.onRatEscaped()
 
-        assertEquals(1, viewModel.uiState.value.slingshotState.hits)
-        assertNotEquals(startZone, viewModel.uiState.value.shieldZone)
-    }
-
-    @Test
-    fun `a miss does not relocate the practice shield`() {
-        val viewModel = createViewModel()
-        val startZone = viewModel.uiState.value.shieldZone
-
-        viewModel.onStoneReleased(aimedPosition = 0.1f, markPosition = 0.9f, shieldMinFraction = 0.35f, shieldMaxFraction = 0.65f)
-
-        assertEquals(startZone, viewModel.uiState.value.shieldZone)
+        assertTrue(audioController.playedEffects.isEmpty())
     }
 
     @Test

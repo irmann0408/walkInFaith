@@ -2,7 +2,6 @@ package com.bibleadventures.davidgoliath
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -14,21 +13,22 @@ import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
 import com.bibleadventures.completeNoahsArk
-import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.stories.DavidGoliathContent
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ANCHOR_X_FRACTION
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ANCHOR_Y_FRACTION
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.FLIGHT_DURATION_MS
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.RatElapsedMsKey
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ratXFractionAt
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ratYFractionAt
 import org.junit.Rule
 import org.junit.Test
 
 private const val CONNECT_FOUR_COLUMN_COUNT = 7
 private const val CONNECT_FOUR_ROW_COUNT = 6
 
-// ic_goliath_shield.xml's silhouette is narrower than its own bounding box —
-// its visible top edge (where the mark's line sits, and what the hit-test
-// actually checks) spans x=12..52 of a 64-wide viewport, mirroring
-// DavidGoliathSlingPracticeScreen.kt's own SHIELD_TOP_EDGE_*_RATIO constants.
-private const val SLING_SHIELD_TOP_EDGE_LEFT_RATIO = 12f / 64f
-private const val SLING_SHIELD_TOP_EDGE_RIGHT_RATIO = 52f / 64f
+/** Comfortably longer than the screen's own (private) flight-animation duration, so the deferred state update always lands before the next check. */
+private const val SLING_FLIGHT_SETTLE_MS = 500L
 
 /**
  * Walks the full David and Goliath adventure end to end. David & Goliath is
@@ -85,33 +85,18 @@ class DavidGoliathFlowTest {
         // Scene 7: Five Smooth Stones video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 8: Cross the Valley — steer David out of each rock's lane
-        // before it lands (rhythmlane avoid semantics, requires 3 avoids).
-        completeLaneAvoid(
-            chart = DavidGoliathContent.crossingValleyChart,
-            requiredAvoids = DavidGoliathContent.CROSSING_VALLEY_REQUIRED_AVOIDS,
-            titleRes = R.string.david_goliath_dodge_title,
-            progressLabelRes = R.string.david_goliath_dodge_progress_label,
-            characterContentDescriptionRes = R.string.david_goliath_dodge_character_content_description,
-            moveLeftLabelRes = R.string.david_goliath_dodge_move_left_content_description,
-            moveRightLabelRes = R.string.david_goliath_dodge_move_right_content_description,
-        )
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        // Scene 9: Sling Practice — 3 real hits required, the shield relocates
-        // to a random different zone after each one.
+        // Scene 8: Sling Practice — 5 rats, one at a time; hit as many as
+        // possible before each one reaches the bottom.
         completeSlingPractice()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.feedback_great_job)).assertExists()
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 10: Victory video.
+        // Scene 9: Victory video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 11: Lesson video (Glory to God).
+        // Scene 10: Lesson video (Glory to God).
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 12: Reward.
+        // Scene 11: Reward.
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.badge_brave_heart_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
@@ -122,112 +107,31 @@ class DavidGoliathFlowTest {
     }
 
     /**
-     * Crossing the Valley's rhythmlane "avoid" mechanic auto-judges every
-     * frame purely from the character's current lane (see
-     * `RhythmLaneGame.onLaneAvoided`) — same shape as Feeding the 5,000's
-     * Gathering the Leftovers catch mechanic, so it inherits the same
-     * implicit-idle-sync unpredictability: Compose's idle-sync (which runs
-     * as an ordinary part of `performClick()`, even under
-     * `mainClock.autoAdvance = false`) pumps this screen's infinite
-     * `withFrameNanos` loop forward by an unpredictable amount before test
-     * code regains control, so a schedule computed from an assumed start of
-     * 0 would land on the wrong moments.
-     *
-     * Sidesteps that entirely: freeze the clock, then for each of the 3
-     * lanes, park the character there and advance the clock by one full
-     * `chart.loopDurationMs` — since every note recurs exactly once per
-     * loop, a full-loop dwell in a lane is guaranteed to pass through (and
-     * avoid) every note assigned to that lane exactly once, regardless of
-     * where in the loop the clock actually started. Progress is read live
-     * off the progress-label text after every sweep, so it's also robust to
-     * however many "free" avoids already happened before this function got
-     * control.
-     */
-    private fun completeLaneAvoid(
-        chart: RhythmLaneChart,
-        requiredAvoids: Int,
-        titleRes: Int,
-        progressLabelRes: Int,
-        characterContentDescriptionRes: Int,
-        moveLeftLabelRes: Int,
-        moveRightLabelRes: Int,
-    ) {
-        val activity = composeTestRule.activity
-        val lanes = chart.notes.map { it.lane }.distinct().sorted()
-
-        // Let the screen fully compose (with the clock still auto-advancing)
-        // before freezing it — freezing immediately after navigating can
-        // catch the new screen before its first frame lands, so even static
-        // elements like the progress label aren't in the semantics tree yet.
-        composeTestRule.onNodeWithText(activity.getString(titleRes)).assertExists()
-
-        composeTestRule.mainClock.autoAdvance = false
-        var safetyRounds = 0
-        while (currentLaneAvoidHits(progressLabelRes, requiredAvoids) < requiredAvoids) {
-            check(safetyRounds++ < 20) { "Lane-avoid puzzle didn't reach $requiredAvoids avoids after 20 full sweep rounds — stuck at ${currentLaneAvoidHits(progressLabelRes, requiredAvoids)}" }
-            lanes.forEach { lane ->
-                if (currentLaneAvoidHits(progressLabelRes, requiredAvoids) < requiredAvoids) {
-                    moveCharacterToLane(lane, characterContentDescriptionRes, moveLeftLabelRes, moveRightLabelRes)
-                    composeTestRule.mainClock.advanceTimeBy(chart.loopDurationMs)
-                }
-            }
-        }
-        composeTestRule.mainClock.autoAdvance = true
-    }
-
-    private fun currentLaneAvoidHits(progressLabelRes: Int, requiredAvoids: Int): Int {
-        val activity = composeTestRule.activity
-        return (0..requiredAvoids).first { candidateHits ->
-            val label = activity.getString(progressLabelRes, candidateHits, requiredAvoids)
-            composeTestRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
-        }
-    }
-
-    private fun currentCharacterLane(characterContentDescriptionRes: Int): Int {
-        val activity = composeTestRule.activity
-        return (1..3).first { candidateLane ->
-            val label = activity.getString(characterContentDescriptionRes, candidateLane)
-            composeTestRule.onAllNodesWithContentDescription(label).fetchSemanticsNodes().isNotEmpty()
-        } - 1
-    }
-
-    private fun moveCharacterToLane(targetLane: Int, characterContentDescriptionRes: Int, moveLeftLabelRes: Int, moveRightLabelRes: Int) {
-        val activity = composeTestRule.activity
-        val moveLeftLabel = activity.getString(moveLeftLabelRes)
-        val moveRightLabel = activity.getString(moveRightLabelRes)
-
-        while (currentCharacterLane(characterContentDescriptionRes) != targetLane) {
-            val label = if (currentCharacterLane(characterContentDescriptionRes) < targetLane) moveRightLabel else moveLeftLabel
-            composeTestRule.onNodeWithContentDescription(label).performClick()
-        }
-    }
-
-    /**
-     * Sling Practice's target mark animates continuously with no
-     * time-based stopping condition reachable on its own (unlike Crossing
-     * the Valley/Hurrying to Pray, which self-complete given enough elapsed
-     * time even with zero player input) — so, unlike [completeLaneAvoid],
-     * querying semantics while the clock auto-advances can never reach
-     * idle here; the mark's `LaunchedEffect` has nothing that would ever
-     * let it stop on its own. Freezes the clock as the very first thing
-     * this function does (once already safely on this screen via an
-     * ordinary, un-frozen navigating click), then drives the mark forward
-     * in small deterministic steps via `advanceTimeBy` — reading the
-     * mark's *actual* rendered position after each step (derived from the
-     * shield image's own rendered bounds via the same top-edge ratios
-     * `DavidGoliathSlingPracticeScreen.kt` uses to pick its hit test's true
-     * perimeter, not the image's wider, partly transparent bounding box)
-     * and dragging the stone onto it the moment it's within the shield's
-     * true span. Repeats until [SlingshotGameState.requiredHits] real hits
-     * land (a miss never loses progress, per SlingshotGame's own design,
-     * and the shield relocates after every hit, so re-reading it live on
-     * each step is required, not just once).
+     * `SlingshotGame` now launches the stone *opposite* the pull (pull
+     * southwest, it flies northeast) — the rat itself is still the only
+     * moving reference the hit-test cares about, but hitting it means
+     * pulling the stone to the *mirror image* of the rat's position
+     * through the sling's anchor, not dragging onto the rat directly. The
+     * stone always rests exactly on that anchor point when not being
+     * dragged, so reading the stone's own resting bounds gives the anchor
+     * for free. Freezes the clock as the very first thing this function
+     * does (once already safely on this screen via an ordinary, un-frozen
+     * navigating click) so `elapsedMs` never advances mid-gesture, then
+     * computes and drags to that mirror point each time. The actual
+     * hit/miss isn't committed to game state until the screen's own
+     * cosmetic flight animation finishes (so a hit visibly lands on the
+     * rat, not just flies off in the right direction) —
+     * [SLING_FLIGHT_SETTLE_MS] advances the clock past that animation
+     * before checking progress again, and dragging is a no-op while a shot
+     * is still resolving. An escaped rat doesn't count toward completion
+     * at all (free practice), so this loop only stops once every required
+     * hit has actually landed — it never deliberately lets a rat escape,
+     * so that path is only covered by the unit tests.
      */
     private fun completeSlingPractice() {
         val activity = composeTestRule.activity
-        val markDescription = activity.getString(R.string.david_goliath_sling_target_mark_content_description)
+        val ratDescription = activity.getString(R.string.david_goliath_sling_rat_content_description)
         val stoneDescription = activity.getString(R.string.david_goliath_sling_stone_content_description)
-        val shieldDescriptionPrefix = activity.getString(R.string.david_goliath_sling_shield_content_description, "")
         val requiredHits = SlingshotGameState().requiredHits
 
         composeTestRule.mainClock.autoAdvance = false
@@ -238,19 +142,15 @@ class DavidGoliathFlowTest {
 
         var safetySteps = 0
         while (currentSlingHits(requiredHits) < requiredHits) {
-            check(safetySteps++ < 1500) { "Sling Practice didn't reach $requiredHits hits after 1500 clock steps — stuck at ${currentSlingHits(requiredHits)}" }
+            check(safetySteps++ < 200) { "Sling Practice didn't reach $requiredHits hits after 200 clock steps — stuck at ${currentSlingHits(requiredHits)}" }
 
-            val markBounds = composeTestRule.onNodeWithContentDescription(markDescription).fetchSemanticsNode().boundsInRoot
-            val shieldImageBounds = composeTestRule.onNodeWithContentDescription(shieldDescriptionPrefix, substring = true).fetchSemanticsNode().boundsInRoot
-            val shieldTrueLeft = shieldImageBounds.left + SLING_SHIELD_TOP_EDGE_LEFT_RATIO * shieldImageBounds.width
-            val shieldTrueRight = shieldImageBounds.left + SLING_SHIELD_TOP_EDGE_RIGHT_RATIO * shieldImageBounds.width
-
-            if (markBounds.center.x in shieldTrueLeft..shieldTrueRight) {
-                val stoneNode = composeTestRule.onNodeWithContentDescription(stoneDescription)
-                dragOntoContentDescription(itemNode = stoneNode, targetContentDescription = markDescription)
-            } else {
-                composeTestRule.mainClock.advanceTimeBy(50L)
+            if (composeTestRule.onAllNodesWithContentDescription(ratDescription).fetchSemanticsNodes().isEmpty()) {
+                // Between one rat resolving and the next rat's first frame landing.
+                composeTestRule.mainClock.advanceTimeByFrame()
+                continue
             }
+            dragStoneOppositeOfRat(stoneDescription, ratDescription)
+            composeTestRule.mainClock.advanceTimeBy(SLING_FLIGHT_SETTLE_MS)
         }
 
         composeTestRule.mainClock.autoAdvance = true
@@ -261,6 +161,54 @@ class DavidGoliathFlowTest {
         return (0..requiredHits).first { candidateHits ->
             val label = activity.getString(R.string.david_goliath_sling_practice_progress_label, candidateHits, requiredHits)
             composeTestRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    /**
+     * The rat keeps moving while a stone is in flight, so the game itself
+     * leads the shot — it resolves against the rat's *projected* position
+     * at `elapsedMs + FLIGHT_DURATION_MS`, not where it stood at release
+     * (see `DavidGoliathSlingPracticeScreen.kt`'s `onDragEnd`). This
+     * mirrors that exactly: reads the rat's live `elapsedMs` off its own
+     * semantics (exposed test-only via `RatElapsedMsKey`, never read
+     * aloud), computes the same projected fractional position via the
+     * screen's own `ratXFractionAt`/`ratYFractionAt` (made `internal`
+     * specifically so a test can reuse the identical math), converts that
+     * into root pixel coordinates using the rat's own current
+     * (position, fraction) pair as a scale reference, and pulls the stone
+     * to the *mirror image* of that projected point through the stone's
+     * own resting point (the sling's anchor) — since the launch direction
+     * is the pull, reversed, this lines the eventual shot up on the rat.
+     */
+    private fun dragStoneOppositeOfRat(stoneDescription: String, ratDescription: String) {
+        val ratNode = composeTestRule.onNodeWithContentDescription(ratDescription).fetchSemanticsNode()
+        val currentElapsedMs = ratNode.config[RatElapsedMsKey]
+        val impactElapsedMs = currentElapsedMs + FLIGHT_DURATION_MS
+
+        val currentRatFraction = Offset(ratXFractionAt(currentElapsedMs), ratYFractionAt(currentElapsedMs))
+        val projectedRatFraction = Offset(ratXFractionAt(impactElapsedMs), ratYFractionAt(impactElapsedMs))
+        val ratPixelCenter = ratNode.boundsInRoot.center
+
+        val stoneNode = composeTestRule.onNodeWithContentDescription(stoneDescription)
+        val stoneBounds = stoneNode.fetchSemanticsNode().boundsInRoot
+        val anchorCenter = stoneBounds.center // the stone rests exactly on the sling's anchor when not being dragged
+        val anchorFraction = Offset(ANCHOR_X_FRACTION, ANCHOR_Y_FRACTION)
+
+        // The track is square (AspectRatioFitBox ratio = 1f), so one scale
+        // (derived from the axis less likely to sit exactly on the
+        // anchor's own fraction, avoiding a near-zero divide) applies to
+        // both.
+        val pixelsPerFraction = (anchorCenter.y - ratPixelCenter.y) / (anchorFraction.y - currentRatFraction.y)
+        val projectedRatPixelCenter = Offset(
+            anchorCenter.x + (projectedRatFraction.x - anchorFraction.x) * pixelsPerFraction,
+            anchorCenter.y + (projectedRatFraction.y - anchorFraction.y) * pixelsPerFraction,
+        )
+
+        val targetGlobalCenter = Offset(2 * anchorCenter.x - projectedRatPixelCenter.x, 2 * anchorCenter.y - projectedRatPixelCenter.y)
+        val localEnd = Offset(targetGlobalCenter.x - stoneBounds.left, targetGlobalCenter.y - stoneBounds.top)
+
+        stoneNode.performTouchInput {
+            swipe(start = center, end = localEnd, durationMillis = 200)
         }
     }
 
@@ -355,14 +303,4 @@ class DavidGoliathFlowTest {
         return validColumns.minBy { kotlin.math.abs(it - center) }
     }
 
-    private fun dragOntoContentDescription(itemNode: SemanticsNodeInteraction, targetContentDescription: String) {
-        val itemBounds = itemNode.fetchSemanticsNode().boundsInRoot
-        val targetBounds = composeTestRule.onNodeWithContentDescription(targetContentDescription).fetchSemanticsNode().boundsInRoot
-        val targetGlobalCenter = targetBounds.center
-        val localEnd = Offset(targetGlobalCenter.x - itemBounds.left, targetGlobalCenter.y - itemBounds.top)
-
-        itemNode.performTouchInput {
-            swipe(start = center, end = localEnd, durationMillis = 200)
-        }
-    }
 }

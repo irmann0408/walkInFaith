@@ -254,13 +254,6 @@
     <string name="david_goliath_sheep_count_4">4 Sheep</string>
     <string name="david_goliath_sheep_count_5">5 Sheep</string>
 
-    <string name="david_goliath_dodge_title">Cross the Valley</string>
-    <string name="david_goliath_dodge_instructions">Use the arrows to move David out of the way before each rock lands.</string>
-    <string name="david_goliath_dodge_progress_label">Avoided %1$d of %2$d rocks</string>
-    <string name="david_goliath_dodge_character_content_description">David, lane %1$d</string>
-    <string name="david_goliath_dodge_move_left_content_description">Move David left</string>
-    <string name="david_goliath_dodge_move_right_content_description">Move David right</string>
-    <string name="david_goliath_dodge_rock_content_description">Rolling rock</string>
 
     <string name="david_goliath_choose_stones_title">Choose the Stones</string>
     <string name="david_goliath_choose_stones_instructions">David already has one stone. Drop stones to connect four in a row — across, up and down, or on a diagonal — before Goliath does!</string>
@@ -286,13 +279,10 @@
     <string name="david_goliath_choice_reaction_3">David stood tall, trusting God completely!</string>
 
     <string name="david_goliath_sling_practice_title">Sling Practice</string>
-    <string name="david_goliath_sling_practice_instructions">Drag back and let go when the mark lines up with the shield. Hit it 3 times!</string>
-    <string name="david_goliath_sling_practice_progress_label">Hit %1$d of %2$d times</string>
-    <string name="david_goliath_sling_target_mark_content_description">Target mark</string>
-    <string name="david_goliath_sling_shield_content_description">Goliath\'s shield, %1$s</string>
-    <string name="david_goliath_sling_shield_zone_left">left</string>
-    <string name="david_goliath_sling_shield_zone_middle">middle</string>
-    <string name="david_goliath_sling_shield_zone_right">right</string>
+    <string name="david_goliath_sling_practice_instructions">Drag back and let go to hit each rat before it scurries away!</string>
+    <string name="david_goliath_sling_practice_progress_label">%1$d of %2$d rats</string>
+    <string name="david_goliath_sling_rat_content_description">Rat</string>
+    <string name="david_goliath_sling_feedback_escaped">It got away — here comes another one!</string>
     <string name="david_goliath_sling_stone_content_description">David\'s stone. Drag to aim, then let go.</string>
 
     <string name="good_samaritan_intro_line_1">A man was traveling the dangerous road from Jerusalem to Jericho when robbers attacked him and left him hurt beside the road.</string>

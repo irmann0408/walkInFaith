@@ -24,7 +24,6 @@ import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
-import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.Feeding5000Content
@@ -33,13 +32,6 @@ import com.bibleadventures.game.stories.JerichoContent
 import com.bibleadventures.game.stories.JesusCalmsStormContent
 import org.junit.Rule
 import org.junit.Test
-
-// ic_goliath_shield.xml's silhouette is narrower than its own bounding box —
-// its visible top edge (where the mark's line sits, and what the hit-test
-// actually checks) spans x=12..52 of a 64-wide viewport, mirroring
-// DavidGoliathSlingPracticeScreen.kt's own SHIELD_TOP_EDGE_*_RATIO constants.
-private const val SLING_SHIELD_TOP_EDGE_LEFT_RATIO = 12f / 64f
-private const val SLING_SHIELD_TOP_EDGE_RIGHT_RATIO = 52f / 64f
 
 /**
  * Walks the full Jesus Calms the Storm adventure end to end — the last
@@ -834,54 +826,6 @@ class JesusCalmsStormFlowTest {
         while (currentCharacterLane(characterContentDescriptionRes) != targetLane) {
             val label = if (currentCharacterLane(characterContentDescriptionRes) < targetLane) moveRightLabel else moveLeftLabel
             composeTestRule.onNodeWithContentDescription(label).performClick()
-        }
-    }
-
-    /**
-     * Sling Practice's target mark animates continuously with no
-     * time-based stopping condition reachable on its own, so querying
-     * semantics while the clock auto-advances can never reach idle here.
-     * Freezes the clock as the very first thing this function does, then
-     * drives the mark forward in small deterministic steps via
-     * `advanceTimeBy` — reading the mark's *actual* rendered position after
-     * each step and dragging the stone onto it the moment it's within the
-     * shield's true span.
-     */
-    private fun completeSlingPractice() {
-        val activity = composeTestRule.activity
-        val markDescription = activity.getString(R.string.david_goliath_sling_target_mark_content_description)
-        val stoneDescription = activity.getString(R.string.david_goliath_sling_stone_content_description)
-        val shieldDescriptionPrefix = activity.getString(R.string.david_goliath_sling_shield_content_description, "")
-        val requiredHits = SlingshotGameState().requiredHits
-
-        composeTestRule.mainClock.autoAdvance = false
-        composeTestRule.mainClock.advanceTimeByFrame()
-
-        var safetySteps = 0
-        while (currentSlingHits(requiredHits) < requiredHits) {
-            check(safetySteps++ < 1500) { "Sling Practice didn't reach $requiredHits hits after 1500 clock steps — stuck at ${currentSlingHits(requiredHits)}" }
-
-            val markBounds = composeTestRule.onNodeWithContentDescription(markDescription).fetchSemanticsNode().boundsInRoot
-            val shieldImageBounds = composeTestRule.onNodeWithContentDescription(shieldDescriptionPrefix, substring = true).fetchSemanticsNode().boundsInRoot
-            val shieldTrueLeft = shieldImageBounds.left + SLING_SHIELD_TOP_EDGE_LEFT_RATIO * shieldImageBounds.width
-            val shieldTrueRight = shieldImageBounds.left + SLING_SHIELD_TOP_EDGE_RIGHT_RATIO * shieldImageBounds.width
-
-            if (markBounds.center.x in shieldTrueLeft..shieldTrueRight) {
-                val stoneNode = composeTestRule.onNodeWithContentDescription(stoneDescription)
-                dragOntoContentDescription(itemNode = stoneNode, targetContentDescription = markDescription)
-            } else {
-                composeTestRule.mainClock.advanceTimeBy(50L)
-            }
-        }
-
-        composeTestRule.mainClock.autoAdvance = true
-    }
-
-    private fun currentSlingHits(requiredHits: Int): Int {
-        val activity = composeTestRule.activity
-        return (0..requiredHits).first { candidateHits ->
-            val label = activity.getString(R.string.david_goliath_sling_practice_progress_label, candidateHits, requiredHits)
-            composeTestRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
         }
     }
 

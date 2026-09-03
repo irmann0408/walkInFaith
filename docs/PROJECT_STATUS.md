@@ -981,6 +981,226 @@ Two issues found testing Connect Four on-device:
   `completeChooseStones()` helper updated to tap that button explicitly
   instead of waiting out a delay.
 
+### Chapter 2 addendum 9 — removed Cross the Valley, reworked Sling Practice into "hit the rats"
+Cross the Valley (the `rhythmlane`-based dodge scene between the Five
+Smooth Stones and Sling Practice videos) is removed entirely — David &
+Goliath is now 12 destinations, down from 13
+(`... FiveSmoothStonesVideo → SlingPractice → VictoryVideo ...`).
+`rhythmlane`/`RhythmLaneGameState` themselves are untouched — Daniel's
+Hurrying to Pray and 7+ other scenes still use the shared engine; only
+this chapter's own `crossingValleyState`/`characterLane`/
+`onCrossingValleyLaneMoved`/`onCrossingValleyTimeAdvanced` (ViewModel) and
+`crossingValleyChart`/`CROSSING_VALLEY_REQUIRED_AVOIDS` (Content) were
+deleted, along with the whole `ui/screens/davidgoliath/dodge/` package.
+`bg_david_goliath_valley`/`ic_rock_hazard` are now unused but left in
+place per this session's "leave unused scene art alone" precedent.
+
+Sling Practice's mechanic changed from "release a stone to hit a
+repositioning stationary shield, timed against a moving mark" to "hit
+moving rat targets" — 5 rats, one at a time (never more than one on
+screen), each moving in a horizontal ping-pong sweep while continuously
+descending; if not hit before it reaches the bottom it escapes and the
+next one appears. The scene completes once all 5 have resolved (hit or
+escaped), regardless of final hit count — confirmed with the user rather
+than requiring a minimum hit count, matching "let's start with 5" as a
+hard cap rather than a threshold.
+
+**`slingshot` was evolved in place, not replaced with a new engine** —
+confirmed single-consumer (nothing else in the app uses
+`SlingshotGame`/`SlingshotGameState`), and the core shape ("compare a
+released aim position to a moving reference position within tolerance")
+still fit once the old separate "mark" (moving reference) and "shield"
+(aim target zone) were merged into one object — the rat is now both.
+`SlingshotOutcome` gained `ESCAPED` alongside `HIT`/`MISS`;
+`SlingshotGameState` swapped `hits`/`requiredHits` for
+`ratsResolved`/`hits`/`totalRats` (`isComplete = ratsResolved >=
+totalRats`, not gated on hit count at all). `SlingshotGame.onStoneReleased`
+dropped its `shieldMinFraction`/`shieldMaxFraction` params entirely — a
+hit is now just "aim within `HIT_TOLERANCE` of the rat's own current
+position," no separate zone check. A new `onRatEscaped(state)` resolves
+the current rat without counting it as a hit, called by the screen once a
+per-rat fall-duration clock (reset every time `ratsResolved` changes)
+elapses unhit.
+
+Kept unchanged: the drag-and-release sling UI idiom itself (confirmed
+with the user over a simpler direct-tap alternative — narrative
+continuity with "sling practice" mattered more than interaction
+simplicity here), the manual `withFrameNanos` clock idiom (never
+`rememberInfiniteTransition`, so tests can freeze/step it), `ic_sling`/
+`ic_stone_smooth` rendering. `ic_goliath_shield`/`ic_goliath_shield_surprised`
+are now unused, left in place per the same precedent as the valley art.
+New placeholder art: `ic_rat.xml`, a simple flat vector silhouette
+matching spec section 25's convention, swappable for real art later
+without touching game logic. `ChapterFlowHelpers.completeSlingPractice()`
+and `DavidGoliathFlowTest`'s own copy both simplified accordingly — no
+more shield-zone-alignment waiting, just drag the stone onto the rat's
+live rendered position each time (the mechanic is fully deterministic, so
+this reliably hits every rat, no retry loop needed).
+
+### Chapter 2 addendum 10 — rats move like descending invaders, real 2D sling physics, and a flight animation
+Three on-device findings after addendum 9 shipped:
+- The rat moved diagonally (continuous horizontal ping-pong combined with
+  continuous downward drift) — the user pictured it moving purely
+  horizontally, stepping down and reversing direction only once it hits
+  either edge, like a classic descending-invader pattern. Replaced
+  `ratXFractionAt`/`ratFallProgressAt`'s continuous diagonal with a
+  row-based model: `ratRowAt(elapsedMs)` derives a discrete row from
+  elapsed time (`elapsedMs / RAT_ROW_TRAVEL_MS`), `ratXFractionAt` sweeps
+  MIN→MAX on even rows and MAX→MIN on odd rows (a boustrophedon, so it
+  visibly reverses each time it steps down), and `ratYFractionAt` holds
+  the vertical position fixed within a row and only steps between rows —
+  motion is horizontal except at the instant a row changes. Escaping is
+  now `ratRowAt(elapsedMs) >= RAT_TOTAL_ROWS` (3 rows), rather than a
+  continuous fall-duration comparison.
+- The stone had no visible flight — release just resolved the hit-test
+  instantly with no projectile animation. Added a purely cosmetic
+  `StoneFlight` (start/end track-fraction points) driven by an
+  `Animatable<Float>` progress value inside a `LaunchedEffect(flight)`,
+  animated over `FLIGHT_DURATION_MS` — the hit-test itself is still
+  decided synchronously on release, exactly as before; this only adds a
+  visual stone that travels from the anchor toward the launch direction
+  afterward. The normal draggable stone deliberately stays present and
+  interactive throughout the flight (a new stone is "loaded" immediately,
+  no cooldown) — both so multiple shots can overlap visually and so an
+  instrumented test never needs to wait out the animation to find the
+  stone by content description again.
+- **The sling's aiming model itself changed to match a real sling**: the
+  user asked for "pull southwest, the stone flies northeast" — pulling
+  the stone toward the target used to be exactly backwards from how a
+  real sling (or slingshot) works. `SlingshotGame.onStoneReleased` was
+  reworked from a 1D "aim fraction vs. mark fraction" comparison to full
+  2D: it takes the sling's fixed `anchor: Vector2`, how far and which way
+  the player `pull`ed the stone back (relative to the anchor), and the
+  rat's live `ratPosition: Vector2`, then computes the launch direction as
+  the pull *reversed and normalized*, and hits if the rat lies within
+  `HIT_TOLERANCE` of that launch ray (perpendicular distance, gated on the
+  rat actually being ahead of the anchor along that ray via a dot-product
+  check — pulling toward the rat now correctly launches away from it and
+  misses). Added `Vector2`, a plain `data class(x, y)` local to the
+  `slingshot` package — not `androidx.compose.ui.geometry.Offset` — since
+  the engine stays pure Kotlin with no Compose/Android dependency,
+  matching every other engine in this app. Also added `MIN_PULL_DISTANCE`
+  so a barely-there drag is treated as no real shot at all rather than an
+  automatic miss. The screen's drag gesture became fully 2D
+  (`dragOffset: Offset`, was `dragOffsetX: Float`), and the dashed aim-guide
+  line now traces the actual 2D pull from the anchor instead of a
+  stylized fixed-height line.
+- **Both `ChapterFlowHelpers.completeSlingPractice()` and
+  `DavidGoliathFlowTest`'s own copy needed the same physics fix**: dragging
+  the stone directly onto the rat's rendered position (the old technique)
+  now reliably *misses*, since the real hit requires pulling to the
+  *mirror image* of the rat's position through the anchor. Both now read
+  the stone's own resting bounds (which always sits exactly on the
+  anchor when not being dragged) and compute that mirror point directly
+  (`2*anchor − ratCenter`) rather than reusing the generic
+  "drag onto another node" helper.
+- Replaced the wooden Y-shaped slingshot art (`ic_sling.xml`, a forked
+  handle + rubber-band silhouette) with an actual sling: two long cords
+  converging on a pouch, matching what the user actually pictured for
+  "David's sling," not a modern slingshot toy. (Later swapped again for a
+  user-supplied image — see the addendum below.)
+
+### Chapter 2 addendum 11 — the hit actually lands on the rat; escapes are free practice, not progress
+Two more on-device findings after addendum 10:
+- The flight animation's endpoint was always the generic "fly off in the
+  launch direction" point, decided once at release and never revisited —
+  so even on a genuine hit, the stone flew toward empty space while the
+  rat count silently ticked up in the background, instead of visibly
+  landing on the rat. Fixed by predicting the outcome *before* starting
+  the animation, via a new `SlingshotGame.wouldHit(anchor, pull,
+  ratPosition): Boolean` — the exact same math `onStoneReleased` commits,
+  exposed as a side-effect-free query. If `wouldHit` is true, the flight's
+  end point is set to the rat's own exact position instead of the
+  generic direction point. The actual state-changing `onStoneReleased`
+  call itself was also moved to fire only *after* the flight animation
+  finishes (inside the `LaunchedEffect(flight)` that drives it), not at
+  the moment of release — so the rat visibly stays put and only
+  disappears/advances once the stone actually arrives. Since a new rat
+  could otherwise spawn mid-flight (the previous rat's position frozen in
+  the flight's own captured `ratPosition`, but the *live* elapsedMs clock
+  still running and potentially escaping that rat while its own hit was
+  still in flight), the per-rat fall clock now also **pauses whenever a
+  stone is in flight** (`LaunchedEffect`'s frame loop accumulates a
+  `pausedDurationNanos` offset while `flight != null`), and the
+  draggable stone's gesture handlers now no-op while a shot is still
+  resolving (`if (flight == null)` guards on both `onDrag` and
+  `onDragEnd`) — only one stone is ever in the air at a time, so the
+  deferred `onStoneReleased` call always resolves against the exact rat
+  still on screen, never a stale or already-replaced one.
+- Escaped rats were counting toward the same "5 resolved" completion
+  total as hits — the user wants only real hits to count; an escape
+  should just be free, harmless practice, with more rats appearing until
+  5 have actually been hit. `SlingshotGameState` dropped
+  `ratsResolved`/`totalRats` for `hits`/`requiredHits` (`isComplete =
+  hits >= requiredHits`, unconditional on escapes) plus a new
+  `ratsSpawned` field that exists *only* to key the screen's per-rat
+  clock-reset effect (i.e. "has this rat's turn ended, hit or escaped,
+  so the next one should start falling") — a deliberate split between
+  "what counts toward finishing the scene" and "what triggers the next
+  rat to appear," since those are no longer the same thing. This is a
+  reversion of the "all 5 resolve, then done" rule explicitly confirmed
+  earlier in addendum 9 — the user tried it on-device and preferred the
+  original hits-required framing after all once escapes were visibly
+  free of consequence.
+- Both `ChapterFlowHelpers.completeSlingPractice()` and
+  `DavidGoliathFlowTest`'s own copy needed two changes to match: the
+  loop condition switched from counting resolved rats to counting real
+  hits, and — since the outcome is no longer committed instantly on
+  release — each drag attempt now advances the clock by a
+  `SLING_FLIGHT_SETTLE_MS` (500ms) buffer past the screen's own
+  (private) flight-animation duration before checking progress again,
+  rather than a single `advanceTimeByFrame()`. Dragging the stone
+  reliably resolves every attempt as a hit or a miss (never stranded
+  mid-flight) since only one shot is ever in flight at a time and the
+  test always waits it out before trying again.
+
+### Chapter 2 addendum 12 — lead the target instead of pausing it
+Addendum 11's fix made a hit visually land on the rat, but only by
+freezing the rat's fall clock for the ~300ms a stone was in flight. The
+user felt this pause itself; they wanted the more realistic mechanic
+instead: the rat keeps moving continuously and the player must lead it,
+like aiming a real projectile at a moving target.
+- The rat-clock `LaunchedEffect` no longer tracks a
+  `pausedDurationNanos` offset — `elapsedMs` now advances every frame
+  unconditionally, flight or no flight. Only the *escape commit* is still
+  gated on `flight == null` (retried every frame, not dropped), so a
+  shot already in the air gets to resolve before an escape can
+  independently end that rat's turn and spawn a new one out from under
+  it.
+- `onDragEnd` now computes `impactElapsedMs = elapsedMs +
+  FLIGHT_DURATION_MS` at the moment of release and evaluates
+  `ratXFractionAt`/`ratYFractionAt` at that *future* time — the rat's
+  projected position when the stone would actually arrive — and uses
+  that projected position for both `SlingshotGame.wouldHit(...)` and the
+  flight's visual endpoint on a hit. This is the same
+  predict-before-flight pattern from addendum 11, just aimed at a moving
+  point in time rather than a frozen one.
+- `ANCHOR_X_FRACTION`, `ANCHOR_Y_FRACTION`, `FLIGHT_DURATION_MS`,
+  `ratXFractionAt`, and `ratYFractionAt` moved from `private` to
+  `internal` in `DavidGoliathSlingPracticeScreen.kt` so the androidTest
+  helpers can reuse the identical motion math instead of re-deriving it
+  (confirmed this is visible across the `main`/`androidTest` source-set
+  boundary in this project's Gradle setup). A new test-only Compose
+  semantics property, `RatElapsedMsKey` (a `SemanticsPropertyKey<Long>`),
+  is attached to the rat's `Image` alongside its real
+  `contentDescription` — the only way for an instrumented test to read
+  the screen's live internal clock, since the rat's *rendered* position
+  alone no longer tells the test where to aim (it needs the future
+  position, not the current one). It carries no accessibility meaning
+  and is never read aloud.
+- Both `ChapterFlowHelpers.completeSlingPractice()` and
+  `DavidGoliathFlowTest`'s own copy of `dragStoneOppositeOfRat()` now
+  read `RatElapsedMsKey` off the rat's semantics node, compute the same
+  `impactElapsedMs` projection production code uses, and convert that
+  projected *fraction* into a pixel position by deriving a
+  `pixelsPerFraction` scale from the anchor's and rat's own current
+  (pixel, fraction) pair — since Compose UI test APIs only expose
+  `boundsInRoot` in pixels, not the fractional track coordinates the
+  engine reasons in.
+- Verified via `./gradlew build -x connectedAndroidTest` (compile, unit
+  tests, lint — all clean) and `installDebug`; awaiting on-device
+  confirmation that leading a continuously-moving rat feels correct.
+
 ### Chapter 3 — The Good Samaritan
 The third full chapter, unlocked automatically once David and Goliath is
 completed. Scene flow: Intro → The Road to Jericho context card → Explore
@@ -3696,14 +3916,17 @@ preview (see above) — no further UI work on it for now. Open items:
 - No other concrete backlog items are currently open; next work should
   come from a fresh round of playtesting or a new milestone/feature
   request.
-- David & Goliath's video restructure + Connect Four "Choose Stones" is
-  implemented, unit-tested, and confirmed compiling (`./gradlew
-  compileDebugKotlin compileDebugUnitTestKotlin` both succeed; full
-  `testDebugUnitTest` and `lintDebug` both pass) — see "Chapter 2 addendum
-  7" above. Not yet verified on-device by the user.
-- The pre-existing `connectedAndroidTest` compile breakage (see "Known
-  issues" above) affects ~9 chapters' flow tests, not just David &
-  Goliath, and needs a dedicated fix pass across all of them.
+- David & Goliath's video restructure, Connect Four "Choose Stones", the
+  Cross the Valley removal, and the rats-based Sling Practice rework are
+  all implemented, unit-tested, confirmed compiling (full `./gradlew
+  build -x connectedAndroidTest` passes), and confirmed on-device by the
+  user — see "Chapter 2 addendum 7", "8", and "9" above.
+- The `connectedAndroidTest` compile breakage noted in earlier revisions
+  of this file (stale `completeNoahsArk()`/`completeDavidGoliath()`
+  copies across ~9 chapters' flow tests) is fixed — centralized into
+  `ChapterFlowHelpers.kt`, confirmed compiling clean. The whole suite
+  hasn't been re-run end-to-end on a device recently; worth doing next
+  time a full instrumented pass is warranted.
 
 ## Architectural decisions log
 

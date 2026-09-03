@@ -43,7 +43,6 @@ sealed class Destination(val route: String) {
         data object HeavyArmorVideo : DavidGoliath("david_goliath/heavy_armor_video")
         data object ChooseStones : DavidGoliath("david_goliath/choose_stones")
         data object FiveSmoothStonesVideo : DavidGoliath("david_goliath/five_smooth_stones_video")
-        data object Dodge : DavidGoliath("david_goliath/dodge")
         data object SlingPractice : DavidGoliath("david_goliath/sling_practice")
         data object VictoryVideo : DavidGoliath("david_goliath/victory_video")
         data object LessonVideo : DavidGoliath("david_goliath/lesson_video")

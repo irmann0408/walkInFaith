@@ -17,6 +17,12 @@ import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.NoahsArkContent
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ANCHOR_X_FRACTION
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ANCHOR_Y_FRACTION
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.FLIGHT_DURATION_MS
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.RatElapsedMsKey
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ratXFractionAt
+import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ratYFractionAt
 
 /**
  * Shared prerequisite-completion helpers for `connectedAndroidTest` flow
@@ -164,10 +170,10 @@ private fun solveExactBinFillAssignment(values: List<Int>, targets: List<Int>): 
  * Walks David & Goliath end to end: World Map -> Intro video -> Sheep
  * Counting -> Giant's Challenge video -> David Arrives video -> Choice ->
  * Heavy Armor video -> Choose the Stones -> Five Smooth Stones video ->
- * Cross the Valley -> Sling Practice -> Victory video -> Lesson video ->
- * Reward -> back to the World Map. Assumes the caller is already on the
- * World Map screen. See `DavidGoliathFlowTest` for the thorough walkthrough
- * that also asserts reward/badge details.
+ * Sling Practice -> Victory video -> Lesson video -> Reward -> back to the
+ * World Map. Assumes the caller is already on the World Map screen. See
+ * `DavidGoliathFlowTest` for the thorough walkthrough that also asserts
+ * reward/badge details.
  */
 fun FlowTestRule.completeDavidGoliath() {
     val activity = this.activity
@@ -193,18 +199,7 @@ fun FlowTestRule.completeDavidGoliath() {
 
     completeChooseStones()
     onNodeWithText(nextPageLabel).performClick() // Choose the Stones -> Five Smooth Stones video
-    onNodeWithText(nextPageLabel).performClick() // Five Smooth Stones video -> Cross the Valley
-
-    completeLaneAvoid(
-        chart = DavidGoliathContent.crossingValleyChart,
-        requiredAvoids = DavidGoliathContent.CROSSING_VALLEY_REQUIRED_AVOIDS,
-        titleRes = R.string.david_goliath_dodge_title,
-        progressLabelRes = R.string.david_goliath_dodge_progress_label,
-        characterContentDescriptionRes = R.string.david_goliath_dodge_character_content_description,
-        moveLeftLabelRes = R.string.david_goliath_dodge_move_left_content_description,
-        moveRightLabelRes = R.string.david_goliath_dodge_move_right_content_description,
-    )
-    onNodeWithText(nextPageLabel).performClick() // Cross the Valley -> Sling Practice
+    onNodeWithText(nextPageLabel).performClick() // Five Smooth Stones video -> Sling Practice
 
     completeSlingPractice()
     onNodeWithText(nextPageLabel).performClick() // Sling Practice -> Victory video
@@ -310,90 +305,32 @@ private fun FlowTestRule.chooseConnectFourColumn(): Int {
 }
 
 /**
- * Freezes the Compose test clock and, for each lane a chart ever uses,
- * parks the character there and advances the clock by one full
- * `chart.loopDurationMs` — since every note recurs exactly once per loop, a
- * full-loop dwell in a lane is guaranteed to pass through (and avoid) every
- * note assigned to that lane exactly once, regardless of where in the loop
- * the clock actually started. Shared by every `rhythmlane` "avoid" scene
- * (David & Goliath's Crossing the Valley, Daniel's Hurrying to Pray).
- */
-private fun FlowTestRule.completeLaneAvoid(
-    chart: com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart,
-    requiredAvoids: Int,
-    titleRes: Int,
-    progressLabelRes: Int,
-    characterContentDescriptionRes: Int,
-    moveLeftLabelRes: Int,
-    moveRightLabelRes: Int,
-) {
-    val activity = this.activity
-    val lanes = chart.notes.map { it.lane }.distinct().sorted()
-
-    // Let the screen fully compose (with the clock still auto-advancing)
-    // before freezing it — freezing immediately after navigating can catch
-    // the new screen before its first frame lands, so even static elements
-    // like the progress label aren't in the semantics tree yet.
-    onNodeWithText(activity.getString(titleRes)).assertExists()
-
-    mainClock.autoAdvance = false
-    var safetyRounds = 0
-    while (currentLaneAvoidHits(progressLabelRes, requiredAvoids) < requiredAvoids) {
-        check(safetyRounds++ < 20) { "Lane-avoid puzzle didn't reach $requiredAvoids avoids after 20 full sweep rounds — stuck at ${currentLaneAvoidHits(progressLabelRes, requiredAvoids)}" }
-        lanes.forEach { lane ->
-            if (currentLaneAvoidHits(progressLabelRes, requiredAvoids) < requiredAvoids) {
-                moveCharacterToLane(lane, characterContentDescriptionRes, moveLeftLabelRes, moveRightLabelRes)
-                mainClock.advanceTimeBy(chart.loopDurationMs)
-            }
-        }
-    }
-    mainClock.autoAdvance = true
-}
-
-private fun FlowTestRule.currentLaneAvoidHits(progressLabelRes: Int, requiredAvoids: Int): Int {
-    val activity = this.activity
-    return (0..requiredAvoids).first { candidateHits ->
-        val label = activity.getString(progressLabelRes, candidateHits, requiredAvoids)
-        onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
-    }
-}
-
-private fun FlowTestRule.currentCharacterLane(characterContentDescriptionRes: Int): Int {
-    val activity = this.activity
-    return (1..3).first { candidateLane ->
-        val label = activity.getString(characterContentDescriptionRes, candidateLane)
-        onAllNodesWithContentDescription(label).fetchSemanticsNodes().isNotEmpty()
-    } - 1
-}
-
-private fun FlowTestRule.moveCharacterToLane(targetLane: Int, characterContentDescriptionRes: Int, moveLeftLabelRes: Int, moveRightLabelRes: Int) {
-    val activity = this.activity
-    val moveLeftLabel = activity.getString(moveLeftLabelRes)
-    val moveRightLabel = activity.getString(moveRightLabelRes)
-
-    while (currentCharacterLane(characterContentDescriptionRes) != targetLane) {
-        val label = if (currentCharacterLane(characterContentDescriptionRes) < targetLane) moveRightLabel else moveLeftLabel
-        onNodeWithContentDescription(label).performClick()
-    }
-}
-
-/**
- * Freezes the clock as the very first thing this function does (once
- * already safely on this screen via an ordinary, un-frozen navigating
- * click), then drives the mark forward in small deterministic steps,
- * reading its *actual* rendered position after each step and dragging the
- * stone onto it the moment it's within the shield's true (rendered, not
- * assumed) span. See `DavidGoliathSlingPracticeScreen.kt`'s own
- * `SHIELD_TOP_EDGE_*_RATIO` constants for why the true span isn't the
- * shield image's full bounding box.
+ * `SlingshotGame` now launches the stone *opposite* the pull (pull
+ * southwest, it flies northeast) — the rat itself is still the only
+ * moving reference the hit-test cares about, but hitting it means pulling
+ * the stone to the *mirror image* of the rat's position through the
+ * sling's anchor, not dragging onto the rat directly. The stone always
+ * rests exactly on that anchor point when not being dragged (confirmed by
+ * `DavidGoliathSlingPracticeScreen.kt`'s own layout math), so reading the
+ * stone's own resting bounds gives the anchor for free — no separate
+ * anchor node needed. Freezes the clock as the very first thing this
+ * function does (once already safely on this screen via an ordinary,
+ * un-frozen navigating click) so `elapsedMs` never advances mid-gesture,
+ * then computes and drags to that mirror point each time. The actual
+ * hit/miss isn't committed to game state until the screen's own cosmetic
+ * flight animation finishes (so a hit visibly lands on the rat, not just
+ * flies off in the right direction) — `SLING_FLIGHT_SETTLE_MS` advances
+ * the clock past that animation before checking progress again, and
+ * dragging is a no-op while a shot is still resolving. An escaped rat
+ * doesn't count toward completion at all (free practice), so this loop
+ * only stops once every required hit has actually landed — it never
+ * deliberately lets a rat escape, so that path is only covered by the
+ * unit tests, not this flow test.
  */
 private fun FlowTestRule.completeSlingPractice() {
-    val shieldTopEdgeLeftRatio = 12f / 64f
-    val shieldTopEdgeRightRatio = 52f / 64f
     val activity = this.activity
-    val markDescription = activity.getString(R.string.david_goliath_sling_target_mark_content_description)
+    val ratDescription = activity.getString(R.string.david_goliath_sling_rat_content_description)
     val stoneDescription = activity.getString(R.string.david_goliath_sling_stone_content_description)
-    val shieldDescriptionPrefix = activity.getString(R.string.david_goliath_sling_shield_content_description, "")
     val requiredHits = com.bibleadventures.game.puzzles.slingshot.SlingshotGameState().requiredHits
 
     mainClock.autoAdvance = false
@@ -404,29 +341,79 @@ private fun FlowTestRule.completeSlingPractice() {
 
     var safetySteps = 0
     while (currentSlingHits(requiredHits) < requiredHits) {
-        check(safetySteps++ < 1500) { "Sling Practice didn't reach $requiredHits hits after 1500 clock steps — stuck at ${currentSlingHits(requiredHits)}" }
+        check(safetySteps++ < 200) { "Sling Practice didn't reach $requiredHits hits after 200 clock steps — stuck at ${currentSlingHits(requiredHits)}" }
 
-        val markBounds = onNodeWithContentDescription(markDescription).fetchSemanticsNode().boundsInRoot
-        val shieldImageBounds = onNodeWithContentDescription(shieldDescriptionPrefix, substring = true).fetchSemanticsNode().boundsInRoot
-        val shieldTrueLeft = shieldImageBounds.left + shieldTopEdgeLeftRatio * shieldImageBounds.width
-        val shieldTrueRight = shieldImageBounds.left + shieldTopEdgeRightRatio * shieldImageBounds.width
-
-        if (markBounds.center.x in shieldTrueLeft..shieldTrueRight) {
-            val stoneNode = onNodeWithContentDescription(stoneDescription)
-            dragOntoContentDescription(itemNode = stoneNode, targetContentDescription = markDescription)
-        } else {
-            mainClock.advanceTimeBy(50L)
+        if (onAllNodesWithContentDescription(ratDescription).fetchSemanticsNodes().isEmpty()) {
+            // Between one rat resolving and the next rat's first frame landing.
+            mainClock.advanceTimeByFrame()
+            continue
         }
+        dragStoneOppositeOfRat(stoneDescription, ratDescription)
+        mainClock.advanceTimeBy(SLING_FLIGHT_SETTLE_MS)
     }
 
     mainClock.autoAdvance = true
 }
+
+/** Comfortably longer than the screen's own (private) flight-animation duration, so the deferred state update always lands before the next check. */
+private const val SLING_FLIGHT_SETTLE_MS = 500L
 
 private fun FlowTestRule.currentSlingHits(requiredHits: Int): Int {
     val activity = this.activity
     return (0..requiredHits).first { candidateHits ->
         val label = activity.getString(R.string.david_goliath_sling_practice_progress_label, candidateHits, requiredHits)
         onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
+    }
+}
+
+/**
+ * The rat keeps moving while a stone is in flight, so the game itself
+ * leads the shot — it resolves against the rat's *projected* position at
+ * `elapsedMs + FLIGHT_DURATION_MS`, not where it stood at release (see
+ * `DavidGoliathSlingPracticeScreen.kt`'s `onDragEnd`). This test mirrors
+ * that exactly: reads the rat's live `elapsedMs` off its own semantics
+ * (exposed test-only via `RatElapsedMsKey`, never read aloud), computes
+ * the same projected fractional position via the screen's own
+ * `ratXFractionAt`/`ratYFractionAt` (made `internal` specifically so a
+ * test can reuse the identical math rather than re-deriving it), converts
+ * that from the screen's 0..1 track space into root pixel coordinates
+ * using the rat's own current (position, fraction) pair as a scale
+ * reference, and finally pulls the stone to the *mirror image* of that
+ * projected point through the stone's own resting point (the sling's
+ * anchor) — since the launch direction is the pull, reversed, this lines
+ * the eventual shot up on the rat.
+ */
+private fun FlowTestRule.dragStoneOppositeOfRat(stoneDescription: String, ratDescription: String) {
+    val ratNode = onNodeWithContentDescription(ratDescription).fetchSemanticsNode()
+    val currentElapsedMs = ratNode.config[RatElapsedMsKey]
+    val impactElapsedMs = currentElapsedMs + FLIGHT_DURATION_MS
+
+    val currentRatFraction = Offset(ratXFractionAt(currentElapsedMs), ratYFractionAt(currentElapsedMs))
+    val projectedRatFraction = Offset(ratXFractionAt(impactElapsedMs), ratYFractionAt(impactElapsedMs))
+    val ratPixelCenter = ratNode.boundsInRoot.center
+
+    val stoneNode = onNodeWithContentDescription(stoneDescription)
+    val stoneBounds = stoneNode.fetchSemanticsNode().boundsInRoot
+    val anchorPixelCenter = stoneBounds.center // the stone rests exactly on the sling's anchor when not being dragged
+    val anchorFraction = Offset(ANCHOR_X_FRACTION, ANCHOR_Y_FRACTION)
+
+    // The track is square (AspectRatioFitBox ratio = 1f), so one scale
+    // (derived from the axis less likely to sit exactly on the anchor's
+    // own fraction, avoiding a near-zero divide) applies to both.
+    val pixelsPerFraction = (anchorPixelCenter.y - ratPixelCenter.y) / (anchorFraction.y - currentRatFraction.y)
+    val projectedRatPixelCenter = Offset(
+        anchorPixelCenter.x + (projectedRatFraction.x - anchorFraction.x) * pixelsPerFraction,
+        anchorPixelCenter.y + (projectedRatFraction.y - anchorFraction.y) * pixelsPerFraction,
+    )
+
+    val targetGlobalCenter = Offset(
+        2 * anchorPixelCenter.x - projectedRatPixelCenter.x,
+        2 * anchorPixelCenter.y - projectedRatPixelCenter.y,
+    )
+    val localEnd = Offset(targetGlobalCenter.x - stoneBounds.left, targetGlobalCenter.y - stoneBounds.top)
+
+    stoneNode.performTouchInput {
+        swipe(start = center, end = localEnd, durationMillis = 200)
     }
 }
 
