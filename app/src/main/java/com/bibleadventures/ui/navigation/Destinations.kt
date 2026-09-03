@@ -55,10 +55,12 @@ sealed class Destination(val route: String) {
 
     /** Nested graph — every scene shares one graph-scoped `GoodSamaritanViewModel`. */
     sealed class GoodSamaritan(route: String) : Destination(route) {
-        data object Intro : GoodSamaritan("good_samaritan/intro")
-        data object ExploreContext : GoodSamaritan("good_samaritan/explore_context")
+        data object DangerousRoadVideo : GoodSamaritan("good_samaritan/dangerous_road_video")
+        data object PassingBy : GoodSamaritan("good_samaritan/passing_by")
+        data object ThePriestVideo : GoodSamaritan("good_samaritan/the_priest_video")
+        data object TheLeviteVideo : GoodSamaritan("good_samaritan/the_levite_video")
         data object Explore : GoodSamaritan("good_samaritan/explore")
-        data object Lesson : GoodSamaritan("good_samaritan/lesson")
+        data object SamaritanArrivesVideo : GoodSamaritan("good_samaritan/samaritan_arrives_video")
         data object Reward : GoodSamaritan("good_samaritan/reward")
 
         companion object {

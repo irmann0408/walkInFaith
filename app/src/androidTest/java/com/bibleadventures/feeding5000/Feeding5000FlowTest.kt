@@ -19,6 +19,7 @@ import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
 import com.bibleadventures.completeDavidGoliath
+import com.bibleadventures.completeGoodSamaritan
 import com.bibleadventures.completeNoahsArk
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
@@ -27,7 +28,6 @@ import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.Feeding5000Content
-import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.JerichoContent
 import org.junit.Rule
 import org.junit.Test
@@ -68,13 +68,12 @@ class Feeding5000FlowTest {
     @Test
     fun completingFeeding5000_awardsStarsAndShowsGenerousHeartBadge() {
         val activity = composeTestRule.activity
-        val continueLabel = activity.getString(R.string.action_continue)
         val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
         composeTestRule.completeNoahsArk()
         composeTestRule.completeDavidGoliath()
-        completeGoodSamaritan(continueLabel)
+        composeTestRule.completeGoodSamaritan()
         completeDaniel()
         completeEsther()
         completeJericho()
@@ -161,48 +160,6 @@ class Feeding5000FlowTest {
 
         // Back on the World Map: Feeding the 5,000 completed.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
-    }
-
-    /** Walks Good Samaritan end to end (mirrors GoodSamaritanFlowTest) so Daniel unlocks. */
-    private fun completeGoodSamaritan(continueLabel: String) {
-        val activity = composeTestRule.activity
-        val nextPageLabel = activity.getString(R.string.action_next_page)
-
-        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_good_samaritan_title))
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_good_samaritan_title)).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // The Road to Jericho context
-
-        val upLabel = activity.getString(R.string.good_samaritan_direction_up)
-        val downLabel = activity.getString(R.string.good_samaritan_direction_down)
-        val leftLabel = activity.getString(R.string.good_samaritan_direction_left)
-        val rightLabel = activity.getString(R.string.good_samaritan_direction_right)
-        val helpingBeatTitle = activity.getString(R.string.good_samaritan_helping_beat_title)
-
-        GoodSamaritanContent.solutionPath.forEach { direction ->
-            val label = when (direction) {
-                Direction.UP -> upLabel
-                Direction.DOWN -> downLabel
-                Direction.LEFT -> leftLabel
-                Direction.RIGHT -> rightLabel
-            }
-            composeTestRule.onNodeWithContentDescription(label).performClick()
-
-            val helpingBeatShown = composeTestRule.onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()
-            if (helpingBeatShown) {
-                // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
-                composeTestRule.onNodeWithText(continueLabel).performClick()
-            }
-        }
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.good_samaritan_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
-        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
     }
 
     /** Walks Daniel and the Lions end to end (mirrors DanielFlowTest) so Esther unlocks. */

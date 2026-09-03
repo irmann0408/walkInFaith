@@ -8,6 +8,7 @@ import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
+import com.bibleadventures.game.puzzles.roadblock.RoadblockOutcome
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.progress.ProgressionService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,6 +57,40 @@ class GoodSamaritanViewModelTest {
         viewModel.onDirectionPressed(Direction.RIGHT) // (0,1)
         viewModel.onDirectionPressed(Direction.RIGHT) // (0,2) medicine
         assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
+    }
+
+    @Test
+    fun `initial roadblockState parses passingByLayout into the correct dimensions and blocks`() {
+        val state = createViewModel().uiState.value.roadblockState
+
+        assertEquals(GoodSamaritanContent.passingByLayout.size, state.rows)
+        assertEquals(GoodSamaritanContent.passingByLayout[0].length, state.cols)
+        assertEquals(GoodSamaritanContent.passingByBlockSpecs.size, state.blocks.size)
+        assertEquals(GoodSamaritanContent.passingByProtagonistId, state.protagonistId)
+        assertEquals(GoodSamaritanContent.passingByExitColumns, state.exitColumns)
+        assertTrue(state.blocks.first { it.id == "injured_man" }.isFixed)
+    }
+
+    @Test
+    fun `onSlideAttempted delegates to RoadblockGame and updates uiState`() {
+        val viewModel = createViewModel()
+
+        // "fear_of_ambush" sliding down is the first move of the hand-verified solution.
+        viewModel.onSlideAttempted("fear_of_ambush", com.bibleadventures.game.puzzles.roadblock.Direction.DOWN, 1)
+
+        assertEquals(RoadblockOutcome.MOVED, viewModel.uiState.value.roadblockState.lastOutcome)
+    }
+
+    @Test
+    fun `passingBySolution replayed end to end reaches isComplete`() {
+        val viewModel = createViewModel()
+
+        GoodSamaritanContent.passingBySolution.forEach { move ->
+            viewModel.onSlideAttempted(move.blockId, move.direction, move.distance)
+        }
+
+        assertTrue(viewModel.uiState.value.roadblockState.isComplete)
+        assertEquals(RoadblockOutcome.EXITED, viewModel.uiState.value.roadblockState.lastOutcome)
     }
 
     @Test

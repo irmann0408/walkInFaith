@@ -13,6 +13,9 @@ import com.bibleadventures.game.puzzles.gridmaze.GridMazeOutcome
 import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
 import com.bibleadventures.game.puzzles.gridmaze.GridPosition
 import com.bibleadventures.game.puzzles.gridmaze.GridTileType
+import com.bibleadventures.game.puzzles.roadblock.RoadblockGame
+import com.bibleadventures.game.puzzles.roadblock.RoadblockGameState
+import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
 import com.bibleadventures.game.rewards.GoodSamaritanReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.GoodSamaritanContent
@@ -30,6 +33,7 @@ data class GoodSamaritanRewardResult(val stars: Int)
 
 data class GoodSamaritanUiState(
     val gridMazeState: GridMazeState,
+    val roadblockState: RoadblockGameState,
     /** Whether the player has dismissed the "helping" story beat shown once the traveler is treated. */
     val helpingBeatAcknowledged: Boolean = false,
     val reward: GoodSamaritanRewardResult? = null,
@@ -70,6 +74,18 @@ class GoodSamaritanViewModel(
                 else -> Unit
             }
             current.copy(gridMazeState = next)
+        }
+    }
+
+    /**
+     * "Passing By": no celebratory SFX on [com.bibleadventures.game.puzzles.roadblock.RoadblockOutcome.EXITED] —
+     * unlike every other puzzle's completion, this one isn't a moment to
+     * celebrate (see [com.bibleadventures.ui.screens.goodsamaritan.passingby.GoodSamaritanPassingByScreen]
+     * for the character's own non-celebratory completion message).
+     */
+    fun onSlideAttempted(blockId: String, direction: RoadblockDirection, cellsAttempted: Int) {
+        _uiState.update { current ->
+            current.copy(roadblockState = RoadblockGame.onSlideAttempted(current.roadblockState, blockId, direction, cellsAttempted))
         }
     }
 
@@ -116,8 +132,16 @@ class GoodSamaritanViewModel(
         val startRow = GoodSamaritanContent.mapLayout.indexOfFirst { it.contains('S') }
         val startCol = GoodSamaritanContent.mapLayout[startRow].indexOf('S')
 
+        val roadblockState = RoadblockGame.fromLayout(
+            layout = GoodSamaritanContent.passingByLayout,
+            blockSpecs = GoodSamaritanContent.passingByBlockSpecs,
+            protagonistId = GoodSamaritanContent.passingByProtagonistId,
+            exitColumns = GoodSamaritanContent.passingByExitColumns,
+        )
+
         return GoodSamaritanUiState(
             gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(startRow, startCol)),
+            roadblockState = roadblockState,
         )
     }
 }

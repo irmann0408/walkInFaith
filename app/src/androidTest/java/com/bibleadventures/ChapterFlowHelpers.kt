@@ -15,7 +15,10 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.rules.ActivityScenarioRule
+import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
 import com.bibleadventures.game.stories.DavidGoliathContent
+import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.NoahsArkContent
 import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ANCHOR_X_FRACTION
 import com.bibleadventures.ui.screens.davidgoliath.slingpractice.ANCHOR_Y_FRACTION
@@ -425,5 +428,103 @@ private fun FlowTestRule.dragOntoContentDescription(itemNode: SemanticsNodeInter
 
     itemNode.performTouchInput {
         swipe(start = center, end = localEnd, durationMillis = 200)
+    }
+}
+
+/**
+ * Walks Good Samaritan end to end: World Map -> Dangerous Road video ->
+ * Passing By -> The Priest video -> The Levite video -> Explore -> Samaritan
+ * Arrives video -> Reward -> back to the World Map. Assumes the caller is
+ * already on the World Map screen.
+ *
+ * This is the second time this exact chapter's flow went stale across every
+ * OTHER chapter's own prerequisite copy of it (see this file's own top
+ * comment — the first time was Noah's Ark/David & Goliath's video
+ * restructuring): when the "Passing By" sliding-block puzzle was inserted
+ * mid-chapter, only `GoodSamaritanFlowTest`'s own copy was updated, so
+ * every later chapter's test silently carried a walkthrough that could
+ * never get past it. Centralizing here for good this time.
+ */
+fun FlowTestRule.completeGoodSamaritan() {
+    val activity = this.activity
+    val continueLabel = activity.getString(R.string.action_continue)
+    val nextPageLabel = activity.getString(R.string.action_next_page)
+
+    scrollToChapterOnWorldMap(activity.getString(R.string.chapter_good_samaritan_title))
+    onNodeWithText(activity.getString(R.string.chapter_good_samaritan_title)).performClick()
+
+    onNodeWithText(nextPageLabel).performClick() // Dangerous Road video -> Passing By
+
+    completePassingBy()
+    onNodeWithText(nextPageLabel).performClick() // Passing By -> The Priest video
+    onNodeWithText(nextPageLabel).performClick() // The Priest video -> The Levite video
+    onNodeWithText(nextPageLabel).performClick() // The Levite video -> Explore
+
+    // The helping-beat overlay appears automatically the instant the traveler is
+    // treated (blocking further D-pad input underneath), so it's dismissed
+    // inline the moment it's detected rather than at one hardcoded step index.
+    val upLabel = activity.getString(R.string.good_samaritan_direction_up)
+    val downLabel = activity.getString(R.string.good_samaritan_direction_down)
+    val leftLabel = activity.getString(R.string.good_samaritan_direction_left)
+    val rightLabel = activity.getString(R.string.good_samaritan_direction_right)
+    val helpingBeatTitle = activity.getString(R.string.good_samaritan_helping_beat_title)
+
+    GoodSamaritanContent.solutionPath.forEach { direction ->
+        val label = when (direction) {
+            Direction.UP -> upLabel
+            Direction.DOWN -> downLabel
+            Direction.LEFT -> leftLabel
+            Direction.RIGHT -> rightLabel
+        }
+        onNodeWithContentDescription(label).performClick()
+
+        val helpingBeatShown = onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()
+        if (helpingBeatShown) {
+            // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
+            onNodeWithText(continueLabel).performClick()
+        }
+    }
+
+    onNodeWithText(nextPageLabel).performClick() // Explore -> Samaritan Arrives video
+    onNodeWithText(nextPageLabel).performClick() // Samaritan Arrives video -> Reward
+
+    onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
+    onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
+}
+
+/**
+ * Replays `GoodSamaritanContent.passingBySolution` as real drag gestures.
+ * Each block's own content description (the protagonist's, or an excuse
+ * block's own label) is unique on screen, and the exit gate's rendered
+ * width — a single grid cell — gives the exact pixels-per-cell needed to
+ * turn a hand-verified (direction, distance) move into a real swipe.
+ */
+private fun FlowTestRule.completePassingBy() {
+    val activity = this.activity
+    val gateBounds = onNodeWithContentDescription(activity.getString(R.string.good_samaritan_passing_by_exit_gate_content_description))
+        .fetchSemanticsNode()
+        .boundsInRoot
+    val cellSizePx = gateBounds.width
+
+    val blockContentDescriptions = mapOf(
+        "religious_leader" to activity.getString(R.string.good_samaritan_passing_by_protagonist_content_description),
+        "ritual_purity" to activity.getString(R.string.good_samaritan_passing_by_excuse_ritual_purity),
+        "fear_of_ambush" to activity.getString(R.string.good_samaritan_passing_by_excuse_fear_of_ambush),
+        "strict_schedule" to activity.getString(R.string.good_samaritan_passing_by_excuse_strict_schedule),
+        "not_my_problem" to activity.getString(R.string.good_samaritan_passing_by_excuse_not_my_problem),
+    )
+
+    GoodSamaritanContent.passingBySolution.forEach { move ->
+        val description = blockContentDescriptions.getValue(move.blockId)
+        val magnitude = cellSizePx * move.distance
+        val delta = when (move.direction) {
+            RoadblockDirection.UP -> Offset(0f, -magnitude)
+            RoadblockDirection.DOWN -> Offset(0f, magnitude)
+            RoadblockDirection.LEFT -> Offset(-magnitude, 0f)
+            RoadblockDirection.RIGHT -> Offset(magnitude, 0f)
+        }
+        onNodeWithContentDescription(description).performTouchInput {
+            swipe(start = center, end = center + delta, durationMillis = 200)
+        }
     }
 }

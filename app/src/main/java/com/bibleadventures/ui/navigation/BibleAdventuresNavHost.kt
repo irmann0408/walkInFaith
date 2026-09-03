@@ -64,8 +64,7 @@ import com.bibleadventures.ui.screens.feeding5000.searchingforfood.Feeding5000Se
 import com.bibleadventures.ui.screens.feeding5000.serving.Feeding5000ServingScreen
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.screens.goodsamaritan.explore.GoodSamaritanExploreScreen
-import com.bibleadventures.ui.screens.goodsamaritan.intro.GoodSamaritanIntroScreen
-import com.bibleadventures.ui.screens.goodsamaritan.lesson.GoodSamaritanLessonScreen
+import com.bibleadventures.ui.screens.goodsamaritan.passingby.GoodSamaritanPassingByScreen
 import com.bibleadventures.ui.screens.goodsamaritan.reward.GoodSamaritanRewardScreen
 import com.bibleadventures.ui.screens.jericho.JerichoViewModel
 import com.bibleadventures.ui.screens.jericho.blowshofar.JerichoBlowShofarScreen
@@ -153,7 +152,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                     } else if (chapterId == ChapterId.DAVID_GOLIATH) {
                         navController.navigate(Destination.DavidGoliath.IntroVideo.route)
                     } else if (chapterId == ChapterId.GOOD_SAMARITAN) {
-                        navController.navigate(Destination.GoodSamaritan.Intro.route)
+                        navController.navigate(Destination.GoodSamaritan.DangerousRoadVideo.route)
                     } else if (chapterId == ChapterId.DANIEL) {
                         navController.navigate(Destination.Daniel.Intro.route)
                     } else if (chapterId == ChapterId.ESTHER) {
@@ -533,24 +532,62 @@ private fun NavHostController.davidGoliathViewModel(entry: NavBackStackEntry): D
 
 private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
-        startDestination = Destination.GoodSamaritan.Intro.route,
+        startDestination = Destination.GoodSamaritan.DangerousRoadVideo.route,
         route = Destination.GoodSamaritan.GRAPH_ROUTE,
     ) {
-        composable(Destination.GoodSamaritan.Intro.route) { entry ->
+        composable(Destination.GoodSamaritan.DangerousRoadVideo.route) { entry ->
             val viewModel = navController.goodSamaritanViewModel(entry)
-            GoodSamaritanIntroScreen(
-                viewModel = viewModel,
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.good_samaritan_dangerous_road,
+                narrationRes = R.raw.good_samaritan_dangerous_road_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.good_samaritan_reflection_dangerous_road,
                 onContinue = {
-                    viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.GoodSamaritan.ExploreContext.route)
+                    viewModel.onSceneCompleted("dangerous_road_video")
+                    navController.navigate(Destination.GoodSamaritan.PassingBy.route)
                 },
             )
         }
-        composable(Destination.GoodSamaritan.ExploreContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.good_samaritan_explore_context_title,
-                lineRes = GoodSamaritanContent.exploreContextLines,
-                onContinue = { navController.navigate(Destination.GoodSamaritan.Explore.route) },
+        composable(Destination.GoodSamaritan.PassingBy.route) { entry ->
+            val viewModel = navController.goodSamaritanViewModel(entry)
+            val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
+            GoodSamaritanPassingByScreen(
+                viewModel = viewModel,
+                previouslyCompleted = "passing_by" in previouslyCompletedSceneIds,
+                onBackToMainMenu = onBackToMainMenu,
+                onContinue = {
+                    viewModel.onSceneCompleted("passing_by")
+                    navController.navigate(Destination.GoodSamaritan.ThePriestVideo.route)
+                },
+            )
+        }
+        composable(Destination.GoodSamaritan.ThePriestVideo.route) { entry ->
+            val viewModel = navController.goodSamaritanViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.good_samaritan_the_priest,
+                narrationRes = R.raw.good_samaritan_the_priest_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.good_samaritan_reflection_the_priest,
+                onContinue = {
+                    viewModel.onSceneCompleted("the_priest_video")
+                    navController.navigate(Destination.GoodSamaritan.TheLeviteVideo.route)
+                },
+            )
+        }
+        composable(Destination.GoodSamaritan.TheLeviteVideo.route) { entry ->
+            val viewModel = navController.goodSamaritanViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.good_samaritan_the_levite,
+                narrationRes = R.raw.good_samaritan_the_levite_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.good_samaritan_reflection_the_levite,
+                onContinue = {
+                    viewModel.onSceneCompleted("the_levite_video")
+                    navController.navigate(Destination.GoodSamaritan.Explore.route)
+                },
             )
         }
         composable(Destination.GoodSamaritan.Explore.route) { entry ->
@@ -562,15 +599,20 @@ private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController,
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("explore")
-                    navController.navigate(Destination.GoodSamaritan.Lesson.route)
+                    navController.navigate(Destination.GoodSamaritan.SamaritanArrivesVideo.route)
                 },
             )
         }
-        composable(Destination.GoodSamaritan.Lesson.route) { entry ->
+        composable(Destination.GoodSamaritan.SamaritanArrivesVideo.route) { entry ->
             val viewModel = navController.goodSamaritanViewModel(entry)
-            GoodSamaritanLessonScreen(
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.good_samaritan_samaritan_arrives,
+                narrationRes = R.raw.good_samaritan_samaritan_arrives_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.good_samaritan_reflection_samaritan_arrives,
                 onContinue = {
-                    viewModel.onSceneCompleted("lesson")
+                    viewModel.onSceneCompleted("samaritan_arrives_video")
                     navController.navigate(Destination.GoodSamaritan.Reward.route)
                 },
             )

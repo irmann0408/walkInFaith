@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- A simple open archway marking the exit — the only visual cue for where the religious leader needs to reach. -->
+    <path android:fillColor="#FFB08D57" android:pathData="M8,60 L8,26 Q32,4 56,26 L56,60 L46,60 L46,30 Q32,16 18,30 L18,60 Z" />
+    <path android:fillColor="#FFE8D9B5" android:pathData="M18,60 L18,32 Q32,20 46,32 L46,60 Z" />
+</vector>

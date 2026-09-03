@@ -285,12 +285,21 @@
     <string name="david_goliath_sling_feedback_escaped">It got away — here comes another one!</string>
     <string name="david_goliath_sling_stone_content_description">David\'s stone. Drag to aim, then let go.</string>
 
-    <string name="good_samaritan_intro_line_1">A man was traveling the dangerous road from Jerusalem to Jericho when robbers attacked him and left him hurt beside the road.</string>
-    <string name="good_samaritan_intro_line_2">Others walked right past him. Will you stop and help, like the Good Samaritan did?</string>
+    <string name="good_samaritan_reflection_dangerous_road">We can notice when someone is hurting, even in unexpected places.</string>
+    <string name="good_samaritan_reflection_the_priest">We can choose to stop, even when it\'s easier to walk away.</string>
+    <string name="good_samaritan_reflection_the_levite">We can make time to help, even when we\'re busy.</string>
+    <string name="good_samaritan_reflection_samaritan_arrives">We can be a good neighbor to everyone we meet, not just our friends.</string>
 
-    <string name="good_samaritan_explore_context_title">The Road to Jericho</string>
-    <string name="good_samaritan_explore_context_line_1">A priest and a Levite already passed the hurt man by without stopping.</string>
-    <string name="good_samaritan_explore_context_line_2">Walk the road, find medicine, and help him — then bring him safely to the Inn.</string>
+    <string name="good_samaritan_passing_by_title">Passing By</string>
+    <string name="good_samaritan_passing_by_instructions">Slide the pieces out of the way to help the Priest/Levite tile reach Jericho.</string>
+    <string name="good_samaritan_passing_by_moral_message">That\'s what the priest and the Levite did… but we shouldn\'t be like them. When we see someone hurt, we should stop and help.</string>
+    <string name="good_samaritan_passing_by_protagonist_content_description">Priest/Levite</string>
+    <string name="good_samaritan_passing_by_excuse_ritual_purity">Ritual Purity</string>
+    <string name="good_samaritan_passing_by_excuse_fear_of_ambush">Fear of Ambush</string>
+    <string name="good_samaritan_passing_by_excuse_strict_schedule">Strict Schedule</string>
+    <string name="good_samaritan_passing_by_excuse_not_my_problem">Not My Problem</string>
+    <string name="good_samaritan_passing_by_exit_gate_content_description">The road to Jericho</string>
+    <string name="good_samaritan_passing_by_rock_content_description">Rock</string>
 
     <string name="good_samaritan_explore_title">The Road to Jericho</string>
     <string name="good_samaritan_explore_instructions">Use the arrows to walk the road. Find medicine, help the traveler, then reach the Inn.</string>
@@ -309,8 +318,6 @@
     <string name="good_samaritan_helping_beat_line_2">He gently poured on oil and wine to help him heal.</string>
     <string name="good_samaritan_helping_beat_line_3">Then he helped the man onto his own animal to carry him the rest of the way.</string>
 
-    <string name="good_samaritan_lesson_title">Kindness and Helping Others</string>
-    <string name="good_samaritan_lesson_text">The Good Samaritan stopped to help even though the hurt man was a stranger. God wants us to be a good neighbor to everyone we meet, not just our friends.</string>
 
     <string name="daniel_intro_line_1">Daniel served King Darius faithfully, and he prayed to God every single day.</string>
     <string name="daniel_intro_line_2">Some jealous officials tricked the king into signing a law that could get Daniel thrown to the lions.</string>

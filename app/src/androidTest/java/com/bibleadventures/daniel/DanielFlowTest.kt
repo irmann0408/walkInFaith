@@ -16,11 +16,11 @@ import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
 import com.bibleadventures.completeDavidGoliath
+import com.bibleadventures.completeGoodSamaritan
 import com.bibleadventures.completeNoahsArk
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.stories.DanielContent
-import com.bibleadventures.game.stories.GoodSamaritanContent
 import org.junit.Rule
 import org.junit.Test
 
@@ -40,13 +40,12 @@ class DanielFlowTest {
     @Test
     fun completingDaniel_awardsStarsAndUnlocksEstherOnTheWorldMap() {
         val activity = composeTestRule.activity
-        val continueLabel = activity.getString(R.string.action_continue)
         val nextPageLabel = activity.getString(R.string.action_next_page)
 
         composeTestRule.onNodeWithText(activity.getString(R.string.menu_adventures)).performClick()
         composeTestRule.completeNoahsArk()
         composeTestRule.completeDavidGoliath()
-        completeGoodSamaritan(continueLabel)
+        composeTestRule.completeGoodSamaritan()
 
         // World Map -> Daniel and the Lions (now unlocked).
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_daniel_title)).performClick()
@@ -127,47 +126,6 @@ class DanielFlowTest {
         // Back on the World Map: Daniel completed, Esther unlocked.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_esther_title)).assertExists()
-    }
-
-    /** Walks Good Samaritan end to end (mirrors GoodSamaritanFlowTest) so Daniel unlocks. */
-    private fun completeGoodSamaritan(continueLabel: String) {
-        val activity = composeTestRule.activity
-        val nextPageLabel = activity.getString(R.string.action_next_page)
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_good_samaritan_title)).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // The Road to Jericho context
-
-        val upLabel = activity.getString(R.string.good_samaritan_direction_up)
-        val downLabel = activity.getString(R.string.good_samaritan_direction_down)
-        val leftLabel = activity.getString(R.string.good_samaritan_direction_left)
-        val rightLabel = activity.getString(R.string.good_samaritan_direction_right)
-        val helpingBeatTitle = activity.getString(R.string.good_samaritan_helping_beat_title)
-
-        GoodSamaritanContent.solutionPath.forEach { direction ->
-            val label = when (direction) {
-                Direction.UP -> upLabel
-                Direction.DOWN -> downLabel
-                Direction.LEFT -> leftLabel
-                Direction.RIGHT -> rightLabel
-            }
-            composeTestRule.onNodeWithContentDescription(label).performClick()
-
-            val helpingBeatShown = composeTestRule.onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()
-            if (helpingBeatShown) {
-                // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
-                composeTestRule.onNodeWithText(continueLabel).performClick()
-            }
-        }
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.good_samaritan_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
-        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
     }
 
     /**

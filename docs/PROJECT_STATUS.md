@@ -587,22 +587,23 @@ correctness.
   button, app switcher, screen off) is unaffected — the Activity is
   merely stopped, not destroyed, so the write completes normally. Accepted
   trade-off, not fixed — see the architectural-decisions-log entry below.
-- **`connectedAndroidTest` (the whole `androidTest` source set) currently
-  fails to compile**, unrelated to the David & Goliath Connect Four work —
-  `NoahsArkContent.sortableItems`/`.hiddenItems`/`.sortCategories` were
-  removed when Organize the Ark and Find the Missing Items became video
-  scenes (Noah's Ark's earlier video restructure), but the shared
-  `completeNoahsArk()` helper duplicated across ~9 chapters' flow tests
-  (Daniel, Esther, Feeding the 5,000, Good Samaritan, Jericho, Jesus Calms
-  the Storm, Parent Area, Noah's Ark itself, David & Goliath) still calls
-  it to unlock past Noah's Ark first — none of these were updated when
-  Noah's Ark's own content changed. `DavidGoliathFlowTest.kt`'s own
-  David-and-Goliath-specific code (video/Choice/Connect Four/Dodge/Sling
-  sections) is internally consistent with the new API and compiles in
-  isolation — confirmed by filtering the compiler's error output down to
-  just that file, which only shows the shared-helper lines. Fixing this
-  needs its own pass across every affected chapter's test file, not a
-  David & Goliath-scoped fix.
+- ~~`connectedAndroidTest` (the whole `androidTest` source set) currently
+  fails to compile~~ — **fixed**, centralized into `ChapterFlowHelpers.kt`
+  (see "Next tasks" below). Originally: `NoahsArkContent.sortableItems`/
+  `.hiddenItems`/`.sortCategories` were removed when Organize the Ark and
+  Find the Missing Items became video scenes (Noah's Ark's earlier video
+  restructure), but the shared `completeNoahsArk()` helper duplicated
+  across ~9 chapters' flow tests still called it to unlock past Noah's Ark
+  first, and none of those copies were updated when Noah's Ark's own
+  content changed. The identical pattern recurred twice more —
+  `completeDavidGoliath()` after David & Goliath's own video restructure,
+  and `completeGoodSamaritan()` after Good Samaritan's Passing By puzzle
+  was added and later its own video restructure (Chapter 3 addendum 8) —
+  each time because only the chapter's *own* flow test was updated, not
+  every other chapter's private prerequisite copy. All three are now
+  single shared functions in `ChapterFlowHelpers.kt`, with each
+  chapter's own flow test keeping an independent, richer walkthrough
+  rather than calling its own shared helper on itself.
 
 ### Milestone 5 — Progression
 Closed out the three items left after Noah's Ark: "Continue Adventure" wiring,
@@ -1312,13 +1313,19 @@ Ark and David & Goliath's puzzle screens only, not retrofitted app-wide.
 
 ### Chapter 3 — The Good Samaritan
 The third full chapter, unlocked automatically once David and Goliath is
-completed. Scene flow: Intro → The Road to Jericho context card → Explore
-(a grid maze covering find-medicine → treat-the-traveler → reach-the-Inn,
-one continuous scene) → Lesson → Reward. No Choice scene this time — Luke
-10:34 describes a specific, non-branching sequence of care (bandaged
-wounds, oil and wine, brought to the inn), so unlike David's open-ended
-reply to Goliath there's no real decision to offer; the flow template is a
-general shape, not a mandatory checklist for every chapter.
+completed. **Scene flow as originally shipped** (text-based Intro/Lesson,
+before the video restructure in addendum 8 below): Intro → The Road to
+Jericho context card → Passing By (a sliding-block puzzle depicting the
+priest/Levite passing the injured man by — added later, see the addendum
+below) → Explore (a grid maze covering find-medicine → treat-the-traveler
+→ reach-the-Inn, one continuous scene) → Lesson → Reward. No Choice scene
+this time — Luke 10:34 describes a specific, non-branching sequence of
+care (bandaged wounds, oil and wine, brought to the inn), so unlike
+David's open-ended reply to Goliath there's no real decision to offer; the
+flow template is a general shape, not a mandatory checklist for every
+chapter. **Current scene flow, post-addendum-8**: Dangerous Road video →
+Passing By → The Priest video → The Levite video → Explore → Samaritan
+Arrives video → Reward.
 - **New mechanic**: a 10x10 grid maze navigated with 4 on-screen direction
   buttons, not tap-on-tile — a 10x10 grid can't give each cell a legible
   48dp tap target on a phone screen, which is exactly why movement is
@@ -1468,6 +1475,370 @@ comes entirely from `ChapterCatalog.all` + `requiredChapter`).
 Updated `ChapterUnlockRulesTest`'s out-of-order-completion case and
 `GoodSamaritanFlowTest`'s final "next chapter unlocked" assertion (and its
 name) to expect Daniel instead of Feeding the 5,000.
+
+### Chapter 3 addendum 1 — "Passing By": a sliding-block puzzle for the priest and Levite
+A new scene, **Passing By**, inserted between the existing "Road to
+Jericho" context card and the existing Explore grid maze — a Rush-Hour/
+Unblock-Me-style sliding block puzzle standing in for both the priest and
+the Levite (one puzzle, not two — they're both "religious leaders"). The
+existing Explore scene itself was untouched.
+- **Deliberately inverted win condition, confirmed with the user**: unlike
+  every other puzzle in this app, solving this one means the "religious
+  leader" block successfully routes *around* a fixed, never-movable
+  injured-man block and exits — historically accurate to the parable (the
+  priest and Levite really did pass by), not a design mistake. The moral
+  is handled separately: once solved, the player's own character delivers
+  a plain corrective line via the existing `CharacterCallout` in
+  `Posture.STANDING` — never `Posture.THUMBS_UP`, since this is never a
+  moment to celebrate. No SFX plays on completion either, for the same
+  reason. The user was direct that this should stay true to what actually
+  happened in the story rather than be softened into another "win = help"
+  puzzle; the character's own commentary carries the correction instead.
+- **New engine `game/puzzles/roadblock/{RoadblockGame,RoadblockGameState}.kt`**,
+  deliberately generic (no chapter-specific concepts) so any future
+  rush-hour-shaped scene could reuse it. A `Block` occupies `length`
+  consecutive cells from an `origin` along one `orientation`; every block
+  is locked to sliding along its own axis **except** the one whose id
+  equals `protagonistId`, which alone may slide in any of the 4
+  directions — this single rule (a non-protagonist block's off-axis
+  `maxSlideDistance` always returns 0) is what makes classic Rush-Hour
+  axis-locking "just happen" with zero branching anywhere else in the
+  code. `exitColumns` are the only columns where the bottom edge isn't a
+  wall, and even there only the protagonist may ever pass through — see
+  the deliberate simplification below for why.
+- **The protagonist is a single 1×1 cell, not the 2×1 block the original
+  pitch described.** A multi-cell piece that's also the only block ever
+  allowed to leave the grid would need special "partial exit" handling
+  (its cells would straddle the exit boundary at different distances,
+  with no clean single-step collision check) — a 1×1 protagonist
+  sidesteps that entirely (it's either at the gate or it isn't) without
+  losing any of the puzzle's thematic or mechanical weight. The fixed
+  injured-man block and the movable "excuse" blocks (Ritual Purity, Fear
+  of Ambush, Strict Schedule, Not My Problem — one block each, per the
+  original pitch) stay multi-cell exactly as pitched, since only the
+  protagonist ever needs to exit.
+- **`maxSlideDistance(state, blockId, direction): Int`** mirrors
+  `GroupFillGame.canAccept`'s pre-check role: it's what the screen calls
+  on every drag frame to clamp a live gesture, and what `onSlideAttempted`
+  itself calls internally to clamp a commit — never rejecting a move
+  outright, only ever clamping it down to whatever's actually legal (an
+  over-ambitious drag just lands at the legal maximum), consistent with
+  "no failure states." `RoadblockGameTest.kt` covers axis-locking in both
+  directions, stopping exactly at a wall/blocker, the fixed block never
+  moving, the protagonist's free 4-directional movement, gate-only exit
+  (confirmed a non-protagonist block can never pass the bottom edge even
+  aligned with a gate column), clamping, and the standard once-complete
+  no-op convention.
+- **Screen gesture idiom**: one generic draggable-piece composable reused
+  for every block (protagonist and excuse blocks alike) — no
+  `if (isProtagonist)` branch anywhere in `GoodSamaritanPassingByScreen.kt`,
+  since axis-locking already falls out of `maxSlideDistance` itself. A
+  drag locks onto one direction (whichever axis/sign dominates once past a
+  small touch-slop) and holds it for the rest of the gesture, clamping the
+  visible offset to `maxSlideDistance(direction) * cellSizePx` every
+  frame — the same "screen decides where to visually clamp a live drag,
+  engine only judges" split as `NoahsArkOrganizeArkScreen`'s nearest-
+  drop-zone snap and `DavidGoliathSlingPracticeScreen`'s pull vector.
+  Because the clamped offset already reflects the exact number of cells
+  that will be committed, the block's new position (once the ViewModel
+  state updates) lands exactly where the drag left off with no visible
+  jump — no snap animation needed, the same instant-move precedent
+  `GridMazeGame`'s D-pad already established for this chapter.
+- **`AspectRatioFitBox` gained an optional `alignment` parameter**
+  (default `Alignment.Center`, matching every existing caller — this
+  screen doesn't even use a non-default value, but the parameter was
+  needed while iterating on Sling Practice's own layout earlier this
+  session and is documented here as the reason it exists).
+- Content (`GoodSamaritanContent.passingByLayout`/`passingByBlockSpecs`/
+  `passingBySolution`) is one hand-authored 5×7 board, **verified solvable
+  by actually replaying `passingBySolution` through the real engine** in a
+  new `GoodSamaritanViewModelTest` case (not just traced by hand) — the
+  same "replay a hand-verified solution end-to-end" pattern the grid
+  maze's own `solutionPath` already established, now proven as a reusable
+  verification technique for a second, structurally different engine.
+  `GoodSamaritanFlowTest` and `DanielFlowTest`'s own mirrored
+  `completeGoodSamaritan` both replay the same solution as real swipe
+  gestures, deriving pixels-per-cell from the exit gate's own rendered
+  width rather than hardcoding a cell size.
+- New flat vector placeholders (`ic_religious_leader.xml`,
+  `ic_excuse_sign.xml` — one shared placard reused for all 4 excuse
+  blocks, each labeled by its own overlaid text rather than 4 bespoke
+  icons, `ic_exit_gate.xml`); the fixed injured-man block reuses the
+  Explore scene's existing `ic_traveler_injured.xml`, since it's the same
+  character.
+
+### Chapter 3 addendum 2 — the protagonist wasn't actually axis-locked, so the puzzle had trivial free routes around every obstacle
+On-device feedback after addendum 1: the religious leader could reach the
+exit lots of ways without ever moving an excuse block — because it could
+move freely in all 4 directions (not axis-locked like every other piece),
+it could just sidestep around any obstacle instead of needing to clear
+one. This wasn't a bug so much as not actually being Rush Hour/Unblock Me
+yet — in the genuine mechanic, the target piece is confined to exactly one
+lane for the whole puzzle, same as every other piece; the only way it
+ever moves is if that lane gets cleared.
+- **Removed the protagonist's free-movement exemption entirely.**
+  `RoadblockGame.maxSlideDistance`'s axis-lock (`direction.axis() !=
+  block.orientation → 0`) now applies to every block with no exceptions —
+  the protagonist keeps exactly one privilege, being the only block ever
+  allowed through the exit gate, nothing more.
+- **`RoadblockBlockSpec` gained `forcedOrientation: Orientation?`.** A
+  single occupied cell has no shape to infer an axis from, so a movable
+  single-cell block (the protagonist) must now say explicitly which axis
+  it's locked to (VERTICAL, since the exit is at the bottom) —
+  `fromLayout` throws if a movable single-cell block omits it; a *fixed*
+  single-cell block is exempt (its axis is moot, since it never slides).
+- **Rebuilt `GoodSamaritanContent.passingByLayout`** so the religious
+  leader is confined to column 2 for the entire board, and the fixed
+  injured-man block was moved out of column 2 entirely (adjacent to it,
+  touching its border, but never inside it) — a fixed piece inside the
+  protagonist's own lane would make the puzzle unsolvable outright, since
+  it could never be cleared. Only the two horizontal "excuse" blocks that
+  actually cross column 2 (`ritual_purity`, `strict_schedule`) are
+  load-bearing; `fear_of_ambush` and `not_my_problem` never intrude on
+  column 2 and never need to move — pure texture, matching the original
+  pitch's 4 named excuses without all 4 needing to gate the solution.
+  **Learned the hard way while first drafting this redesign**: a
+  *vertical* movable block sharing the protagonist's own column can wedge
+  itself into a genuinely unsolvable deadlock against the bottom wall
+  (the protagonist blocks its only way back up, the wall blocks its only
+  way further down) — so only *horizontal* blocks are ever allowed to
+  cross the protagonist's lane; anything vertical stays confined to other
+  columns entirely.
+- Re-verified solvable the same way as before — replaying
+  `passingBySolution` through the real engine in
+  `GoodSamaritanViewModelTest`, not just traced by hand — now a 4-move
+  solution instead of 7. Updated `RoadblockGameTest`'s protagonist-movement
+  cases to assert axis-locking instead of free movement, and added a case
+  covering the new `forcedOrientation` requirement.
+- No changes needed to `GoodSamaritanPassingByScreen.kt` at all — its drag
+  handler already just calls `maxSlideDistance` generically for whichever
+  direction the player drags, so once the engine enforced the axis lock
+  uniformly, the screen enforced it too, for free.
+
+### Chapter 3 addendum 3 — tightened the board and unified every tile's look to match real Unblock Me
+Further on-device feedback: even with the protagonist properly axis-locked
+(addendum 2), the board still didn't read as "Unblock Me" — it was too
+spacious (5x7, mostly empty), and the target/injured-man rendered as
+distinct character art rather than the plain colored rectangles every
+other block used, which stood out as a different *kind* of thing rather
+than "the one tile you have to get out."
+- **Rebuilt the board as a tight 4x5 grid** (20 cells, 11 occupied — far
+  denser than the previous 5x7/35-cell board) — closer to genuine Unblock
+  Me's mostly-full-grid feel for this piece count. Still only 2 of the 4
+  excuse blocks are load-bearing (`ritual_purity`, `strict_schedule` sit in
+  the protagonist's column; `fear_of_ambush`, `not_my_problem` are stacked
+  in another column as pure texture) — solved in the same 4 moves as
+  before, just re-verified against the new layout via the same
+  replay-through-the-real-engine test in `GoodSamaritanViewModelTest`
+  (this is now the third layout that verification approach has caught
+  before it ever reached the device).
+- **Every tile — the target, the fixed injured man, and every excuse
+  block — now renders identically**: a plain colored rounded rectangle
+  with a centered text label (`RoadblockPieceContent` in
+  `GoodSamaritanPassingByScreen.kt`), distinguished only by color
+  (`MaterialTheme.colorScheme.primary` for the target, `.outline` for the
+  fixed injured man, `.secondaryContainer` for excuse blocks) — matching
+  real Unblock Me, where the target is a differently-colored rectangle
+  among the others, never a different *shape* or a character sprite.
+  Deleted the now-unused `ic_religious_leader.xml` and `ic_excuse_sign.xml`
+  placeholder art created for the previous look; the fixed block no longer
+  reuses `ic_traveler_injured.xml` either (that stays in use only by the
+  Explore scene).
+- **Labeled the target tile "Priest/Levite"** (`good_samaritan_passing_by_protagonist_content_description`)
+  instead of "The religious leader" — the user's own preferred, more
+  compact label for a tile standing in for both figures from the parable.
+  The internal block id (`religious_leader`) was left unchanged since it's
+  never player-visible — only the displayed string changed.
+
+### Chapter 3 addendum 4 — borders, harder board, labels only on the target tile
+On-device feedback after addendum 3: excuse tiles were nearly invisible
+against the board background (similar fill color, no edge definition),
+the puzzle was solvable in too few moves, and labeling every tile made
+the board read as cluttered signage rather than a set of interchangeable
+blockers with one marked target.
+- **Every tile gets a 2dp border** (`Modifier.border(2.dp,
+  MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))`) so a tile
+  is always visually distinct from the board background regardless of how
+  close its fill color happens to land.
+- **Only the target ("Priest/Levite") shows a visible text label now.**
+  Every other tile — the fixed injured man and all 4 excuse blocks — still
+  carries its own `contentDescription` for accessibility, just no
+  on-screen `Text` anymore (`RoadblockPieceContent` only renders the label
+  `if (isTarget)`).
+- **Harder board, same 4x-ish compact footprint**: rebuilt as 4 cols x 6
+  rows with all 4 named excuse blocks sitting directly in the target's
+  column (`ritual_purity`, `fear_of_ambush`, `strict_schedule`,
+  `not_my_problem` each block a different row) — up from 2 load-bearing
+  blockers in addendum 3, with zero pure-texture pieces this time; every
+  tile on the board now matters. On this narrow a board, `cols(2,3)` is
+  the only position that doesn't still cover the target's column, so each
+  excuse clears independently with one slide right — no ordering
+  dependency between them, but four separate obstructions to find and
+  clear instead of two. Re-verified solvable the same way as every
+  previous layout change: replaying the new 5-move `passingBySolution`
+  through the real engine in `GoodSamaritanViewModelTest`, not just traced
+  by hand.
+
+### Chapter 3 addendum 5 — a rectangular target, a larger board, and a real vertical-enables-horizontal dependency
+On-device feedback after addendum 4, three requests: make the Priest/
+Levite tile a rectangle like every other tile (it was still a 1x1 square);
+make the board bigger with smaller tiles (not the tight, small 4x6 grid);
+and build genuine dependency chains — sliding a vertical tile to enable
+sliding a horizontal one — rather than independent, unrelated obstructions.
+- **The engine now supports a genuinely multi-cell protagonist exiting
+  progressively.** This was the real blocker for "make the target a
+  rectangle" — addendum 1 deliberately made the protagonist a single cell
+  specifically to dodge this, since a naive multi-cell exit check (`all
+  cells land exactly on the gate row`) can never be satisfied by a block
+  sliding one row at a time. `RoadblockGame.maxSlideDistance` and
+  `onSlideAttempted` were rewritten around a `CellPosition.isExited()`
+  helper (`row >= rows && col in exitColumns`) so a cell that's already
+  past the bottom edge is simply treated as legally placed, while the
+  *rest* of the block is still checked normally — a 2-cell protagonist can
+  now legitimately hang half off the board as an intermediate `MOVED`
+  state, only flipping to `EXITED` once every one of its cells has
+  cleared. Added `RoadblockGameTest` coverage for the partial-hang-off
+  state, the "only fully exits once every cell clears" distance
+  arithmetic, and confirmed a non-gate column still blocks even a partial
+  exit. The board container also gained `Modifier.clipToBounds()` so this
+  progressive exit crops cleanly at the board edge instead of spilling
+  into whatever sits below it.
+- **Rebuilt as a larger 6x8 board** (up from 4x6) — more, smaller tiles
+  rather than a cramped grid, per the explicit request.
+- **A real dependency, not just more independent obstructions**:
+  `fear_of_ambush` (vertical) sits exactly in the one cell `ritual_purity`
+  (horizontal) needs to slide into to clear the target's column — the
+  player must slide `fear_of_ambush` down first before `ritual_purity` can
+  move at all. A new fixed, unlabeled `rock` block (this chapter's Explore
+  scene already uses rocks as generic wall dressing, so it's thematically
+  free) permanently walls off `ritual_purity`'s only other escape route,
+  making the dependency load-bearing rather than an optional shortcut.
+  Added a focused, chapter-content-independent `RoadblockGameTest` case
+  proving the underlying rule generically (a horizontal block's blocked
+  move becomes legal only after the vertical piece occupying its
+  destination cell slides away) — a reusable proof for the engine that
+  any future rush-hour-shaped scene can lean on for this exact mechanic.
+  `strict_schedule` still clears independently, so the board isn't *only*
+  one dependency chain — some texture remains.
+- Re-verified the new 4-move solution the same way as every previous
+  layout change: replaying it through the real engine in
+  `GoodSamaritanViewModelTest`, not just traced by hand — this is now the
+  fourth board revision that check has caught issues in before they ever
+  reached the device (this time: an incorrect assumption in the engine's
+  own test fixture that a 1-step vertical slide always clears a row,
+  which is only true when that row sits at the block's *leading* edge for
+  the direction it's moving, not its trailing edge).
+
+### Chapter 3 addendum 6 — the exit snap-back bug, and moving the character out of the puzzle
+Two more on-device findings right after addendum 5.
+- **Bug**: the Priest/Levite tile visually snapped back to its pre-drag
+  position immediately after successfully sliding all the way out. Root
+  cause: `RoadblockGame.onSlideAttempted`'s `EXITED` branch set
+  `exitedProtagonist = true` but never actually updated the block's own
+  `origin` — only the `MOVED` branch did that. The screen's drag handler
+  always resets its local `dragOffset` to zero once a gesture commits (see
+  `RoadblockPiece` in `GoodSamaritanPassingByScreen.kt`), relying entirely
+  on the committed `block.origin` to hold the new visual position — so for
+  an exit specifically, resetting the offset against an origin that never
+  moved snapped the render straight back to where the drag started. Fixed
+  by computing the shifted origin unconditionally and using it in both
+  branches; `EXITED` now also carries the block's final (fully off-grid)
+  position, which `clipToBounds()` (added in addendum 5) then crops
+  cleanly. Added a regression assertion to the existing "protagonist exits
+  through a gate column" test in `RoadblockGameTest` checking the block's
+  post-exit origin, not just the outcome flags — this is exactly the kind
+  of bug that outcome-only assertions don't catch.
+- **The character was rendered inside the puzzle's own letterboxed board**,
+  overlapping tiles on a board this much taller/denser than before. Same
+  root cause and same fix as Sling Practice earlier this session: the
+  `CharacterCallout` was a child of the `AspectRatioFitBox`/
+  `BoxWithConstraints` pair that letterboxes the *board itself*, so it
+  moved and overlapped along with the board's own tiles instead of
+  staying in the empty margin around it. Moved it out to a shared outer
+  `Box(Modifier.weight(1f, fill = true).fillMaxSize())` that wraps the
+  letterboxed board as a sibling, anchored to *that* full region instead —
+  the same pattern this session already established once for exactly this
+  failure mode.
+
+### Chapter 3 addendum 7 — a guaranteed-non-overlapping character row, and reclaiming wasted top margin
+Addendum 6 moved the character out of the puzzle's own letterboxed box,
+but it was still anchored inside a *shared* weighted region with the
+board — on this board's aspect ratio, the letterboxed square used nearly
+all of that region's height, so the character (and especially its
+upward-growing speech bubble) still overlapped the bottom of the board.
+- **The character now gets its own dedicated Column row**
+  (`CHARACTER_ROW_HEIGHT = 180.dp`, sized for the character's own 96dp box
+  plus its bubble's ~76dp of upward growth room), placed as a plain
+  sibling *after* the puzzle's weighted box, not sharing a Box with it.
+  Since this row isn't weighted, Column layout mechanics alone guarantee
+  the puzzle's `weight(1f, fill = true)` box shrinks to leave it room —
+  no more reasoning about letterbox margins or aspect-ratio math to avoid
+  overlap, the two can never occupy the same space by construction.
+- **`AspectRatioFitBox`'s `alignment` gained real use here**: switched
+  from the default `Center` to `TopCenter`, so the board hugs the title
+  instead of centering with equal empty margins above and below inside
+  its own (now smaller, non-shared) weighted allocation — reclaiming the
+  gap that used to sit unused between the title and the board.
+
+### Chapter 3 addendum 8 — video restructure, interleaved around the existing Passing By and Explore puzzles
+Reused Noah's Ark's/David & Goliath's video-narrated-scene pattern for a
+third chapter, on the user's instruction, once 4 narrated videos (Scenes
+1, 3, 4, 5 — Scene 2 was never produced) arrived from the sibling
+`bibleStory` project's narration set. Unlike the first two video
+restructures, this chapter already had two real mid-chapter puzzles
+(Passing By, Explore) that needed to stay in place around the new videos
+rather than being fully replaced — the user specified the exact
+interleaving up front: video 1 → Passing By → video 3 → video 4 → Explore
+→ video 5.
+- 7 destinations, down from the old `Intro, ExploreContext, PassingBy,
+  Explore, Lesson, Reward` (6): `DangerousRoadVideo, PassingBy,
+  ThePriestVideo, TheLeviteVideo, Explore, SamaritanArrivesVideo, Reward`.
+  `Intro` and `ExploreContext` (the old text-based lead-ins) are gone, and
+  `Lesson` is gone too — same as Noah's Ark/David & Goliath, the videos'
+  own reflection lines absorb that lead-in/wrap-up context, and the
+  `ScriptureCardView` that used to live on the dedicated Lesson screen was
+  already duplicated on the Reward screen, so deleting Lesson lost nothing.
+  The old `intro/` and `lesson/` screen packages were deleted outright, not
+  kept alongside unused.
+- 4 video/narration pairs copied into `res/raw/` as
+  `good_samaritan_<scene>(.mp4|_narration.mp3)`:
+  `dangerous_road`, `the_priest`, `the_levite`, `samaritan_arrives`. 4 new
+  one-sentence reflection strings
+  (`good_samaritan_reflection_{dangerous_road,the_priest,the_levite,samaritan_arrives}`)
+  replace the 7 deleted `intro_line_*`/`explore_context_*`/`lesson_*`
+  strings.
+- **Found only by compiling, not by inspection**: `BibleAdventuresNavHost`'s
+  World Map chapter-tap handler still routed
+  `ChapterId.GOOD_SAMARITAN` to the now-deleted `Destination.GoodSamaritan.Intro.route`
+  — a second call site independent from the graph's own `startDestination`,
+  easy to miss when only skimming the `goodSamaritanGraph` function itself.
+  Fixed by pointing it at `DangerousRoadVideo.route`, the new
+  `startDestination`.
+- **Confirmed and fixed a second occurrence of the exact stale-test-helper
+  pattern already documented for Noah's Ark/David & Goliath's own video
+  restructures**: every *other* chapter's flow test that needs Good
+  Samaritan only as a prerequisite (`DanielFlowTest`, `EstherFlowTest`,
+  `Feeding5000FlowTest`, `JerichoFlowTest`, `JesusCalmsStormFlowTest`) had
+  carried its own private, stale `completeGoodSamaritan(continueLabel: String)`
+  copy that still walked the *original* pre-Passing-By flow (`Intro` →
+  `ExploreContext` → `Explore` straight through) — meaning these 5 files'
+  tests were **already silently broken** even before this restructure,
+  ever since Passing By was added earlier in the same work session, since
+  only `GoodSamaritanFlowTest.kt`'s own copy had been updated at the time.
+  Fixed for good this time by centralizing into a single
+  `fun FlowTestRule.completeGoodSamaritan()` in the shared
+  `ChapterFlowHelpers.kt` (which already held Noah's Ark's/David &
+  Goliath's equivalents for exactly this reason) and deleting all 5 stale
+  private copies plus their now-dead `continueLabel` locals and unused
+  `GoodSamaritanContent`/`RoadblockDirection` imports.
+  `GoodSamaritanFlowTest.kt` itself keeps its own richer, independent
+  walkthrough (asserting its own reward/badge details) rather than calling
+  the shared helper — same established convention as the other two
+  restructured chapters.
+- Confirmed: full `./gradlew compileDebugKotlin compileDebugUnitTestKotlin
+  testDebugUnitTest compileDebugAndroidTestKotlin` and
+  `./gradlew build -x connectedAndroidTest` both pass; installed via
+  `installDebug` and confirmed on-device by the user.
 
 ### Chapter 4 — Daniel and the Lions
 The fourth full chapter, unlocked automatically once the Good Samaritan is
@@ -4031,11 +4402,14 @@ preview (see above) — no further UI work on it for now. Open items:
   build -x connectedAndroidTest` passes), and confirmed on-device by the
   user — see "Chapter 2 addendum 7", "8", and "9" above.
 - The `connectedAndroidTest` compile breakage noted in earlier revisions
-  of this file (stale `completeNoahsArk()`/`completeDavidGoliath()`
-  copies across ~9 chapters' flow tests) is fixed — centralized into
-  `ChapterFlowHelpers.kt`, confirmed compiling clean. The whole suite
-  hasn't been re-run end-to-end on a device recently; worth doing next
-  time a full instrumented pass is warranted.
+  of this file (stale `completeNoahsArk()`/`completeDavidGoliath()`/
+  `completeGoodSamaritan()` copies across other chapters' flow tests) is
+  fixed — centralized into `ChapterFlowHelpers.kt`, confirmed compiling
+  clean. The whole suite hasn't been re-run end-to-end on a device
+  recently; worth doing next time a full instrumented pass is warranted.
+- Good Samaritan's video restructure (Chapter 3 addendum 8) is implemented,
+  unit-tested, confirmed compiling (full `./gradlew build
+  -x connectedAndroidTest` passes), and confirmed on-device by the user.
 
 ## Architectural decisions log
 

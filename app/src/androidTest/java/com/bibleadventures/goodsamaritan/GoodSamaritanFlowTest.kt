@@ -1,15 +1,19 @@
 package com.bibleadventures.goodsamaritan
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
 import com.bibleadventures.completeDavidGoliath
 import com.bibleadventures.completeNoahsArk
 import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import org.junit.Rule
 import org.junit.Test
@@ -40,13 +44,20 @@ class GoodSamaritanFlowTest {
         // World Map -> Good Samaritan (now unlocked).
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_good_samaritan_title)).performClick()
 
-        // Scene 1: Intro.
+        // Scene 1: Dangerous Road video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 1b: The Road to Jericho context card.
+        // Scene 2: Passing By — a sliding-block puzzle, solved with a hand-verified move sequence.
+        completePassingBy()
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 2: Explore — solve the maze with a hand-verified move sequence. The
+        // Scene 3: The Priest video.
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
+
+        // Scene 4: The Levite video.
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
+
+        // Scene 5: Explore — solve the maze with a hand-verified move sequence. The
         // helping-beat overlay appears automatically the instant the traveler is
         // treated (blocking further D-pad input underneath), so it's dismissed
         // inline the moment it's detected rather than at one hardcoded step index.
@@ -72,13 +83,12 @@ class GoodSamaritanFlowTest {
             }
         }
 
+        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Explore -> Samaritan Arrives video
+
+        // Scene 6: Samaritan Arrives video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 3: Lesson.
-        composeTestRule.onNodeWithText(activity.getString(R.string.good_samaritan_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        // Scene 4: Reward.
+        // Scene 7: Reward.
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.badge_good_neighbor_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
@@ -86,5 +96,43 @@ class GoodSamaritanFlowTest {
         // Back on the World Map: Good Samaritan completed, Daniel and the Lions unlocked.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_daniel_title)).assertExists()
+    }
+
+    /**
+     * Replays GoodSamaritanContent.passingBySolution as real drag gestures.
+     * Each block's own content description (the protagonist's, or an excuse
+     * block's own label) is unique on screen, and the exit gate's rendered
+     * width — a single grid cell — gives the exact pixels-per-cell needed
+     * to turn a hand-verified (direction, distance) move into a real swipe.
+     */
+    private fun completePassingBy() {
+        val activity = composeTestRule.activity
+        val gateBounds = composeTestRule
+            .onNodeWithContentDescription(activity.getString(R.string.good_samaritan_passing_by_exit_gate_content_description))
+            .fetchSemanticsNode()
+            .boundsInRoot
+        val cellSizePx = gateBounds.width
+
+        val blockContentDescriptions = mapOf(
+            "religious_leader" to activity.getString(R.string.good_samaritan_passing_by_protagonist_content_description),
+            "ritual_purity" to activity.getString(R.string.good_samaritan_passing_by_excuse_ritual_purity),
+            "fear_of_ambush" to activity.getString(R.string.good_samaritan_passing_by_excuse_fear_of_ambush),
+            "strict_schedule" to activity.getString(R.string.good_samaritan_passing_by_excuse_strict_schedule),
+            "not_my_problem" to activity.getString(R.string.good_samaritan_passing_by_excuse_not_my_problem),
+        )
+
+        GoodSamaritanContent.passingBySolution.forEach { move ->
+            val description = blockContentDescriptions.getValue(move.blockId)
+            val magnitude = cellSizePx * move.distance
+            val delta = when (move.direction) {
+                RoadblockDirection.UP -> Offset(0f, -magnitude)
+                RoadblockDirection.DOWN -> Offset(0f, magnitude)
+                RoadblockDirection.LEFT -> Offset(-magnitude, 0f)
+                RoadblockDirection.RIGHT -> Offset(magnitude, 0f)
+            }
+            composeTestRule.onNodeWithContentDescription(description).performTouchInput {
+                swipe(start = center, end = center + delta, durationMillis = 200)
+            }
+        }
     }
 }
