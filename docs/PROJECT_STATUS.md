@@ -1241,6 +1241,75 @@ user-supplied reference art, e.g. the Noah's Ark tool icons).
   confirms the "engine only judges, screen owns rendering" split held up
   even for a full asset swap.
 
+### Chapter 2 addendum 14 — the character voices each puzzle's instructions (Noah's Ark + David & Goliath only)
+Per the user's request that the player's own character feel more involved,
+`CharacterCallout`'s speech bubble now carries each puzzle's instructions
+(as an "introduction," shown until the player's first meaningful action)
+in addition to its existing feedback role — deliberately scoped to Noah's
+Ark and David & Goliath's puzzle screens only, not retrofitted app-wide.
+- **Pattern**: each screen's own `feedback` value (already nullable, null
+  exactly when nothing has happened yet) falls back to that puzzle's
+  instructions string: `message = feedback ?: stringResource(...instructions)`.
+  Applied to Find the Tools, Matching, Load the Ark, and Sheep Counting —
+  all of which already computed a nullable feedback string, so this was a
+  one-line change per screen, plus deleting the now-redundant standalone
+  instructions `Text`.
+- **Sling Practice** got the same treatment, but also had its *own*
+  separate feedback `Text`/`Box` (HIT/MISS/ESCAPED) that had never been
+  routed through the character at all (`message` was hardcoded `null`) —
+  both the standalone instructions line and the standalone feedback line
+  were removed in favor of the one character bubble.
+- **Choose Stones** is the one exception: its "Your turn"/"Opponent's
+  turn"/outcome line is ongoing game status, not a one-time introduction,
+  so it stays as its own separate `Text`, unchanged. The character instead
+  shows the instructions only while `boardIsEmpty && outcome == NONE`
+  (before the first stone is dropped), then goes back to silently
+  reacting via `posture` only, same as before this change.
+- **`SpeechBubble` gained a hard height cap with auto-scroll for
+  overflow** (`TEXT_MAX_HEIGHT = 44.dp`, ~2 lines) instead of trying to
+  pass ever-larger `bubbleAboveClearance` values per screen to accommodate
+  a puzzle's full instructions (which run far longer than a short feedback
+  phrase like "Great job!"). A `LaunchedEffect(text, reducedMotion)` drives
+  a scroll-down/pause/scroll-back-up loop only when the content actually
+  overflows (`scrollState.maxValue > 0`), and is skipped entirely under
+  `LocalReducedMotion` — this is a shared-component change, so it also
+  benefits every other existing `SpeechBubble` caller (e.g.
+  `StoryVideoScreen`'s reflection sentences) without any of them needing
+  changes.
+- **`AspectRatioFitBox` gained an optional `alignment` parameter**
+  (default `Alignment.Center`, matching every existing caller) so a
+  caller whose available height runs well past the fitted square's own
+  size can hug one edge instead of floating centered with symmetric empty
+  margins — used by Sling Practice (`Alignment.TopCenter`) to pull the
+  play area up closer to the title/status text once the standalone
+  instructions line above it was removed. Choose Stones' own (non-fitted)
+  grid `BoxWithConstraints` got the equivalent one-line
+  `contentAlignment = Alignment.TopCenter` change directly, plus a bigger
+  `CELL_SIZE` cap (52dp → 64dp) now that there's more room.
+- **Character/bubble placement pitfalls hit and fixed on-device**:
+  anchoring the character at a Box's `BottomEnd` clipped its bubble
+  off-screen, since the bubble's own anchor is its *top-left* corner (it
+  grows rightward from there) — switched to `BottomStart` everywhere,
+  matching the alignment every other puzzle screen already used. Sling
+  Practice separately had the character nested *inside* the
+  `AspectRatioFitBox`'s fitted square, so top-aligning that square (previous
+  bullet) dragged the character up the screen along with it; fixed by
+  wrapping the fitted square and the character in a shared outer
+  `Box(Modifier.weight(1f, fill = true).fillMaxSize())` and anchoring the
+  character to *that* outer box instead, so it stays pinned to the actual
+  bottom-left corner of the available space regardless of where the
+  square above it sits.
+- **Sling Practice's rat (and the stone's drag gesture) briefly gained an
+  explicit "Start" button** so a player would have time to read the
+  character's introduction before anything moved, then — per further
+  on-device feedback — that button was removed again in favor of the
+  player's first pull on the stone itself starting the game
+  (`detectDragGestures(onDragStart = { hasStarted = true }, ...)`), with
+  the instructions string reworded to say so ("Pull back the sling to
+  begin — then let go to hit each rat..."). One fewer UI concept to teach,
+  since dragging the stone is already the only gesture the whole game
+  uses.
+
 ### Chapter 3 — The Good Samaritan
 The third full chapter, unlocked automatically once David and Goliath is
 completed. Scene flow: Intro → The Road to Jericho context card → Explore

@@ -19,14 +19,22 @@ import androidx.compose.ui.Modifier
  * overflow past a D-pad below it. Pair with `Modifier.weight(1f, fill =
  * true)` on [modifier] so the available space this fits into is itself
  * "whatever's left after every other sibling," not the whole screen.
+ *
+ * [alignment] defaults to [Alignment.Center] (matching every existing
+ * caller) but can be overridden — e.g. [Alignment.TopCenter] for a caller
+ * whose available height runs well past the fitted square's own size, so
+ * the content hugs whatever's above it instead of floating in the middle
+ * of a taller-than-necessary box with empty space evenly split above and
+ * below.
  */
 @Composable
 fun AspectRatioFitBox(
     ratio: Float,
     modifier: Modifier = Modifier,
+    alignment: Alignment = Alignment.Center,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+    BoxWithConstraints(modifier = modifier, contentAlignment = alignment) {
         val fittedWidth = minOf(maxWidth, maxHeight * ratio)
         val fittedHeight = fittedWidth / ratio
         Box(modifier = Modifier.width(fittedWidth).height(fittedHeight), content = content)

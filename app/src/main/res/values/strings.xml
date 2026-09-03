@@ -279,7 +279,7 @@
     <string name="david_goliath_choice_reaction_3">David stood tall, trusting God completely!</string>
 
     <string name="david_goliath_sling_practice_title">Sling Practice</string>
-    <string name="david_goliath_sling_practice_instructions">Drag back and let go to hit each rat before it scurries away!</string>
+    <string name="david_goliath_sling_practice_instructions">Pull back the sling to begin — then let go to hit each rat before it scurries away!</string>
     <string name="david_goliath_sling_practice_progress_label">%1$d of %2$d rats</string>
     <string name="david_goliath_sling_rat_content_description">Rat</string>
     <string name="david_goliath_sling_feedback_escaped">It got away — here comes another one!</string>

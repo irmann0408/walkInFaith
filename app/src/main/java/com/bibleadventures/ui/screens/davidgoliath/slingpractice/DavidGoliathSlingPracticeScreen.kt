@@ -255,11 +255,6 @@ private fun DavidGoliathSlingPracticeContent(
                 style = MaterialTheme.typography.headlineMedium,
             )
             Text(
-                text = stringResource(R.string.david_goliath_sling_practice_instructions),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-            Text(
                 text = stringResource(R.string.david_goliath_sling_practice_progress_label, slingshotState.hits, slingshotState.requiredHits),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(top = 4.dp),
@@ -269,10 +264,7 @@ private fun DavidGoliathSlingPracticeContent(
                 SlingshotOutcome.HIT -> stringResource(R.string.feedback_great_job)
                 SlingshotOutcome.MISS -> stringResource(R.string.feedback_try_another_one)
                 SlingshotOutcome.ESCAPED -> stringResource(R.string.david_goliath_sling_feedback_escaped)
-                SlingshotOutcome.NONE -> ""
-            }
-            Box(modifier = Modifier.height(32.dp)) {
-                Text(text = feedback, style = MaterialTheme.typography.titleLarge)
+                SlingshotOutcome.NONE -> null
             }
 
             // A fresh local clock per rat: keyed on ratsSpawned so it resets to 0
@@ -283,6 +275,17 @@ private fun DavidGoliathSlingPracticeContent(
             var elapsedMs by remember { mutableLongStateOf(0L) }
             val isComplete = slingshotState.isComplete
 
+            // Gates the very first rat: it sits still at its starting spot
+            // (elapsedMs stays 0 until this flips) until the player's first
+            // touch on the stone (see onDragStart below), so there's time to
+            // read the character's introduction before anything is moving —
+            // no separate Start button needed, since pulling the stone back
+            // is already the one gesture the whole game is built around.
+            // Re-composed fresh (remember, no saved-state restore) each time
+            // this screen is entered, so revisiting it for a retry gets the
+            // same reading pause again.
+            var hasStarted by remember { mutableStateOf(false) }
+
             // Hoisted above the rat-clock effect (not declared inside
             // BoxWithConstraints below) so that effect can read `flight` to
             // defer committing a natural escape while a shot is still
@@ -292,8 +295,8 @@ private fun DavidGoliathSlingPracticeContent(
             var flight by remember { mutableStateOf<StoneFlight?>(null) }
             val flightProgress = remember { Animatable(0f) }
 
-            LaunchedEffect(slingshotState.ratsSpawned, isComplete) {
-                if (isComplete) return@LaunchedEffect
+            LaunchedEffect(slingshotState.ratsSpawned, isComplete, hasStarted) {
+                if (isComplete || !hasStarted) return@LaunchedEffect
                 elapsedMs = 0L
                 var startFrameNanos = -1L
                 while (isActive) {
@@ -333,13 +336,15 @@ private fun DavidGoliathSlingPracticeContent(
             val ratXFraction = ratXFractionAt(elapsedMs)
             val ratYFraction = ratYFractionAt(elapsedMs)
 
-            // weight(1f, fill = true) hands this element exactly the space left
-            // over after every other (naturally-sized) sibling in this Column,
-            // and AspectRatioFitBox letterbox-fits within that bounded box, so
-            // nothing here ever needs to scroll. The nested BoxWithConstraints
-            // re-reads the fitted box's own size so maxWidth/maxHeight below stay
-            // correct.
-            AspectRatioFitBox(ratio = 1f, modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+            // The outer Box fills the whole leftover Column space
+            // (weight(1f, fill = true)); the character and its Start-gate
+            // button are anchored to *that* full region (see below), not to
+            // the fitted square inside it — otherwise, since the square is
+            // top-aligned to sit closer to the title/status text above, the
+            // character would have moved up right along with it instead of
+            // staying put at the screen's actual bottom-left corner.
+            Box(modifier = Modifier.weight(1f, fill = true).fillMaxSize()) {
+            AspectRatioFitBox(ratio = 1f, modifier = Modifier.fillMaxSize(), alignment = Alignment.TopCenter) {
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 val density = LocalDensity.current
                 val trackWidthPx = with(density) { maxWidth.toPx() }
@@ -447,6 +452,12 @@ private fun DavidGoliathSlingPracticeContent(
                         .size(48.dp)
                         .pointerInput(Unit) {
                             detectDragGestures(
+                                // The first touch on the stone is what starts the rat
+                                // moving — see the rat-clock LaunchedEffect above — so
+                                // there's no separate "Start" affordance to teach: the
+                                // player's very first pull is the same gesture that
+                                // plays the whole game.
+                                onDragStart = { hasStarted = true },
                                 onDragEnd = {
                                     // Ignored while a previous shot is still flying — only
                                     // one stone is ever in the air at a time, so the
@@ -509,13 +520,21 @@ private fun DavidGoliathSlingPracticeContent(
             }
             }
 
+            // Anchored to the outer weighted Box (declared above,
+            // surrounding AspectRatioFitBox) rather than the fitted square
+            // inside it, so this stays put at the actual bottom-left corner
+            // of the available space — its bubble points *up* toward the
+            // character (default bubbleBelow=false), so it needs real
+            // screen space above it to grow into regardless of where the
+            // top-aligned square ends up.
             CharacterCallout(
                 characterCustomization = characterCustomization,
-                message = null,
+                message = feedback ?: stringResource(R.string.david_goliath_sling_practice_instructions),
                 posture = if (slingshotState.lastOutcome == SlingshotOutcome.HIT) Posture.THUMBS_UP else Posture.STANDING,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                bubbleBelow = true,
+                modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                bubbleAboveClearance = 76.dp,
             )
+            }
 
             if (previouslyCompleted && !slingshotState.isComplete) {
                 Text(

@@ -102,11 +102,6 @@ private fun NoahsArkMatchingContent(
                 text = stringResource(R.string.noahs_ark_matching_title),
                 style = MaterialTheme.typography.headlineMedium,
             )
-            Text(
-                text = stringResource(R.string.noahs_ark_matching_instructions),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp),
-            )
 
             val feedback = when (matchingState.lastOutcome) {
                 MatchOutcome.CORRECT -> stringResource(R.string.feedback_great_job)
@@ -151,7 +146,7 @@ private fun NoahsArkMatchingContent(
 
                 CharacterCallout(
                     characterCustomization = characterCustomization,
-                    message = feedback,
+                    message = feedback ?: stringResource(R.string.noahs_ark_matching_instructions),
                     posture = if (matchingState.lastOutcome == MatchOutcome.CORRECT) Posture.THUMBS_UP else Posture.STANDING,
                     modifier = Modifier.align(Alignment.BottomStart),
                 )

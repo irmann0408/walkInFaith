@@ -115,11 +115,6 @@ private fun NoahsArkFindToolsContent(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
-            Text(
-                text = stringResource(R.string.noahs_ark_find_tools_instructions),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
-            )
 
             AspectRatioFitBox(
                 ratio = NoahsArkContent.FIND_TOOLS_SCENE_ASPECT_RATIO,
@@ -168,7 +163,11 @@ private fun NoahsArkFindToolsContent(
 
                     CharacterCallout(
                         characterCustomization = characterCustomization,
-                        message = if (wrongTapOutcome == DecoyTapOutcome.DECOY_TAPPED) stringResource(R.string.feedback_not_a_tool) else null,
+                        message = if (wrongTapOutcome == DecoyTapOutcome.DECOY_TAPPED) {
+                            stringResource(R.string.feedback_not_a_tool)
+                        } else {
+                            stringResource(R.string.noahs_ark_find_tools_instructions)
+                        },
                         posture = if (tapWasCorrect) Posture.THUMBS_UP else Posture.STANDING,
                         modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
                     )

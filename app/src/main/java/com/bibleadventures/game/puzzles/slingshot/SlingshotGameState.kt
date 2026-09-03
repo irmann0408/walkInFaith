@@ -21,7 +21,7 @@ enum class SlingshotOutcome { NONE, HIT, MISS, ESCAPED }
  */
 data class SlingshotGameState(
     val hits: Int = 0,
-    val requiredHits: Int = 5,
+    val requiredHits: Int = 7,
     val ratsSpawned: Int = 0,
     val lastOutcome: SlingshotOutcome = SlingshotOutcome.NONE,
 ) {

@@ -109,11 +109,6 @@ private fun DavidGoliathSheepCountingContent(
                 text = stringResource(R.string.david_goliath_sheep_counting_title),
                 style = MaterialTheme.typography.headlineMedium,
             )
-            Text(
-                text = stringResource(R.string.david_goliath_sheep_counting_instructions),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp),
-            )
 
             val feedback = when (sheepCountingState.lastOutcome) {
                 MatchOutcome.CORRECT -> stringResource(R.string.feedback_great_job)
@@ -156,9 +151,10 @@ private fun DavidGoliathSheepCountingContent(
 
                 CharacterCallout(
                     characterCustomization = characterCustomization,
-                    message = feedback,
+                    message = feedback ?: stringResource(R.string.david_goliath_sheep_counting_instructions),
                     posture = if (sheepCountingState.lastOutcome == MatchOutcome.CORRECT) Posture.THUMBS_UP else Posture.STANDING,
                     modifier = Modifier.align(Alignment.BottomStart),
+                    bubbleAboveClearance = 76.dp,
                 )
             }
 

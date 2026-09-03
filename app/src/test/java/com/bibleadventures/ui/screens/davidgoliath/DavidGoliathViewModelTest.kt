@@ -162,7 +162,7 @@ class DavidGoliathViewModelTest {
     }
 
     @Test
-    fun `slingshotState requires 5 real hits to complete — escaped rats are free and never count`() {
+    fun `slingshotState requires 7 real hits to complete — escaped rats are free and never count`() {
         val viewModel = createViewModel()
         val rat = Vector2(0.5f, 0.2f)
 
@@ -171,15 +171,15 @@ class DavidGoliathViewModelTest {
         assertFalse(viewModel.uiState.value.slingshotState.isComplete)
 
         // Escapes and a miss don't advance the hit count at all — the same
-        // 5th hit is still needed no matter how many rats got away first.
+        // 7th hit is still needed no matter how many rats got away first.
         viewModel.onRatEscaped()
         viewModel.onRatEscaped()
         viewModel.onStoneReleased(anchor, pullUp, rat) // a miss
         assertEquals(1, viewModel.uiState.value.slingshotState.hits)
 
-        repeat(4) { viewModel.onStoneReleased(anchor, pullDown, rat) }
+        repeat(6) { viewModel.onStoneReleased(anchor, pullDown, rat) }
 
-        assertEquals(5, viewModel.uiState.value.slingshotState.hits)
+        assertEquals(7, viewModel.uiState.value.slingshotState.hits)
         assertTrue(viewModel.uiState.value.slingshotState.isComplete)
     }
 

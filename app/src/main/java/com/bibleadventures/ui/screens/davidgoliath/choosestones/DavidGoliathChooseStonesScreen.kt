@@ -43,7 +43,7 @@ import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlinx.coroutines.delay
 
-private val CELL_SIZE = 52.dp
+private val CELL_SIZE = 64.dp
 private val CELL_SPACING = 4.dp
 private const val OPPONENT_THINK_DELAY_MS = 700L
 
@@ -107,6 +107,11 @@ private fun DavidGoliathChooseStonesContent(
     // player — the finished board stays on screen exactly as it landed until
     // they tap Try Again. Only a real win (isComplete above) unlocks Next Page.
     val canTryAgain = connectFourState.outcome == ConnectFourOutcome.OPPONENT_WON || connectFourState.outcome == ConnectFourOutcome.DRAW
+    // The character introduces the game only before the first stone is
+    // dropped — once play is underway, the turn/outcome text above already
+    // carries ongoing status, so the character falls silent (just posture)
+    // rather than repeating or competing with it.
+    val boardIsEmpty = connectFourState.grid.all { row -> row.all { it == Slot.EMPTY } }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -132,11 +137,6 @@ private fun DavidGoliathChooseStonesContent(
                 text = stringResource(R.string.david_goliath_choose_stones_title),
                 style = MaterialTheme.typography.headlineMedium,
             )
-            Text(
-                text = stringResource(R.string.david_goliath_choose_stones_instructions),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp),
-            )
 
             val feedback = when (connectFourState.outcome) {
                 ConnectFourOutcome.PLAYER_WON -> stringResource(R.string.david_goliath_choose_stones_player_won)
@@ -156,7 +156,12 @@ private fun DavidGoliathChooseStonesContent(
 
             BoxWithConstraints(
                 modifier = Modifier.weight(1f, fill = true).fillMaxSize(),
-                contentAlignment = Alignment.Center,
+                // TopCenter, not Center: this box got taller once the
+                // character's own row (and the old standalone instructions
+                // line) were removed, and a vertically-centered grid just
+                // grows equal empty margins above and below it instead of
+                // actually moving closer to the title/status text above.
+                contentAlignment = Alignment.TopCenter,
             ) {
                 val cellSize = minOf(
                     (maxWidth - CELL_SPACING * (connectFourState.columns - 1)) / connectFourState.columns,
@@ -187,6 +192,28 @@ private fun DavidGoliathChooseStonesContent(
                         }
                     }
                 }
+
+                // Anchored inside the grid's own box (not a separate row
+                // below it) so its bubble — which points *up* toward the
+                // character, per the default bubbleBelow=false — has real
+                // screen space to grow into, and so this box gets to claim
+                // the vertical room a separate character row used to take,
+                // letting the grid itself render larger (see CELL_SIZE).
+                // Bottom-*start*, not end: the bubble's own anchor is its
+                // top-left corner (it grows rightward from there, up to
+                // 220dp wide) — anchoring the character at the right edge
+                // left no room for that growth and clipped the bubble.
+                CharacterCallout(
+                    characterCustomization = characterCustomization,
+                    message = if (boardIsEmpty && connectFourState.outcome == ConnectFourOutcome.NONE) {
+                        stringResource(R.string.david_goliath_choose_stones_instructions)
+                    } else {
+                        null
+                    },
+                    posture = if (isComplete) Posture.THUMBS_UP else Posture.STANDING,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                    bubbleAboveClearance = 76.dp,
+                )
             }
 
             if (canTryAgain) {
@@ -194,14 +221,6 @@ private fun DavidGoliathChooseStonesContent(
                     Text(text = stringResource(R.string.david_goliath_choose_stones_try_again))
                 }
             }
-
-            CharacterCallout(
-                characterCustomization = characterCustomization,
-                message = null,
-                posture = if (isComplete) Posture.THUMBS_UP else Posture.STANDING,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                bubbleBelow = true,
-            )
 
             if (previouslyCompleted && !isComplete) {
                 Text(

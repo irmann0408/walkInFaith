@@ -156,11 +156,6 @@ private fun NoahsArkOrganizeArkContent(
                 style = MaterialTheme.typography.headlineMedium,
             )
             Text(
-                text = stringResource(R.string.noahs_ark_organize_instructions),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-            Text(
                 text = stringResource(
                     R.string.noahs_ark_load_ark_progress_label,
                     groupFillState.circleTargets.indices.count { groupFillState.isCircleComplete(it) },
@@ -251,9 +246,14 @@ private fun NoahsArkOrganizeArkContent(
                 )
                 CharacterCallout(
                     characterCustomization = characterCustomization,
-                    message = feedback,
+                    message = feedback ?: stringResource(R.string.noahs_ark_organize_instructions),
                     posture = if (isPositiveOutcome) Posture.THUMBS_UP else Posture.STANDING,
                     modifier = Modifier.align(Alignment.BottomStart),
+                    // The instructions here run noticeably longer than this game's
+                    // short feedback phrases — see SpeechBubble's own auto-scroll
+                    // (it caps at ~2 lines regardless) and CharacterCallout's doc
+                    // comment on this param.
+                    bubbleAboveClearance = 76.dp,
                 )
             }
 
