@@ -5,12 +5,13 @@ import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
-import com.bibleadventures.game.puzzles.gridmaze.Direction
-import com.bibleadventures.game.puzzles.gridmaze.GridPosition
-import com.bibleadventures.game.puzzles.gridmaze.GridTileType
+import com.bibleadventures.game.puzzles.dungeon.DungeonGame
+import com.bibleadventures.game.puzzles.dungeon.DungeonOutcome
+import com.bibleadventures.game.puzzles.dungeon.Vector2
 import com.bibleadventures.game.puzzles.roadblock.RoadblockOutcome
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.progress.ProgressionService
+import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -18,6 +19,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -28,35 +30,129 @@ class GoodSamaritanViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    /** A [Random] whose `nextFloat()` always returns [value] — see `DungeonGameTest`'s own identical helper for why a fixed-return fake beats a seeded sequence here. */
+    private fun fixedRandom(value: Float): Random = object : Random() {
+        override fun nextBits(bitCount: Int): Int = 0
+        override fun nextFloat(): Float = value
+    }
+
+    /**
+     * Defaults to a guaranteed-success roll: none of these tests are about
+     * [DungeonGame.PLAYER_HIT_CHANCE]/[DungeonGame.BANDIT_STEAL_CHANCE]'s
+     * own randomness (that's `DungeonGameTest`'s job) — using
+     * `Random.Default` here would make any test that throws a supply or
+     * triggers a bandit attack flaky, since a real roll could occasionally
+     * miss/steal unexpectedly. Tests that specifically want a miss pass
+     * their own [fixedRandom] value.
+     */
     private fun createViewModel(
         repository: FakePlayerProfileRepository = FakePlayerProfileRepository(),
         audioController: FakeAudioController = FakeAudioController(),
-    ) = GoodSamaritanViewModel(ProgressionService(repository), repository, audioController)
+        random: Random = fixedRandom(0f),
+    ) = GoodSamaritanViewModel(ProgressionService(repository), repository, audioController, random)
 
-    @Test
-    fun `initial grid parses mapLayout into the correct dimensions and start position`() {
-        val state = createViewModel().uiState.value.gridMazeState
-
-        assertEquals(GoodSamaritanContent.mapLayout.size, state.grid.size)
-        assertEquals(GoodSamaritanContent.mapLayout[0].length, state.grid[0].size)
-        assertEquals(GridPosition(0, 0), state.playerPosition)
-        assertEquals(GridTileType.PATH, state.grid[0][0])
-        assertEquals(GridTileType.COLLECTIBLE, state.grid[0][2])
-        assertEquals(GridTileType.CHECKPOINT, state.grid[2][9])
-        assertEquals(GridTileType.GOAL, state.grid[9][9])
+    /** Steers to the optional bandit at (row 2, col 6), collecting both row-0 supplies along the way so there's always at least 1 in reserve to test a steal/miss against. Shared by every combat-related test below. */
+    private fun walkToOptionalBanditEncounter(viewModel: GoodSamaritanViewModel) {
+        walkToward(viewModel, target = Vector2(3.5f, 0.5f)) // passes supply (0,2)
+        walkToward(viewModel, target = Vector2(5.5f, 0.5f)) // supply (0,5)
+        walkToward(viewModel, target = Vector2(3.5f, 0.5f))
+        walkToward(viewModel, target = Vector2(3.5f, 2.5f))
+        walkToward(viewModel, target = Vector2(6.5f, 2.5f))
+        check(viewModel.uiState.value.dungeonState.combat != null) { "Expected the bandit encounter to have triggered by now" }
     }
 
     @Test
-    fun `onDirectionPressed plays a sound on collecting medicine and treating the traveler, not on blocked moves`() {
+    fun `initial dungeonState parses mapLayout into the correct dimensions and landmark positions`() {
+        val state = createViewModel().uiState.value.dungeonState
+
+        assertEquals(GoodSamaritanContent.mapLayout.size, state.rows)
+        assertEquals(GoodSamaritanContent.mapLayout[0].length, state.cols)
+        assertEquals(Vector2(0.5f, 0.5f), state.playerPosition)
+        assertEquals(Vector2(9.5f, 2.5f), state.checkpointPosition)
+        assertEquals(Vector2(9.5f, 9.5f), state.goalPosition)
+        assertEquals(10, state.supplies.size)
+    }
+
+    @Test
+    fun `onDungeonTick plays a sound on collecting a supply, not on an ordinary movement-only frame`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
-        viewModel.onDirectionPressed(Direction.UP) // blocked: (0,0) is the top row, out of bounds
+        // A tiny nudge, nowhere near anything — no sound.
+        viewModel.onDungeonTick(Vector2(1f, 0f), deltaSeconds = 0.01f)
         assertTrue(audioController.playedEffects.isEmpty())
 
-        viewModel.onDirectionPressed(Direction.RIGHT) // (0,1)
-        viewModel.onDirectionPressed(Direction.RIGHT) // (0,2) medicine
+        // The first supply sits a couple of cells to the right, along the
+        // open row-0 corridor — walk straight at it until it's collected.
+        walkToward(viewModel, target = Vector2(2.5f, 0.5f))
+
         assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
+    }
+
+    @Test
+    fun `onSupplyThrown plays a hit sound, then a scared-off sound once the bandit's toughness reaches zero`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
+        walkToOptionalBanditEncounter(viewModel)
+        check(viewModel.uiState.value.dungeonState.supplyCount >= DungeonGame.BANDIT_INITIAL_TOUGHNESS) {
+            "Expected at least ${DungeonGame.BANDIT_INITIAL_TOUGHNESS} supplies before the fight, had ${viewModel.uiState.value.dungeonState.supplyCount}"
+        }
+
+        repeat(DungeonGame.BANDIT_INITIAL_TOUGHNESS - 1) { viewModel.onSupplyThrown() }
+        assertEquals(SoundEffect.TARGET_HIT, audioController.playedEffects.last())
+
+        viewModel.onSupplyThrown()
+        assertEquals(SoundEffect.OBSTACLE_DODGED, audioController.playedEffects.last())
+        assertNull(viewModel.uiState.value.dungeonState.combat)
+    }
+
+    @Test
+    fun `onBanditAttack plays a dodge sound and changes nothing else on an unfavorable roll`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController, random = fixedRandom(0.999f))
+        walkToOptionalBanditEncounter(viewModel)
+        val supplyCountBefore = viewModel.uiState.value.dungeonState.supplyCount
+
+        viewModel.onBanditAttack()
+
+        assertEquals(DungeonOutcome.BANDIT_ATTACK_MISSED, viewModel.uiState.value.dungeonState.lastOutcome)
+        assertEquals(supplyCountBefore, viewModel.uiState.value.dungeonState.supplyCount)
+        assertEquals(SoundEffect.OBSTACLE_DODGED, audioController.playedEffects.last())
+    }
+
+    @Test
+    fun `onBanditAttack steals a supply silently on a favorable roll`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController, random = fixedRandom(0f))
+        walkToOptionalBanditEncounter(viewModel)
+        val supplyCountBefore = viewModel.uiState.value.dungeonState.supplyCount
+
+        viewModel.onBanditAttack()
+
+        assertEquals(DungeonOutcome.SUPPLY_STOLEN, viewModel.uiState.value.dungeonState.lastOutcome)
+        assertEquals(supplyCountBefore - 1, viewModel.uiState.value.dungeonState.supplyCount)
+        assertTrue("stealing a supply isn't a sound cue this app plays", SoundEffect.OBSTACLE_DODGED !in audioController.playedEffects)
+    }
+
+    /**
+     * Steers straight at [target] one small frame at a time through the
+     * real ViewModel API — mirrors `DungeonGameTest`'s own `steerToward`
+     * (see its doc comment for why the direction is normalized to a fixed
+     * magnitude rather than the raw, shrinking distance-to-target vector),
+     * just driven through [GoodSamaritanViewModel.onDungeonTick] instead of
+     * calling the pure engine directly, since this test is about the
+     * ViewModel's wiring, not the engine's own movement math (already
+     * covered by DungeonGameTest).
+     */
+    private fun walkToward(viewModel: GoodSamaritanViewModel, target: Vector2, maxSteps: Int = 2_000) {
+        repeat(maxSteps) {
+            val current = viewModel.uiState.value.dungeonState
+            if (current.combat != null || current.playerPosition.distanceTo(target) <= 0.05f) return
+            val dx = target.x - current.playerPosition.x
+            val dy = target.y - current.playerPosition.y
+            val magnitude = kotlin.math.hypot(dx, dy)
+            viewModel.onDungeonTick(Vector2(dx / magnitude, dy / magnitude), deltaSeconds = 1f / 60f)
+        }
     }
 
     @Test

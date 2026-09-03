@@ -1,9 +1,0 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="64dp"
-    android:height="64dp"
-    android:viewportWidth="64"
-    android:viewportHeight="64">
-    <!-- A traveler resting on the roadside — reclined pose only, no wounds/blood depicted. -->
-    <path android:fillColor="#FFC9A16A" android:pathData="M10,42 L48,42 L48,50 L10,50 Z" />
-    <path android:fillColor="#FFE0B48A" android:pathData="M50,38 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" />
-</vector>

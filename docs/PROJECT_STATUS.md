@@ -1840,6 +1840,131 @@ interleaving up front: video 1 → Passing By → video 3 → video 4 → Explor
   `./gradlew build -x connectedAndroidTest` both pass; installed via
   `installDebug` and confirmed on-device by the user.
 
+### Chapter 3 addendum 9 — Explore reworked into a real-time joystick "mini dungeon" with bandit combat, reversing the original path-blocking-bandit decision
+The user's daughter played the original D-pad grid maze (Chapter 3's own
+section above) and found it boring. The user explicitly asked for a
+real-time joystick-driven rework with actual turn-based bandit fights,
+patterned after a separate personal LibGDX project (`Hamsterholm`, used as
+design reference only — never touched/imported from) — **and explicitly,
+on the record, overrode this app's "no combat / no failure states" rule**
+for this one feature ("it's ok to fail as long as you stand up and try
+again"), reversing the original addendum's decision to keep bandits
+mechanically identical to a wall. This is the app's **second** explicit
+exception to that rule (see the Connect Four architectural-decision entry
+below for the first) — treat both as one-off, user-confirmed calls, not a
+precedent to extend elsewhere without asking again.
+- **New pure engine, Good-Samaritan-only: `game/puzzles/dungeon/`**
+  (`DungeonGameState.kt`, `DungeonGame.kt`) — continuous `Vector2` coordinate
+  space, not shared with `gridmaze` (still used by Daniel, Feeding the
+  5,000, Jesus Calms the Storm) or Esther's stealth engine. Per-axis
+  sliding wall collision (resolve X against the old Y, then Y against the
+  resolved X — makes diagonal movement slide along a wall instead of
+  stopping dead, the standard Minkowski-sum point-vs-expanded-wall-cell
+  trick). Proximity triggers (supply pickup, bandit trap, checkpoint, goal)
+  fire only on the frame the player crosses *into* the trigger radius, not
+  every frame spent standing inside it — this single rule both stops an
+  idle "needs supplies" announcement from spamming and stops a trap from
+  instantly re-triggering the moment a fight is retreated from (position
+  never left the radius during the fight, so "before" and "after" are both
+  already inside on the next tick).
+- **`GoodSamaritanContent.mapLayout`** converted in place: the wall
+  footprint is unchanged from the original hand-verified-solvable map (so
+  connectivity carries over by construction), the 2 old `X` bandit-wall
+  cells became plain `#` walls, and new `X` markers were placed on
+  previously-open path cells as walkable bandit triggers. `solutionPath`
+  (meaningless for continuous movement) was replaced with a hand-verified
+  `dungeonRouteWaypoints: List<Vector2>`, reused by both the unit test's
+  end-to-end replay and the instrumented flow test's steering. One of the 3
+  bandit traps on the current map is skippable via an alternate route —
+  left as-is on the user's instruction; they intend to replace the map
+  layout later.
+- **Combat**: entering a trap freezes movement and starts a fight
+  (`BANDIT_INITIAL_TOUGHNESS = 2` — "easy fight only"). Tapping the
+  player's own on-screen character (not a supply icon, not the bandit)
+  throws one medical supply, rolled against `PLAYER_HIT_CHANCE = 0.85f` —
+  favored, not guaranteed. A hit reduces bandit toughness; reaching 0
+  resolves the trap and awards a flat `BANDIT_DEFEAT_SUPPLY_REWARD = 2`
+  bonus supplies (net-positive trade, not just a toughness sink). The
+  bandit counter-attacks in melee after every throw — it never hurts the
+  player (no HP, no game over), it only has a chance
+  (`BANDIT_STEAL_CHANCE = 0.3f`, deliberately lower than the player's own
+  hit chance) to steal back 1 supply. Running out of supplies mid-fight
+  isn't a loss: a "Retreat" button ends the encounter with no penalty
+  beyond supplies already spent — the trap stays live, unresolved, for a
+  later attempt at full toughness. Both engine-side rolls take an
+  injectable `random: Random = Random.Default` parameter (`DungeonGame.tick`
+  for the supply-pickup roll below, `onSupplyThrown`, `onBanditAttack`),
+  threaded through a matching `GoodSamaritanViewModel(random: Random = Random.Default)`
+  constructor param — established as this codebase's reusable pattern for
+  any future RNG-dependent engine; tests use a `fixedRandom(value)` fake
+  (fixed return, not a seeded sequence) for exact per-call control rather
+  than relying on `Random.Default`'s real odds.
+- **Balance, tuned across several rounds of the user's own on-device
+  testing** (not guessed up front): map supply pickups originally granted a
+  flat +1; after the user found that a bandit's steal roll could leave a
+  run supply-starved, pickups were changed to grant a random
+  `SUPPLY_PICKUP_MIN = 1`..`SUPPLY_PICKUP_MAX = 2` (50/50) instead — the
+  defeat bonus stayed a guaranteed flat 2 throughout (an earlier attempt to
+  randomize the *defeat* bonus instead was corrected by the user: the
+  randomization belongs on map pickups, not on winning a fight).
+- **Screen (`GoodSamaritanExploreScreen.kt`, the most heavily iterated file
+  in this rework)**: an on-screen analog joystick fully replaces the D-pad
+  for this scene only. **Two real Compose stale-closure bugs found and
+  fixed this round, both the same root shape**: (1) the joystick initially
+  behaved like "tap once, move one space" instead of a held stick — its
+  `pointerInput(Unit) { detectDragGestures(...) }` closure captured a plain
+  `Offset` *parameter*, which a `pointerInput(Unit)` (never re-keyed) then
+  permanently freezes at first composition; fixed by passing a hoisted
+  `MutableState<Offset>` object and reading/writing `.value` inside the
+  closure, since that object reference stays live regardless of which
+  composition created the closure. (2) The camera-follow frame loop needed
+  `rememberUpdatedState(dungeonState)` for the same reason before reading
+  the player's live position inside its own long-lived, intentionally-
+  non-restarting `LaunchedEffect`. A Hamsterholm-style following camera
+  (`CAMERA_FOLLOW_SPEED = 4f` exponential ease, `VIEWPORT_CELLS = 5f`
+  clipped window, clamped to map edges) replaced showing the full 10x10 map
+  at once. The player's own customized `CharacterPreview` is now the
+  on-map avatar (confirmed it can be rendered smaller than its 160dp
+  internal default, since a caller's own tighter outer `.size()`
+  constrains it first — the same trick `CharacterCallout` already uses).
+  Thrown supplies fly in a visible parabolic arc, not a straight line.
+  Bandit art (from the user's own "game art" folder: idle/attack sprites,
+  plus a replacement injured-traveler image) is used in the fight overlay
+  only — the map's own trap icon deliberately still uses the old
+  `ic_wall_bandit.xml` placeholder, since the user scoped the new art to
+  "the fight screen." The bandit renders at the same size as the character
+  (120dp) and now visibly lunges toward the character when it counter-
+  attacks (RNG resolves at the peak of the lunge, then it retreats back to
+  idle) rather than attacking in place. **Decoupled instant engine-state
+  commit from animated visual lifecycle**: a defeating hit resolves
+  synchronously in the engine (clearing `combat`), but the overlay must
+  stay mounted long enough to finish playing that final throw's animation
+  — solved with a nullable `combat` overlay parameter, a `displayedCombat`
+  last-known-good snapshot, and an explicit `onFinished()` callback the
+  overlay calls once its own animation sequence genuinely completes (fixes
+  an earlier bug where the overlay unmounted, and its in-flight animation
+  was cancelled, the instant the defeating tap landed).
+- **Explicit division of labor for this feature, on the user's own
+  instruction**: unit tests (`DungeonGameTest.kt`, `GoodSamaritanViewModelTest.kt`)
+  are the thorough, deterministic verification; all real on-device
+  gameplay/feel/balance verification is the user's own, done by installing
+  to their phone after each round — not claimed as "done" from automated
+  tests alone. The instrumented `ChapterFlowHelpers.completeExploreDungeon()`
+  is explicitly the least-invested part of this whole feature: switched
+  from closed-loop screen-position steering (broken once camera-follow made
+  world-to-screen position non-fixed) to open-loop dead-reckoning by
+  analytically-computed per-leg duration, and its bandit-fight resolution
+  helper (`fightBanditToResolution`) is real-time/polling-based (real RNG
+  in production, no test-injectable `Random` wired into the app's actual
+  DI graph) rather than fully deterministic — flagged in code comments
+  rather than silently assumed solid.
+- Confirmed: full `./gradlew compileDebugKotlin compileDebugUnitTestKotlin
+  testDebugUnitTest compileDebugAndroidTestKotlin` and
+  `./gradlew build -x connectedAndroidTest` both pass; installed via
+  `installDebug` and confirmed on-device by the user across several
+  feedback rounds (movement speed, throw-arc animation, bandit art sizing/
+  attack motion, and the pickup-vs-defeat-bonus randomization split above).
+
 ### Chapter 4 — Daniel and the Lions
 The fourth full chapter, unlocked automatically once the Good Samaritan is
 completed. Scene flow: Intro → Hurrying to Pray context card → Stealth
@@ -4410,6 +4535,12 @@ preview (see above) — no further UI work on it for now. Open items:
 - Good Samaritan's video restructure (Chapter 3 addendum 8) is implemented,
   unit-tested, confirmed compiling (full `./gradlew build
   -x connectedAndroidTest` passes), and confirmed on-device by the user.
+- Good Samaritan's Explore scene rework into a real-time joystick "mini
+  dungeon" with bandit combat (Chapter 3 addendum 9) is implemented,
+  unit-tested, confirmed compiling, and confirmed on-device by the user
+  across several feedback rounds. One known, accepted-as-fine-for-now gap:
+  one of the map's 3 bandit traps is skippable via an alternate route — the
+  user plans to replace the map layout themselves later.
 
 ## Architectural decisions log
 
@@ -4845,3 +4976,32 @@ preview (see above) — no further UI work on it for now. Open items:
   fixed solution, verify a test policy's win rate with an offline
   simulation against the real engine before trusting it in an
   instrumented test — don't assume a "reasonable-looking" policy works.
+- **A "no failure states" redesign-around-the-rule decision can later be
+  explicitly reversed by the user, once real playtesting says so — and
+  that reversal is its own one-off exception, not evidence the rule is
+  gone.** Good Samaritan's bandit hazard was originally redesigned to be
+  mechanically identical to a wall specifically because of this app's "no
+  combat/no failure states" rule (see Chapter 3's own section above). After
+  the user's daughter played it and found it boring, the user explicitly
+  asked to reverse that call and build real turn-based combat instead
+  (Chapter 3 addendum 9) — the app's second explicit exception after
+  Connect Four's above, made the same way: flagged and confirmed with the
+  user before writing code, not decided unilaterally. Both exceptions
+  share the same mitigation shape (gentle failure: no HP/game over, capped
+  toughness, unlimited retries via Retreat, no lost progress beyond what
+  was spent on the current attempt) even though the two engines are
+  otherwise unrelated. Don't infer from either exception that the standing
+  rule is relaxed generally — every other mini-game in the app still has
+  zero combat and zero lose condition, and a third exception would need
+  the same explicit check-in as these two.
+- **When a real-time engine gains its first RNG-dependent rolls, add an
+  injectable `Random` parameter at both the pure-engine function level and
+  the owning ViewModel's constructor, defaulting to `Random.Default`.**
+  `DungeonGame.tick`/`onSupplyThrown`/`onBanditAttack` and
+  `GoodSamaritanViewModel`'s constructor all take a `random: Random =
+  Random.Default` param (Chapter 3 addendum 9) specifically so unit tests
+  can force exact outcomes via a `fixedRandom(value)` fake (a constant
+  return, not a seeded sequence — easier to reason about across multiple
+  rolls in one test) instead of depending on `Random.Default`'s real odds
+  and risking flaky tests. Reuse this exact shape for any future engine
+  that adds its own randomness rather than inventing a new one.

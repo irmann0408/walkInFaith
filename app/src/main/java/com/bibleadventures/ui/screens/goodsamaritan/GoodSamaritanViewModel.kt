@@ -7,12 +7,10 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.gridmaze.Direction
-import com.bibleadventures.game.puzzles.gridmaze.GridMazeGame
-import com.bibleadventures.game.puzzles.gridmaze.GridMazeOutcome
-import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
-import com.bibleadventures.game.puzzles.gridmaze.GridPosition
-import com.bibleadventures.game.puzzles.gridmaze.GridTileType
+import com.bibleadventures.game.puzzles.dungeon.DungeonGame
+import com.bibleadventures.game.puzzles.dungeon.DungeonGameState
+import com.bibleadventures.game.puzzles.dungeon.DungeonOutcome
+import com.bibleadventures.game.puzzles.dungeon.Vector2
 import com.bibleadventures.game.puzzles.roadblock.RoadblockGame
 import com.bibleadventures.game.puzzles.roadblock.RoadblockGameState
 import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
@@ -20,6 +18,7 @@ import com.bibleadventures.game.rewards.GoodSamaritanReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.progress.ProgressionService
+import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +31,7 @@ import kotlinx.coroutines.launch
 data class GoodSamaritanRewardResult(val stars: Int)
 
 data class GoodSamaritanUiState(
-    val gridMazeState: GridMazeState,
+    val dungeonState: DungeonGameState,
     val roadblockState: RoadblockGameState,
     /** Whether the player has dismissed the "helping" story beat shown once the traveler is treated. */
     val helpingBeatAcknowledged: Boolean = false,
@@ -43,6 +42,8 @@ class GoodSamaritanViewModel(
     private val progressionService: ProgressionService,
     private val profileRepository: PlayerProfileRepository,
     private val audioController: AudioController,
+    /** Injectable so tests can force deterministic hit/steal rolls (see [DungeonGame.onSupplyThrown]/[DungeonGame.onBanditAttack]) instead of depending on real randomness. */
+    private val random: Random = Random.Default,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(createInitialState())
@@ -65,16 +66,65 @@ class GoodSamaritanViewModel(
             initialValue = emptySet(),
         )
 
-    fun onDirectionPressed(direction: Direction) {
+    /**
+     * One frame of joystick-driven movement — see [DungeonGame.tick] for
+     * why the screen, not this ViewModel, owns [deltaSeconds]. [DungeonOutcome]
+     * is sticky (an ordinary movement frame never resets it — see
+     * [com.bibleadventures.game.puzzles.dungeon.DungeonGameState]'s own doc
+     * comment), so the SFX dispatch below must compare against the
+     * *previous* outcome, not just switch on the new one — otherwise every
+     * subsequent movement-only frame after a real pickup would keep
+     * replaying that pickup's sound for as long as nothing else happens.
+     */
+    fun onDungeonTick(joystickInput: Vector2, deltaSeconds: Float) {
         _uiState.update { current ->
-            val next = GridMazeGame.onDirectionPressed(current.gridMazeState, direction)
-            when (next.lastOutcome) {
-                GridMazeOutcome.COLLECTED, GridMazeOutcome.CHECKPOINT_ACTIVATED ->
-                    audioController.playSfx(SoundEffect.ITEM_COLLECTED)
-                else -> Unit
+            val previousOutcome = current.dungeonState.lastOutcome
+            val next = DungeonGame.tick(current.dungeonState, joystickInput, deltaSeconds, random)
+            if (next.lastOutcome != previousOutcome) {
+                when (next.lastOutcome) {
+                    DungeonOutcome.SUPPLY_COLLECTED, DungeonOutcome.CHECKPOINT_ACTIVATED ->
+                        audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+                    else -> Unit
+                }
             }
-            current.copy(gridMazeState = next)
+            current.copy(dungeonState = next)
         }
+    }
+
+    /** Tapping the player's own character throws one medical supply at the bandit — a real roll now, favored but not guaranteed (see [DungeonGame.onSupplyThrown]). Same sticky-[DungeonOutcome] comparison as [onDungeonTick]. */
+    fun onSupplyThrown() {
+        _uiState.update { current ->
+            val previousOutcome = current.dungeonState.lastOutcome
+            val next = DungeonGame.onSupplyThrown(current.dungeonState, random)
+            if (next.lastOutcome != previousOutcome) {
+                when (next.lastOutcome) {
+                    DungeonOutcome.BANDIT_HIT -> audioController.playSfx(SoundEffect.TARGET_HIT)
+                    DungeonOutcome.BANDIT_SCARED_OFF -> audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
+                    else -> Unit
+                }
+            }
+            current.copy(dungeonState = next)
+        }
+    }
+
+    /** The bandit's own melee counter-attack, triggered by the screen after a hit's throw animation lands (see [DungeonGame.onBanditAttack]) — never hurts the player, just a chance to steal a supply back. */
+    fun onBanditAttack() {
+        _uiState.update { current ->
+            val previousOutcome = current.dungeonState.lastOutcome
+            val next = DungeonGame.onBanditAttack(current.dungeonState, random)
+            if (next.lastOutcome != previousOutcome) {
+                when (next.lastOutcome) {
+                    DungeonOutcome.BANDIT_ATTACK_MISSED -> audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
+                    else -> Unit
+                }
+            }
+            current.copy(dungeonState = next)
+        }
+    }
+
+    /** Leaves an unwinnable-right-now bandit fight without losing anything but the supplies already spent — see [DungeonGame.onRetreat]. */
+    fun onRetreat() {
+        _uiState.update { it.copy(dungeonState = DungeonGame.onRetreat(it.dungeonState)) }
     }
 
     /**
@@ -118,20 +168,6 @@ class GoodSamaritanViewModel(
     }
 
     private fun createInitialState(): GoodSamaritanUiState {
-        val grid = GoodSamaritanContent.mapLayout.map { row ->
-            row.map { cell ->
-                when (cell) {
-                    '#', 'X' -> GridTileType.WALL
-                    'M' -> GridTileType.COLLECTIBLE
-                    'T' -> GridTileType.CHECKPOINT
-                    'I' -> GridTileType.GOAL
-                    else -> GridTileType.PATH
-                }
-            }
-        }
-        val startRow = GoodSamaritanContent.mapLayout.indexOfFirst { it.contains('S') }
-        val startCol = GoodSamaritanContent.mapLayout[startRow].indexOf('S')
-
         val roadblockState = RoadblockGame.fromLayout(
             layout = GoodSamaritanContent.passingByLayout,
             blockSpecs = GoodSamaritanContent.passingByBlockSpecs,
@@ -140,7 +176,7 @@ class GoodSamaritanViewModel(
         )
 
         return GoodSamaritanUiState(
-            gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(startRow, startCol)),
+            dungeonState = DungeonGame.fromLayout(GoodSamaritanContent.mapLayout),
             roadblockState = roadblockState,
         )
     }

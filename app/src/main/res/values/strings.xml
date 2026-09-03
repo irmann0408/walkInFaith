@@ -302,16 +302,31 @@
     <string name="good_samaritan_passing_by_rock_content_description">Rock</string>
 
     <string name="good_samaritan_explore_title">The Road to Jericho</string>
-    <string name="good_samaritan_explore_instructions">Use the arrows to walk the road. Find medicine, help the traveler, then reach the Inn.</string>
+    <string name="good_samaritan_explore_instructions">Drag the joystick to walk the road. Find medical supplies, help the traveler, then reach the Inn.</string>
     <string name="good_samaritan_player_content_description">You are here</string>
-    <string name="good_samaritan_medicine_content_description">Medicine</string>
     <string name="good_samaritan_traveler_content_description">Injured traveler</string>
-    <string name="good_samaritan_inn_content_description">The Inn</string>
-    <string name="good_samaritan_direction_up">Up</string>
-    <string name="good_samaritan_direction_down">Down</string>
-    <string name="good_samaritan_direction_left">Left</string>
-    <string name="good_samaritan_direction_right">Right</string>
-    <string name="good_samaritan_needs_medicine_message">He needs medicine first — look around for some nearby!</string>
+    <string name="good_samaritan_joystick_content_description">Move the Samaritan — drag in any direction</string>
+    <string name="good_samaritan_dungeon_map_content_description">The road to Jericho</string>
+
+    <string name="good_samaritan_bandit_encounter_title">A Bandit Blocks the Way!</string>
+    <string name="good_samaritan_bandit_toughness_label">Bandit: %1$d of %2$d</string>
+    <string name="good_samaritan_supply_count_label">Supplies: %1$d</string>
+    <string name="good_samaritan_throw_supply_content_description">Throw medical supplies at the bandit</string>
+    <string name="good_samaritan_out_of_supplies_message">Out of supplies! Retreat and look for more along the road.</string>
+    <string name="good_samaritan_retreat_button">Retreat</string>
+
+    <string name="dungeon_feedback_supply_collected">Found medical supplies!</string>
+    <string name="dungeon_feedback_trap_entered">A bandit jumps out!</string>
+    <string name="dungeon_feedback_checkpoint_needs_supplies">He needs medical supplies first — look around for some nearby!</string>
+    <string name="dungeon_feedback_checkpoint_activated">You stopped to help the traveler!</string>
+    <string name="dungeon_feedback_goal_reached">You reached the Inn!</string>
+    <string name="dungeon_feedback_bandit_hit">The bandit backs away!</string>
+    <string name="dungeon_feedback_throw_missed">Your throw missed!</string>
+    <string name="dungeon_feedback_bandit_scared_off">The bandit runs off!</string>
+    <string name="dungeon_feedback_out_of_supplies">Out of supplies!</string>
+    <string name="dungeon_feedback_retreated">You stepped back to safety.</string>
+    <string name="dungeon_feedback_supply_stolen">The bandit stole a supply!</string>
+    <string name="dungeon_feedback_bandit_attack_missed">The bandit\'s attack missed!</string>
 
     <string name="good_samaritan_helping_beat_title">Stopping to Help</string>
     <string name="good_samaritan_helping_beat_line_1">The Samaritan knelt down and bandaged the man\'s wounds.</string>

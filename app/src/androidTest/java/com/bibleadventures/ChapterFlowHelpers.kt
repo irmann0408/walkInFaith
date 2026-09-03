@@ -15,7 +15,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.rules.ActivityScenarioRule
-import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.dungeon.DungeonGame
 import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.GoodSamaritanContent
@@ -460,36 +460,130 @@ fun FlowTestRule.completeGoodSamaritan() {
     onNodeWithText(nextPageLabel).performClick() // The Priest video -> The Levite video
     onNodeWithText(nextPageLabel).performClick() // The Levite video -> Explore
 
-    // The helping-beat overlay appears automatically the instant the traveler is
-    // treated (blocking further D-pad input underneath), so it's dismissed
-    // inline the moment it's detected rather than at one hardcoded step index.
-    val upLabel = activity.getString(R.string.good_samaritan_direction_up)
-    val downLabel = activity.getString(R.string.good_samaritan_direction_down)
-    val leftLabel = activity.getString(R.string.good_samaritan_direction_left)
-    val rightLabel = activity.getString(R.string.good_samaritan_direction_right)
+    completeExploreDungeon()
     val helpingBeatTitle = activity.getString(R.string.good_samaritan_helping_beat_title)
-
-    GoodSamaritanContent.solutionPath.forEach { direction ->
-        val label = when (direction) {
-            Direction.UP -> upLabel
-            Direction.DOWN -> downLabel
-            Direction.LEFT -> leftLabel
-            Direction.RIGHT -> rightLabel
-        }
-        onNodeWithContentDescription(label).performClick()
-
-        val helpingBeatShown = onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()
-        if (helpingBeatShown) {
-            // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
-            onNodeWithText(continueLabel).performClick()
-        }
+    if (onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()) {
+        // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
+        onNodeWithText(continueLabel).performClick()
     }
-
     onNodeWithText(nextPageLabel).performClick() // Explore -> Samaritan Arrives video
     onNodeWithText(nextPageLabel).performClick() // Samaritan Arrives video -> Reward
 
     onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
     onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
+}
+
+/**
+ * Steers the real on-screen joystick through
+ * [GoodSamaritanContent.dungeonRouteWaypoints], fighting each bandit
+ * encountered along the way to full resolution — the continuous-movement
+ * replacement for the old D-pad tap-per-cell replay. Deliberately kept as
+ * simple as this mechanic allows rather than a maximally-polished
+ * re-targeting algorithm: the exact joystick feel/balance is expected to
+ * keep changing from on-device playtesting, so this exists to keep
+ * `completeGoodSamaritan()` (and every other chapter's flow test that
+ * depends on it as a prerequisite) compiling and able to reach the Reward
+ * screen — not to be the primary verification for this feature. Real
+ * gameplay/feel verification happens on-device, not here.
+ *
+ * Not private: [com.bibleadventures.goodsamaritan.GoodSamaritanFlowTest]
+ * reuses this exact same steering logic for its own thorough walkthrough
+ * rather than duplicating this much gesture-timing complexity a second
+ * time — a deliberate, one-off exception to this file's usual "thorough
+ * tests keep their own copy" convention, justified by how fragile/verbose
+ * a real joystick-steering replay is compared to every other puzzle
+ * helper here.
+ */
+internal fun FlowTestRule.completeExploreDungeon() {
+    val activity = this.activity
+    val throwSupplyDescription = activity.getString(R.string.good_samaritan_throw_supply_content_description)
+    val banditEncounterTitle = activity.getString(R.string.good_samaritan_bandit_encounter_title)
+    val joystickNode = onNodeWithContentDescription(activity.getString(R.string.good_samaritan_joystick_content_description))
+    val maxKnobTravelPx = with(activity.resources.displayMetrics) { JOYSTICK_MAX_KNOB_TRAVEL_DP * density }
+
+    mainClock.autoAdvance = false
+    mainClock.advanceTimeByFrame()
+
+    var previousWaypoint = GoodSamaritanContent.dungeonRouteWaypoints.first()
+    GoodSamaritanContent.dungeonRouteWaypoints.drop(1).forEach { waypoint ->
+        val dx = waypoint.x - previousWaypoint.x
+        val dy = waypoint.y - previousWaypoint.y
+        val legDistance = kotlin.math.hypot(dx, dy)
+        if (legDistance > 0f) {
+            val knobOffset = Offset(dx / legDistance, dy / legDistance) * maxKnobTravelPx
+            var remainingMs = (legDistance / DungeonGame.PLAYER_SPEED_CELLS_PER_SECOND * 1000).toLong() + DUNGEON_STEER_LEG_MARGIN_MS
+
+            joystickNode.performTouchInput { down(center) }
+            joystickNode.performTouchInput { moveTo(center + knobOffset) }
+            while (remainingMs > 0) {
+                if (onAllNodesWithText(banditEncounterTitle).fetchSemanticsNodes().isNotEmpty()) {
+                    joystickNode.performTouchInput { up() }
+                    fightBanditToResolution(throwSupplyDescription, banditEncounterTitle)
+                    joystickNode.performTouchInput { down(center) }
+                    joystickNode.performTouchInput { moveTo(center + knobOffset) }
+                }
+                val step = minOf(remainingMs, DUNGEON_STEER_FRAME_STEP_MS)
+                mainClock.advanceTimeBy(step)
+                remainingMs -= step
+            }
+            joystickNode.performTouchInput { up() }
+        }
+        previousWaypoint = waypoint
+    }
+
+    mainClock.autoAdvance = true
+}
+
+/**
+ * Open-loop dead reckoning by duration, not by reading the player's on-screen
+ * position: since the world now scrolls under a follow camera (see
+ * `GoodSamaritanExploreScreen.kt`'s camera-follow addition), a waypoint's
+ * *screen* position is no longer fixed, so steering can't aim at one the way
+ * every other drag-based helper in this file does. Every leg of
+ * `GoodSamaritanContent.dungeonRouteWaypoints` was hand-verified to be a
+ * straight, collision-free corridor, so each leg's exact travel time is
+ * knowable analytically from `DungeonGame.PLAYER_SPEED_CELLS_PER_SECOND`
+ * alone — hold the joystick in that leg's fixed direction for that computed
+ * duration, watching only for the bandit-encounter title (plain text,
+ * unaffected by camera/position rendering) to pause and fight.
+ */
+private const val JOYSTICK_MAX_KNOB_TRAVEL_DP = 32f
+
+/** Small headroom added to each leg's analytically-computed travel time, covering acceleration/rounding slop rather than the exact dead-zone ramp-up. */
+private const val DUNGEON_STEER_LEG_MARGIN_MS = 200L
+
+/** Roughly one frame at 60fps — small enough that the real-time frame loop's own delta-time math stays close to actual play. */
+private const val DUNGEON_STEER_FRAME_STEP_MS = 16L
+
+/**
+ * Taps the bandit-fight character button until the encounter resolves.
+ * Deliberately the least-invested part of this whole helper: combat is now
+ * a real roll on both sides (`DungeonGame.PLAYER_HIT_CHANCE`/`BANDIT_STEAL_CHANCE`)
+ * with an animated counter-attack sequence in between taps (see
+ * `BanditCombatOverlay`'s `isResolving` gate), and the production
+ * `GoodSamaritanViewModel` has no test-injectable `Random` (only the unit
+ * tests get that), so there's no way to make this deterministic from here.
+ * Switches to real-time (`mainClock.autoAdvance = true`) for this stretch
+ * specifically, since the counter-attack sequence is driven by plain
+ * `kotlinx.coroutines.delay`, not `withFrameNanos` — a frozen clock would
+ * never let it progress. [ComposeTestRule.waitUntil] polls in real time
+ * for the throw button to become tappable again (or the fight to end)
+ * rather than guessing a fixed wait per throw.
+ */
+private fun FlowTestRule.fightBanditToResolution(throwSupplyDescription: String, banditEncounterTitle: String, maxThrows: Int = 40) {
+    mainClock.autoAdvance = true
+    var throws = 0
+    while (onAllNodesWithText(banditEncounterTitle).fetchSemanticsNodes().isNotEmpty()) {
+        check(throws++ < maxThrows) { "Bandit encounter did not resolve after $maxThrows throws" }
+        if (onAllNodesWithContentDescription(throwSupplyDescription).fetchSemanticsNodes().isNotEmpty()) {
+            onNodeWithContentDescription(throwSupplyDescription).performClick()
+        }
+        waitUntil(timeoutMillis = 3_000) {
+            onAllNodesWithText(banditEncounterTitle).fetchSemanticsNodes().isEmpty() ||
+                onAllNodesWithContentDescription(throwSupplyDescription).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+    mainClock.autoAdvance = false
 }
 
 /**

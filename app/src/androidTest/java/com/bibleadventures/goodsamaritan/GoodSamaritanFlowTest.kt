@@ -11,8 +11,8 @@ import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
 import com.bibleadventures.completeDavidGoliath
+import com.bibleadventures.completeExploreDungeon
 import com.bibleadventures.completeNoahsArk
-import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import org.junit.Rule
@@ -57,30 +57,17 @@ class GoodSamaritanFlowTest {
         // Scene 4: The Levite video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 5: Explore — solve the maze with a hand-verified move sequence. The
-        // helping-beat overlay appears automatically the instant the traveler is
-        // treated (blocking further D-pad input underneath), so it's dismissed
-        // inline the moment it's detected rather than at one hardcoded step index.
-        val upLabel = activity.getString(R.string.good_samaritan_direction_up)
-        val downLabel = activity.getString(R.string.good_samaritan_direction_down)
-        val leftLabel = activity.getString(R.string.good_samaritan_direction_left)
-        val rightLabel = activity.getString(R.string.good_samaritan_direction_right)
+        // Scene 5: Explore — a real-time "mini dungeon" now (analog joystick,
+        // bandit encounters, medical-supply resource economy), steered via
+        // ChapterFlowHelpers.completeExploreDungeon() rather than a private
+        // copy here — see that function's own doc comment for why this one
+        // mechanic is a deliberate exception to this file's usual
+        // "thorough test keeps its own copy" convention.
+        composeTestRule.completeExploreDungeon()
         val helpingBeatTitle = activity.getString(R.string.good_samaritan_helping_beat_title)
-
-        GoodSamaritanContent.solutionPath.forEach { direction ->
-            val label = when (direction) {
-                Direction.UP -> upLabel
-                Direction.DOWN -> downLabel
-                Direction.LEFT -> leftLabel
-                Direction.RIGHT -> rightLabel
-            }
-            composeTestRule.onNodeWithContentDescription(label).performClick()
-
-            val helpingBeatShown = composeTestRule.onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()
-            if (helpingBeatShown) {
-                // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
-                composeTestRule.onNodeWithText(continueLabel).performClick()
-            }
+        if (composeTestRule.onAllNodesWithText(helpingBeatTitle).fetchSemanticsNodes().isNotEmpty()) {
+            // This "Continue" belongs to HelpingBeatOverlay, a full-screen dialog.
+            composeTestRule.onNodeWithText(continueLabel).performClick()
         }
 
         composeTestRule.onNodeWithText(nextPageLabel).performClick() // Explore -> Samaritan Arrives video

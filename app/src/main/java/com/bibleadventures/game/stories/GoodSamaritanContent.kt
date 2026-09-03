@@ -1,7 +1,7 @@
 package com.bibleadventures.game.stories
 
 import com.bibleadventures.R
-import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.dungeon.Vector2
 import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
 import com.bibleadventures.game.puzzles.roadblock.Orientation
 import com.bibleadventures.game.puzzles.roadblock.RoadblockBlockSpec
@@ -23,42 +23,113 @@ object GoodSamaritanContent {
         R.string.good_samaritan_helping_beat_line_3,
     )
 
-    // 10x10 map, row-major. '.' path, '#' rocky-terrain wall, 'X' bandit wall
-    // (mechanically identical to '#' — see GridMazeGame; the two only differ
-    // in which icon the screen draws for that cell), 'M' medicine, 'T' the
-    // injured traveler, 'I' the Inn, 'S' the start (a walkable path tile).
-    // Verified solvable by hand (BFS from start): start -> the medicine at
-    // (0,2) -> a connected route to the traveler at (2,9) -> a separate
-    // connected route to the Inn at (9,9), all in one connected component.
-    // Not shuffled per playthrough (unlike other chapters' item order) —
-    // randomizing tile layout risks an unsolvable maze with no in-app
-    // solver/validator in scope for this pass.
+    // 10x10 map, row-major, now walked in real time with an analog joystick
+    // (see game/puzzles/dungeon) instead of the old D-pad. '.' path, '#'
+    // rocky-terrain wall, 'X' a bandit ambush — a proximity-triggered
+    // turn-based fight now, not a wall variant like it used to be under the
+    // old discrete gridmaze engine — 'M' a medical-supply pickup, 'T' the
+    // injured traveler (checkpoint), 'I' the Inn (goal), 'S' the start.
+    //
+    // This is the same wall footprint as the original discrete-maze layout,
+    // byte-for-byte: the two 'X' cells that used to be wall cells (row 1
+    // col 7, row 7 col 0) became plain '#' walls (a trap must sit on a
+    // walkable cell, not inside a wall), and every new 'M'/'X' marker was
+    // placed only on a cell that was already open ('.') in the original —
+    // so the original's hand-verified connectivity carries over unchanged;
+    // no fresh BFS was needed to confirm every cell is still reachable.
+    //
+    // Full connectivity WAS re-verified by hand for the new bandit
+    // placements specifically, since a proximity trigger (unlike a wall)
+    // can turn out to be a mandatory chokepoint rather than an optional
+    // detour depending on exactly where it sits: the bandit at (2,6) turns
+    // out to be entirely optional — (4,4)-(4,9)'s cluster (and the Inn) has
+    // an independent route in via (2,8)-(3,8)-(4,8) that never comes near
+    // it, so a player can route around it for free. The bandits at (6,4)
+    // and (8,6) are genuine chokepoints, though: they're the *only* way to
+    // reach the two supply pickups at (8,0) and (9,3) (row 7 has no other
+    // opening into that pocket). So the real "mandatory" cost is 2 bandits
+    // x 2 toughness (4 supplies) + the checkpoint's cost (1) = 5, not 3
+    // bandits' worth — comfortably covered by the 10 pickups on the map
+    // even after a failed attempt needs re-supplying. Treat the exact
+    // counts/positions as a first pass, same as every other number in this
+    // file — verify feel on-device before calling it final.
     val mapLayout: List<String> = listOf(
-        "S.M.......",
-        ".##.###X..",
-        ".......#.T",
+        "S.M..M....",
+        ".##.####..",
+        ".M....X#.T",
         "##.###.#.#",
-        "...#M.....",
+        "M..#M...M.",
         ".#.######.",
-        ".#......#.",
-        "X#####.##.",
-        ".....#....",
-        ".......##I",
+        "M#..X...#M",
+        "######.##.",
+        "M....#X...",
+        "...M...##I",
     )
 
-    // A hand-verified 20-move solution (9 right, 2 down, 1 left, 2 down,
-    // 1 right, 5 down) — collects the medicine at (0,2) while crossing row
-    // 0, treats the traveler at (2,9), then reaches the Inn at (9,9).
-    // Used by the instrumented flow test to replay a known-solvable path
-    // deterministically, since the map itself is intentionally not shuffled.
-    val solutionPath: List<Direction> = listOf(
-        Direction.RIGHT, Direction.RIGHT, Direction.RIGHT, Direction.RIGHT, Direction.RIGHT,
-        Direction.RIGHT, Direction.RIGHT, Direction.RIGHT, Direction.RIGHT,
-        Direction.DOWN, Direction.DOWN,
-        Direction.LEFT,
-        Direction.DOWN, Direction.DOWN,
-        Direction.RIGHT,
-        Direction.DOWN, Direction.DOWN, Direction.DOWN, Direction.DOWN, Direction.DOWN,
+    // A hand-verified route through the revised map, as turning points only
+    // (not every cell) — each consecutive pair is a straight, wall-free
+    // corridor run, so a real steering test only needs to aim at the next
+    // point and hold until it arrives; anything sitting exactly on a
+    // straight run between two waypoints (a supply pickup, say) is picked
+    // up automatically as the player passes through it, no separate stop
+    // needed. Order: all 8 supply pickups reachable without a fight, then
+    // the (6,4) bandit, then the (8,6) bandit (fought to full resolution
+    // each time before continuing — see DungeonGame.BANDIT_INITIAL_TOUGHNESS),
+    // which opens the way to the last 2 pickups behind them, then back to
+    // the checkpoint (with supplies to spare), then the Inn. Deliberately
+    // routes around the optional (2,6) bandit entirely (see the map comment
+    // above) rather than fighting it for no required benefit. Used by both
+    // DungeonGameTest's end-to-end replay and the instrumented flow test's
+    // real-gesture steering.
+    val dungeonRouteWaypoints: List<Vector2> = listOf(
+        Vector2(0.5f, 0.5f), // start
+        Vector2(5.5f, 0.5f), // supply (0,5)
+        Vector2(3.5f, 0.5f),
+        Vector2(3.5f, 2.5f),
+        Vector2(1.5f, 2.5f), // supply (2,1)
+        Vector2(2.5f, 2.5f),
+        Vector2(2.5f, 4.5f),
+        Vector2(0.5f, 4.5f), // supply (4,0)
+        Vector2(0.5f, 6.5f), // supply (6,0)
+        Vector2(0.5f, 4.5f),
+        Vector2(2.5f, 4.5f),
+        Vector2(2.5f, 2.5f),
+        Vector2(3.5f, 2.5f),
+        Vector2(3.5f, 0.5f),
+        Vector2(9.5f, 0.5f),
+        Vector2(9.5f, 1.5f),
+        Vector2(8.5f, 1.5f),
+        Vector2(8.5f, 4.5f), // supply (4,8)
+        Vector2(4.5f, 4.5f), // supply (4,4) — a dead end, direction reverses here
+        Vector2(9.5f, 4.5f),
+        Vector2(9.5f, 6.5f), // supply (6,9)
+        Vector2(9.5f, 4.5f),
+        Vector2(8.5f, 4.5f),
+        Vector2(8.5f, 0.5f),
+        Vector2(3.5f, 0.5f),
+        Vector2(3.5f, 2.5f),
+        Vector2(2.5f, 2.5f),
+        Vector2(2.5f, 6.5f),
+        Vector2(4.5f, 6.5f), // bandit (6,4)
+        Vector2(6.5f, 6.5f),
+        Vector2(6.5f, 8.5f), // bandit (8,6)
+        Vector2(6.5f, 9.5f),
+        Vector2(0.5f, 9.5f),
+        Vector2(0.5f, 8.5f), // supply (8,0)
+        Vector2(0.5f, 9.5f),
+        Vector2(6.5f, 9.5f),
+        Vector2(6.5f, 8.5f), // bandit (8,6), already resolved — passes through safely
+        Vector2(6.5f, 6.5f),
+        Vector2(2.5f, 6.5f), // continuing west, past the already-resolved (6,4) bandit along the way
+        Vector2(2.5f, 2.5f),
+        Vector2(3.5f, 2.5f),
+        Vector2(3.5f, 0.5f),
+        Vector2(9.5f, 0.5f),
+        Vector2(9.5f, 2.5f), // checkpoint — the injured traveler
+        Vector2(8.5f, 2.5f),
+        Vector2(8.5f, 4.5f),
+        Vector2(9.5f, 4.5f),
+        Vector2(9.5f, 9.5f), // the Inn — goal
     )
 
     // "Passing By" — a genuine Rush-Hour/Unblock-Me-style sliding block
