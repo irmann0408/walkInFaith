@@ -31,6 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -55,6 +57,8 @@ import com.bibleadventures.ui.components.Posture
 import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
+import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 import kotlinx.coroutines.isActive
@@ -71,11 +75,44 @@ private const val RAT_TOTAL_ROWS = 3
 private const val RAT_TOP_Y_FRACTION = 0.04f
 private const val RAT_ESCAPE_Y_FRACTION = 0.55f
 
-private val RAT_SIZE = 48.dp
+private const val RAT_ASPECT_RATIO = 1024f / 559f
+private val RAT_WIDTH = 64.dp
+private val RAT_HEIGHT = RAT_WIDTH / RAT_ASPECT_RATIO
+
+/** How often the rat's walk-cycle swaps between its "relaxed" and "humped" frame — purely a cosmetic scurry animation, unrelated to [RAT_ROW_TRAVEL_MS]. */
+private const val RAT_WALK_FRAME_MS = 250L
 
 /** The sling's fixed pivot — "the middle" of the play area, near the bottom where the player's hand would be. Internal, not private: an instrumented test needs these exact fractions (alongside [ratElapsedMs]) to convert the rat's live pixel bounds into the same 0..1 track space `onDragEnd` below computes in. */
 internal const val ANCHOR_X_FRACTION = 0.5f
 internal const val ANCHOR_Y_FRACTION = 0.85f
+
+/**
+ * Both sling art states are flat illustrations of one continuous cord, not
+ * a rig that can be stretched — so rather than trying to make the drawn
+ * pouch/knot literally track the dragged stone, the whole image is
+ * rotated as a rigid piece around the loop it's drawn hanging from, which
+ * stays pinned at [ANCHOR_X_FRACTION]/[ANCHOR_Y_FRACTION] regardless of
+ * rotation (that's the "pivot is the loop" the art was made for). The
+ * fraction/angle constants below were measured directly off each PNG's
+ * own pixel geometry — the loop's own hole, and the pouch/knot at the
+ * cord's far end — not eyeballed, so the rotation lines up with what's
+ * actually drawn.
+ */
+private const val SLING_PULLED_PIVOT_X = 0.259f
+private const val SLING_PULLED_PIVOT_Y = 0.132f
+private const val SLING_PULLED_DEFAULT_ANGLE_DEG = 62.2f
+private const val SLING_PULLED_ASPECT_RATIO = 1024f / 717f
+private val SLING_PULLED_WIDTH = 84.dp
+private val SLING_PULLED_HEIGHT = SLING_PULLED_WIDTH / SLING_PULLED_ASPECT_RATIO
+
+private const val SLING_RELEASED_PIVOT_X = 0.156f
+private const val SLING_RELEASED_PIVOT_Y = 0.944f
+private const val SLING_RELEASED_DEFAULT_ANGLE_DEG = -65.4f
+private const val SLING_RELEASED_ASPECT_RATIO = 706f / 1081f
+private val SLING_RELEASED_WIDTH = 30.dp
+private val SLING_RELEASED_HEIGHT = SLING_RELEASED_WIDTH / SLING_RELEASED_ASPECT_RATIO
+
+private val RADIANS_TO_DEGREES = 180f / PI.toFloat()
 
 /**
  * Exposes the rat's current elapsed-time clock value via semantics, purely
@@ -126,6 +163,16 @@ internal fun ratYFractionAt(elapsedMs: Long): Float {
 }
 
 private fun ratHasEscapedAt(elapsedMs: Long): Boolean = ratRowAt(elapsedMs) >= RAT_TOTAL_ROWS
+
+/** Picks the walk-cycle frame (relaxed/humped) and left/right-facing sprite to match the row's current sweep direction — purely cosmetic, the hit-test only ever reasons in terms of [ratXFractionAt]/[ratYFractionAt]. */
+private fun ratDrawableRes(elapsedMs: Long): Int {
+    val movingRight = ratRowAt(elapsedMs) % 2 == 0
+    val humped = (elapsedMs / RAT_WALK_FRAME_MS) % 2 == 1L
+    return when {
+        movingRight -> if (humped) R.drawable.ic_rat_humped_right else R.drawable.ic_rat_relaxed_right
+        else -> if (humped) R.drawable.ic_rat_humped_left else R.drawable.ic_rat_relaxed_left
+    }
+}
 
 /**
  * The flying stone's start/end points (0..1 track fractions) plus the
@@ -301,17 +348,19 @@ private fun DavidGoliathSlingPracticeContent(
                 val ratContentDescription = stringResource(R.string.david_goliath_sling_rat_content_description)
                 if (!isComplete) {
                     Image(
-                        painter = painterResource(R.drawable.ic_rat),
+                        painter = painterResource(ratDrawableRes(elapsedMs)),
                         contentDescription = ratContentDescription,
                         modifier = Modifier
-                            .offset(x = maxWidth * ratXFraction - RAT_SIZE / 2, y = maxHeight * ratYFraction)
-                            .size(RAT_SIZE)
+                            .offset(x = maxWidth * ratXFraction - RAT_WIDTH / 2, y = maxHeight * ratYFraction)
+                            .size(width = RAT_WIDTH, height = RAT_HEIGHT)
                             .semantics {
                                 contentDescription = ratContentDescription
                                 ratElapsedMs = elapsedMs
                             },
                     )
                 }
+
+                val currentFlight = flight
 
                 if (dragOffset != Offset.Zero) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
@@ -325,15 +374,55 @@ private fun DavidGoliathSlingPracticeContent(
                     }
                 }
 
-                Image(
-                    painter = painterResource(R.drawable.ic_sling),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .offset(x = maxWidth * ANCHOR_X_FRACTION - 32.dp, y = maxHeight * ANCHOR_Y_FRACTION - 48.dp)
-                        .size(64.dp),
-                )
+                // The cord snaps straight in the throw direction for the brief
+                // moment a stone is in flight, then falls back to the loaded
+                // "pulled" pose the instant it resolves — same rigid-rotation
+                // treatment as the pulled pose below, just around its own
+                // pivot/default-angle measurements.
+                if (currentFlight != null) {
+                    val launchDirX = -currentFlight.pull.x
+                    val launchDirY = -currentFlight.pull.y
+                    val rotationDeg = atan2(launchDirY, launchDirX) * RADIANS_TO_DEGREES - SLING_RELEASED_DEFAULT_ANGLE_DEG
+                    Image(
+                        painter = painterResource(R.drawable.ic_sling_released),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .offset(
+                                x = maxWidth * ANCHOR_X_FRACTION - SLING_RELEASED_WIDTH * SLING_RELEASED_PIVOT_X,
+                                y = maxHeight * ANCHOR_Y_FRACTION - SLING_RELEASED_HEIGHT * SLING_RELEASED_PIVOT_Y,
+                            )
+                            .size(width = SLING_RELEASED_WIDTH, height = SLING_RELEASED_HEIGHT)
+                            .graphicsLayer(
+                                rotationZ = rotationDeg,
+                                transformOrigin = TransformOrigin(SLING_RELEASED_PIVOT_X, SLING_RELEASED_PIVOT_Y),
+                            ),
+                    )
+                } else {
+                    // Rotated to face the drag so the cord visibly stretches
+                    // toward wherever the stone is being pulled; hangs in its
+                    // own drawn resting pose (no rotation) once released back
+                    // to Offset.Zero.
+                    val rotationDeg = if (dragOffset == Offset.Zero) {
+                        0f
+                    } else {
+                        atan2(dragOffset.y, dragOffset.x) * RADIANS_TO_DEGREES - SLING_PULLED_DEFAULT_ANGLE_DEG
+                    }
+                    Image(
+                        painter = painterResource(R.drawable.ic_sling_pulled),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .offset(
+                                x = maxWidth * ANCHOR_X_FRACTION - SLING_PULLED_WIDTH * SLING_PULLED_PIVOT_X,
+                                y = maxHeight * ANCHOR_Y_FRACTION - SLING_PULLED_HEIGHT * SLING_PULLED_PIVOT_Y,
+                            )
+                            .size(width = SLING_PULLED_WIDTH, height = SLING_PULLED_HEIGHT)
+                            .graphicsLayer(
+                                rotationZ = rotationDeg,
+                                transformOrigin = TransformOrigin(SLING_PULLED_PIVOT_X, SLING_PULLED_PIVOT_Y),
+                            ),
+                    )
+                }
 
-                val currentFlight = flight
                 if (currentFlight != null) {
                     val flightX = currentFlight.startX + (currentFlight.endX - currentFlight.startX) * flightProgress.value
                     val flightY = currentFlight.startY + (currentFlight.endY - currentFlight.startY) * flightProgress.value

@@ -1198,8 +1198,48 @@ like aiming a real projectile at a moving target.
   `boundsInRoot` in pixels, not the fractional track coordinates the
   engine reasons in.
 - Verified via `./gradlew build -x connectedAndroidTest` (compile, unit
-  tests, lint — all clean) and `installDebug`; awaiting on-device
-  confirmation that leading a continuously-moving rat feels correct.
+  tests, lint — all clean) and `installDebug`; confirmed on-device —
+  leading a continuously-moving rat feels correct.
+
+### Chapter 2 addendum 13 — final sling and rat art
+Replaced both remaining placeholder vectors with user-supplied final art:
+`ic_sling.xml`/`ic_rat.xml` (single static icons) became six PNGs —
+`ic_sling_pulled`/`ic_sling_released`, and `ic_rat_{relaxed,humped}_
+{left,right}` — dropped in `game art/` and copied into
+`res/drawable/` under valid resource names (the originals stay in
+`game art/`, matching this project's existing convention for
+user-supplied reference art, e.g. the Noah's Ark tool icons).
+- **Sling**: per the user's explicit note ("the pivot point should be the
+  loop in the left part of the sling"), both art states are rendered as a
+  rigid image rotated around the loop drawn in each PNG, not stretched or
+  repositioned — the loop's pixel center was pinned at
+  [ANCHOR_X_FRACTION]/[ANCHOR_Y_FRACTION] the same way the previous
+  placeholder was, so none of `SlingshotGame`'s physics or the existing
+  hit-test changed, only the visuals layered on top of it. The loop
+  location, the pouch/knot at the cord's far end, and each image's aspect
+  ratio were all measured directly off the PNGs' own pixel geometry
+  (`SLING_PULLED_PIVOT_X/Y`, `SLING_PULLED_DEFAULT_ANGLE_DEG`, and their
+  `_RELEASED_` counterparts) rather than eyeballed, so a computed rotation
+  (`atan2` of the drag or launch direction, minus the art's own default
+  angle) lines up with what's actually drawn. `ic_sling_pulled` renders
+  while idle or mid-drag (0° rotation at rest, rotating to face the pull
+  as the player drags); `ic_sling_released` swaps in only for the stone's
+  brief flight window, rotated to face the launch direction, then reverts
+  the instant the flight resolves — a natural "snap back to loaded"
+  read, confirmed on-device even though the two arts' rope lengths don't
+  perfectly match pixel-for-pixel (the release pose reads as a
+  foreshortened, "moving away" perspective rather than a mismatch).
+- **Rat**: the four sprites are a 2-frame walk cycle (relaxed/humped)
+  crossed with left/right facing. `ratDrawableRes(elapsedMs)` picks the
+  facing from the row's existing sweep-direction parity
+  (`ratRowAt(elapsedMs) % 2`) and alternates the walk frame on its own
+  fixed cadence (`RAT_WALK_FRAME_MS = 250L`) — both purely cosmetic,
+  layered on top of the existing `ratXFractionAt`/`ratYFractionAt`
+  position functions the hit-test already relies on, so none of the
+  motion or trajectory-projection logic needed to change.
+- No engine, ViewModel, or test changes were required for this pass —
+  confirms the "engine only judges, screen owns rendering" split held up
+  even for a full asset swap.
 
 ### Chapter 3 — The Good Samaritan
 The third full chapter, unlocked automatically once David and Goliath is
