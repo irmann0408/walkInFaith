@@ -176,7 +176,7 @@ class GoodSamaritanViewModel(
         )
 
         return GoodSamaritanUiState(
-            dungeonState = DungeonGame.fromLayout(GoodSamaritanContent.mapLayout),
+            dungeonState = DungeonGame.fromLayout(GoodSamaritanContent.mapLayout, GoodSamaritanContent.banditPatrols),
             roadblockState = roadblockState,
         )
     }

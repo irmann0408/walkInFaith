@@ -16,8 +16,23 @@ data class Vector2(val x: Float, val y: Float) {
     }
 }
 
-/** A bandit ambush — proximity-triggered, one-shot per [id] until resolved (added to [DungeonGameState.resolvedTrapIds]). */
-data class DungeonTrap(val id: String, val position: Vector2)
+/**
+ * A bandit ambush — proximity-triggered, one-shot per [id] until resolved
+ * (added to [DungeonGameState.resolvedTrapIds]). [patrolWaypoints] empty
+ * (the default) means a stationary trap, exactly as before; 2+ waypoints
+ * means [position] instead cycles between them at
+ * [DungeonGame.BANDIT_PATROL_SPEED_CELLS_PER_SECOND], [patrolTargetIndex]
+ * tracking which waypoint it's currently heading toward — the player's own
+ * proximity trigger still fires the same way regardless of whether the trap
+ * walked into range or the player did (see [DungeonGame]'s moving-target
+ * `crossedInto` overload).
+ */
+data class DungeonTrap(
+    val id: String,
+    val position: Vector2,
+    val patrolWaypoints: List<Vector2> = emptyList(),
+    val patrolTargetIndex: Int = 0,
+)
 
 /** A medical-supply pickup — proximity-triggered, one-shot per [id]. */
 data class DungeonSupply(val id: String, val position: Vector2)

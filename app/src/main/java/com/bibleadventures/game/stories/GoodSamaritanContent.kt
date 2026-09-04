@@ -23,113 +23,279 @@ object GoodSamaritanContent {
         R.string.good_samaritan_helping_beat_line_3,
     )
 
-    // 10x10 map, row-major, now walked in real time with an analog joystick
-    // (see game/puzzles/dungeon) instead of the old D-pad. '.' path, '#'
-    // rocky-terrain wall, 'X' a bandit ambush — a proximity-triggered
-    // turn-based fight now, not a wall variant like it used to be under the
-    // old discrete gridmaze engine — 'M' a medical-supply pickup, 'T' the
-    // injured traveler (checkpoint), 'I' the Inn (goal), 'S' the start.
+    // 56x30 map, row-major — the real road from Jerusalem to Jericho
+    // (Luke 10:30), replacing the old placeholder 10x10 grid now that real
+    // map art exists (`bg_good_samaritan_road_map.jpg`). '.' the walkable
+    // road, '#' everything else (rock/terrain — rendered as part of the
+    // single background image, not tiled wall sprites), 'X' a bandit
+    // ambush's spawn point (patrols — see [banditPatrols] — rather than
+    // sitting still), 'M' a medical-supply pickup, 'T' the injured
+    // traveler (checkpoint), 'I' the Inn (goal), 'S' the start.
     //
-    // This is the same wall footprint as the original discrete-maze layout,
-    // byte-for-byte: the two 'X' cells that used to be wall cells (row 1
-    // col 7, row 7 col 0) became plain '#' walls (a trap must sit on a
-    // walkable cell, not inside a wall), and every new 'M'/'X' marker was
-    // placed only on a cell that was already open ('.') in the original —
-    // so the original's hand-verified connectivity carries over unchanged;
-    // no fresh BFS was needed to confirm every cell is still reachable.
+    // Traced from "The Road to Jericho Map - walkable blue area.jpe" (a
+    // solid blue overlay tracing the drawn road, provided by the artist —
+    // re-supplied once already, to fix a few areas the artist noticed were
+    // wrongly excluded, hence 427 walkable cells rather than the original
+    // pass's 414): built a blue-channel pixel mask, rasterized it into this
+    // 56x30 grid (each cell walkable if ≥35% of its pixel area is blue),
+    // and verified by BFS/flood-fill that every walkable cell forms one
+    // connected body. Start placed at the walkable cell nearest the drawn
+    // Jerusalem castle icon; the checkpoint (traveler) and goal (Inn)
+    // positions come from a second artist-marked reference image ("The
+    // Road to Jericho Map - Traveller and Inn.jpe", a blue ink marker for
+    // the traveler and a green one for the Inn) rather than a visual
+    // estimate — an earlier estimate had the Inn wrong, corrected once the
+    // artist marked it precisely.
     //
-    // Full connectivity WAS re-verified by hand for the new bandit
-    // placements specifically, since a proximity trigger (unlike a wall)
-    // can turn out to be a mandatory chokepoint rather than an optional
-    // detour depending on exactly where it sits: the bandit at (2,6) turns
-    // out to be entirely optional — (4,4)-(4,9)'s cluster (and the Inn) has
-    // an independent route in via (2,8)-(3,8)-(4,8) that never comes near
-    // it, so a player can route around it for free. The bandits at (6,4)
-    // and (8,6) are genuine chokepoints, though: they're the *only* way to
-    // reach the two supply pickups at (8,0) and (9,3) (row 7 has no other
-    // opening into that pocket). So the real "mandatory" cost is 2 bandits
-    // x 2 toughness (4 supplies) + the checkpoint's cost (1) = 5, not 3
-    // bandits' worth — comfortably covered by the 10 pickups on the map
-    // even after a failed attempt needs re-supplying. Treat the exact
-    // counts/positions as a first pass, same as every other number in this
-    // file — verify feel on-device before calling it final.
+    // The 5 bandit ambushes patrol closed loops circling the rocky/grassy
+    // "islands" the road's own switchbacks curl around, per a third
+    // artist-marked reference ("The Road to Jericho Map - Bandits.jpe",
+    // 5 red-ink rings) — see [banditPatrols] for the loop waypoints
+    // themselves, extracted from that art by isolating each ring's red
+    // pixels, intersecting with the walkable road, and tracing an angular
+    // order around each loop's own enclosed "island". 4 of the 5 loops are
+    // the *only* road through that stretch of map (removing the loop's
+    // cells disconnects the route), so passing through one is unavoidable
+    // — but since the bandit is only ever near one point of its own loop
+    // at a time, timing a crossing for when it's on the far side avoids a
+    // fight; getting caught starts the turn-based fight screen. 7 supply
+    // pickups sit in genuine dead-end pockets (real detours, not just
+    // decoration) — one deliberately right next to the Inn, mirroring
+    // where the artist placed it on the source art, and two sharing the
+    // same dead-end corridor near (10,44)/(11,49) (one at the mouth, one
+    // deeper in), rewarding the length of that particular detour with two
+    // pickups instead of one. Treat exact counts/positions as a first
+    // pass, same as every other number in this file — verify feel
+    // on-device before calling it final.
     val mapLayout: List<String> = listOf(
-        "S.M..M....",
-        ".##.####..",
-        ".M....X#.T",
-        "##.###.#.#",
-        "M..#M...M.",
-        ".#.######.",
-        "M#..X...#M",
-        "######.##.",
-        "M....#X...",
-        "...M...##I",
+        "########################################################",
+        "########################################################",
+        "########################################################",
+        "########################################################",
+        "########################################################",
+        "########################################################",
+        "#################........#######.......####......#######",
+        "################..#####...#####....##...##...##...######",
+        "#########S.####..###M####..###X.##..###.#..######..#####",
+        "#########..####..#.....##..###..#.......#..######..#####",
+        "########...####.##.##......###....##..###..#M.###..#####",
+        "######.....###..#..##.....#####...##.......##....M######",
+        "#####..##......##..##..#..#####...M#.....#.#############",
+        "#####..#########..##..#....####...##X.#.##.....#########",
+        "#####..#####......#..##..#........##..#.####......######",
+        "#####...###...#..##..##X####...#####....#########T.#####",
+        "######....#..#...##..##..###..#######...#########..#####",
+        "########....##.#####..#......#####....###..######..#####",
+        "#########..###.##M##..##....###......##...........######",
+        "#######..X.###..#.....###..###...#..###.#####...########",
+        "######....#####.##...####.###..####.....################",
+        "#####..#..#####.########..###X.####....#################",
+        "#####..#........#######..###M..####.####################",
+        "#####..##....#########..#####..###..######....##########",
+        "#####..#############...######.........##......IM########",
+        "######...............##########..............###########",
+        "########################################################",
+        "########################################################",
+        "########################################################",
+        "########################################################",
     )
 
-    // A hand-verified route through the revised map, as turning points only
+    // Each `X` in [mapLayout] is a spawn point; keyed by that cell's
+    // deterministic id ("trap_${row}_$col", from [DungeonGame.fromLayout])
+    // to the closed loop of waypoints it cycles through at
+    // [DungeonGame.BANDIT_PATROL_SPEED_CELLS_PER_SECOND] — see the
+    // extraction method described in [mapLayout]'s own comment. Ordered so
+    // the bandit's very first move heads to the *second* point of its loop
+    // (its spawn cell is already the last entry), avoiding a trivial
+    // zero-distance "arrival" on the very first frame.
+    val banditPatrols: Map<String, List<Vector2>> = mapOf(
+        "trap_8_30" to listOf(
+            Vector2(33.5f, 7.5f), Vector2(34.5f, 6.5f), Vector2(37.5f, 7.5f), Vector2(39.5f, 8.5f),
+            Vector2(37.5f, 10.5f), Vector2(33.5f, 10.5f), Vector2(33.5f, 9.5f), Vector2(30.5f, 8.5f),
+        ),
+        "trap_13_36" to listOf(
+            Vector2(36.5f, 11.5f), Vector2(38.5f, 11.5f), Vector2(39.5f, 12.5f),
+            Vector2(39.5f, 15.5f), Vector2(37.5f, 14.5f), Vector2(36.5f, 13.5f),
+        ),
+        "trap_15_23" to listOf(
+            Vector2(24.5f, 13.5f), Vector2(26.5f, 13.5f), Vector2(29.5f, 14.5f), Vector2(28.5f, 17.5f),
+            Vector2(26.5f, 18.5f), Vector2(24.5f, 17.5f), Vector2(23.5f, 15.5f),
+        ),
+        "trap_19_9" to listOf(
+            Vector2(11.5f, 17.5f), Vector2(12.5f, 14.5f), Vector2(14.5f, 16.5f), Vector2(14.5f, 17.5f),
+            Vector2(14.5f, 19.5f), Vector2(14.5f, 22.5f), Vector2(11.5f, 22.5f), Vector2(8.5f, 22.5f), Vector2(9.5f, 19.5f),
+        ),
+        "trap_21_29" to listOf(
+            Vector2(31.5f, 19.5f), Vector2(33.5f, 18.5f), Vector2(35.5f, 20.5f),
+            Vector2(35.5f, 24.5f), Vector2(32.5f, 25.5f), Vector2(29.5f, 24.5f), Vector2(29.5f, 21.5f),
+        ),
+    )
+
+    // A hand-verified route through the road map, as turning points only
     // (not every cell) — each consecutive pair is a straight, wall-free
     // corridor run, so a real steering test only needs to aim at the next
     // point and hold until it arrives; anything sitting exactly on a
     // straight run between two waypoints (a supply pickup, say) is picked
     // up automatically as the player passes through it, no separate stop
-    // needed. Order: all 8 supply pickups reachable without a fight, then
-    // the (6,4) bandit, then the (8,6) bandit (fought to full resolution
-    // each time before continuing — see DungeonGame.BANDIT_INITIAL_TOUGHNESS),
-    // which opens the way to the last 2 pickups behind them, then back to
-    // the checkpoint (with supplies to spare), then the Inn. Deliberately
-    // routes around the optional (2,6) bandit entirely (see the map comment
-    // above) rather than fighting it for no required benefit. Used by both
-    // DungeonGameTest's end-to-end replay and the instrumented flow test's
-    // real-gesture steering.
+    // needed. Verified (not just hand-traced) by porting DungeonGame.tick's
+    // exact physics — including bandit patrol movement and
+    // DungeonGame.BANDIT_DETECTION_RADIUS's wider "spotted, not just
+    // touched" trigger — to a matching script and replaying this route
+    // frame-by-frame: reaches every supply, activates the checkpoint, and
+    // completes at the Inn, with all 4 of the unavoidable bandit loops
+    // actually spotting the player at least once in that replay (fought to
+    // full resolution each time, per the loop below).
+    //
+    // A route replay's own steering only aims at the *next* waypoint in
+    // this list — if a bandit spots the player mid-leg, the resulting fight
+    // freezes movement wherever that happened, and once it's won, steering
+    // resumes toward whatever waypoint comes *next* in this list, not back
+    // toward the one that got interrupted (see DungeonGameTest's
+    // `steerToward` for the exact mechanics this list is authored against).
+    // That's why a couple of stretches here look like an odd detour rather
+    // than the shortest path: they're the exact recovery route from a
+    // verified fight-interruption point back onto the intended corridor,
+    // baked in by the same verification script rather than guessed by hand.
+    //
+    // Order: the medical supply next to the Inn (`supply_24_47`) is
+    // deliberately visited *before* the checkpoint, not after: it's a true
+    // dead end whose only neighbor is the Inn's own cell, so visiting it
+    // after the checkpoint is activated would trip [DungeonGameState.isComplete]
+    // the moment the player gets close enough to reach it — reaching the
+    // Inn's proximity while the checkpoint is active always ends the run,
+    // there's no way to "pass through" it first. Every other supply and
+    // bandit is visited in roughly the road's own west-to-east order.
+    // Used by both DungeonGameTest's end-to-end replay and the
+    // instrumented flow test's real-gesture steering.
     val dungeonRouteWaypoints: List<Vector2> = listOf(
-        Vector2(0.5f, 0.5f), // start
-        Vector2(5.5f, 0.5f), // supply (0,5)
-        Vector2(3.5f, 0.5f),
-        Vector2(3.5f, 2.5f),
-        Vector2(1.5f, 2.5f), // supply (2,1)
-        Vector2(2.5f, 2.5f),
-        Vector2(2.5f, 4.5f),
-        Vector2(0.5f, 4.5f), // supply (4,0)
-        Vector2(0.5f, 6.5f), // supply (6,0)
-        Vector2(0.5f, 4.5f),
-        Vector2(2.5f, 4.5f),
-        Vector2(2.5f, 2.5f),
-        Vector2(3.5f, 2.5f),
-        Vector2(3.5f, 0.5f),
-        Vector2(9.5f, 0.5f),
-        Vector2(9.5f, 1.5f),
-        Vector2(8.5f, 1.5f),
-        Vector2(8.5f, 4.5f), // supply (4,8)
-        Vector2(4.5f, 4.5f), // supply (4,4) — a dead end, direction reverses here
-        Vector2(9.5f, 4.5f),
-        Vector2(9.5f, 6.5f), // supply (6,9)
-        Vector2(9.5f, 4.5f),
-        Vector2(8.5f, 4.5f),
-        Vector2(8.5f, 0.5f),
-        Vector2(3.5f, 0.5f),
-        Vector2(3.5f, 2.5f),
-        Vector2(2.5f, 2.5f),
-        Vector2(2.5f, 6.5f),
-        Vector2(4.5f, 6.5f), // bandit (6,4)
-        Vector2(6.5f, 6.5f),
-        Vector2(6.5f, 8.5f), // bandit (8,6)
-        Vector2(6.5f, 9.5f),
-        Vector2(0.5f, 9.5f),
-        Vector2(0.5f, 8.5f), // supply (8,0)
-        Vector2(0.5f, 9.5f),
-        Vector2(6.5f, 9.5f),
-        Vector2(6.5f, 8.5f), // bandit (8,6), already resolved — passes through safely
-        Vector2(6.5f, 6.5f),
-        Vector2(2.5f, 6.5f), // continuing west, past the already-resolved (6,4) bandit along the way
-        Vector2(2.5f, 2.5f),
-        Vector2(3.5f, 2.5f),
-        Vector2(3.5f, 0.5f),
-        Vector2(9.5f, 0.5f),
-        Vector2(9.5f, 2.5f), // checkpoint — the injured traveler
-        Vector2(8.5f, 2.5f),
-        Vector2(8.5f, 4.5f),
-        Vector2(9.5f, 4.5f),
-        Vector2(9.5f, 9.5f), // the Inn — goal
+        Vector2(9.5f, 8.5f), // start
+        Vector2(9.5f, 12.5f),
+        Vector2(14.5f, 12.5f),
+        Vector2(14.5f, 11.5f),
+        Vector2(15.5f, 11.5f),
+        Vector2(15.5f, 8.5f),
+        Vector2(16.5f, 8.5f),
+        Vector2(16.5f, 7.5f),
+        Vector2(17.5f, 7.5f),
+        Vector2(17.5f, 6.5f),
+        Vector2(23.5f, 6.5f),
+        Vector2(23.5f, 7.5f),
+        Vector2(25.5f, 7.5f),
+        Vector2(25.5f, 11.5f),
+        Vector2(22.5f, 11.5f),
+        Vector2(22.5f, 12.5f),
+        Vector2(21.5f, 12.5f),
+        Vector2(21.5f, 13.5f),
+        Vector2(20.5f, 13.5f),
+        Vector2(20.5f, 19.5f),
+        Vector2(17.5f, 19.5f),
+        Vector2(17.5f, 18.5f), // supply (18,17)
+        Vector2(17.5f, 19.5f),
+        Vector2(20.5f, 19.5f),
+        Vector2(20.5f, 13.5f),
+        Vector2(21.5f, 13.5f),
+        Vector2(21.5f, 9.5f),
+        Vector2(20.5f, 9.5f),
+        Vector2(20.5f, 8.5f), // supply (8,20)
+        Vector2(20.5f, 9.5f),
+        Vector2(21.5f, 9.5f),
+        Vector2(21.5f, 11.5f),
+        Vector2(24.5f, 11.5f),
+        Vector2(24.5f, 14.5f), // bandit loop spawn (15,23)
+        Vector2(23.5f, 14.5f),
+        Vector2(23.5f, 15.5f),
+        Vector2(23.5f, 13.5f),
+        Vector2(26.5f, 13.5f),
+        Vector2(26.5f, 14.5f),
+        Vector2(31.5f, 14.5f),
+        Vector2(31.5f, 8.5f),
+        Vector2(30.5f, 8.5f), // bandit loop spawn (8,30)
+        Vector2(30.5f, 10.5f),
+        Vector2(33.5f, 10.5f),
+        Vector2(33.5f, 9.5f),
+        Vector2(36.5f, 9.5f),
+        Vector2(36.5f, 11.5f),
+        Vector2(41.5f, 11.5f),
+        Vector2(41.5f, 8.5f),
+        // Fight-interruption recovery detour: the bandit loop spawned at
+        // (8,30) spots the player partway along this leg, well short of
+        // (41.5, 8.5) — this bridges from that verified interruption point
+        // back to it rather than cutting through a wall.
+        Vector2(39.5f, 8.5f),
+        Vector2(39.5f, 9.5f),
+        Vector2(37.5f, 9.5f),
+        Vector2(37.5f, 11.5f),
+        Vector2(41.5f, 11.5f),
+        Vector2(41.5f, 8.5f),
+        Vector2(42.5f, 8.5f),
+        Vector2(42.5f, 7.5f),
+        Vector2(43.5f, 7.5f),
+        Vector2(43.5f, 6.5f),
+        Vector2(47.5f, 6.5f),
+        Vector2(47.5f, 7.5f),
+        Vector2(49.5f, 7.5f),
+        Vector2(49.5f, 11.5f), // supply (11,49) — the mouth of the same dead-end pocket as (10,44) below; sitting exactly on this turn, so no separate stop needed
+        Vector2(45.5f, 11.5f),
+        Vector2(45.5f, 10.5f),
+        Vector2(44.5f, 10.5f), // supply (10,44) — deeper in the same pocket
+        Vector2(45.5f, 10.5f),
+        Vector2(45.5f, 11.5f),
+        Vector2(49.5f, 11.5f),
+        Vector2(49.5f, 7.5f),
+        Vector2(48.5f, 7.5f),
+        Vector2(48.5f, 6.5f),
+        Vector2(44.5f, 6.5f),
+        Vector2(44.5f, 7.5f),
+        Vector2(42.5f, 7.5f),
+        Vector2(42.5f, 11.5f),
+        Vector2(37.5f, 11.5f),
+        Vector2(37.5f, 9.5f),
+        Vector2(33.5f, 9.5f),
+        Vector2(33.5f, 12.5f),
+        Vector2(34.5f, 12.5f), // supply (12,34)
+        Vector2(33.5f, 12.5f),
+        Vector2(33.5f, 9.5f),
+        Vector2(36.5f, 9.5f),
+        Vector2(36.5f, 13.5f), // bandit loop spawn (13,36)
+        Vector2(36.5f, 15.5f),
+        Vector2(37.5f, 15.5f),
+        Vector2(37.5f, 17.5f),
+        Vector2(36.5f, 17.5f),
+        Vector2(36.5f, 18.5f),
+        Vector2(32.5f, 18.5f),
+        Vector2(32.5f, 19.5f),
+        Vector2(30.5f, 19.5f),
+        Vector2(30.5f, 21.5f),
+        Vector2(29.5f, 21.5f), // bandit loop spawn (21,29)
+        Vector2(29.5f, 22.5f),
+        Vector2(28.5f, 22.5f), // supply (22,28)
+        Vector2(29.5f, 22.5f),
+        Vector2(29.5f, 24.5f),
+        Vector2(31.5f, 24.5f),
+        Vector2(31.5f, 25.5f),
+        Vector2(40.5f, 25.5f),
+        Vector2(40.5f, 24.5f),
+        Vector2(47.5f, 24.5f), // supply (24,47) — dead end off the Inn's own cell, visited before the checkpoint (see note above)
+        Vector2(44.5f, 24.5f),
+        Vector2(44.5f, 25.5f),
+        Vector2(37.5f, 25.5f),
+        Vector2(37.5f, 24.5f),
+        Vector2(35.5f, 24.5f),
+        Vector2(35.5f, 20.5f),
+        Vector2(39.5f, 20.5f),
+        Vector2(39.5f, 18.5f),
+        Vector2(49.5f, 18.5f),
+        Vector2(49.5f, 15.5f), // checkpoint — the injured traveler (15,49)
+        Vector2(49.5f, 18.5f),
+        Vector2(39.5f, 18.5f),
+        Vector2(39.5f, 20.5f),
+        Vector2(38.5f, 20.5f),
+        Vector2(38.5f, 21.5f),
+        Vector2(35.5f, 21.5f),
+        Vector2(35.5f, 25.5f),
+        Vector2(40.5f, 25.5f),
+        Vector2(40.5f, 24.5f),
+        Vector2(46.5f, 24.5f), // the Inn — goal (24,46)
     )
 
     // "Passing By" — a genuine Rush-Hour/Unblock-Me-style sliding block

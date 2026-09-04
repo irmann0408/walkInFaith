@@ -1,6 +1,14 @@
 # Project Status
 
-Last updated: 2026-08-17 (Jericho's Shout finale puzzle now shows 3
+Last updated: 2026-09-04 (Good Samaritan's "mini dungeon" now uses real
+illustrated Jerusalem-to-Jericho road map art in place of the old
+placeholder 10x10 grid, with bandits that patrol closed loops and spot the
+player from a real detection radius rather than standing still and
+requiring a touch — see "Chapter 3 addendum 10" further down for the full
+writeup, including a real dead-zone-early-return bug (a moving bandit
+could never catch a stationary player) caught and fixed before shipping.
+Before that:
+Jericho's Shout finale puzzle now shows 3
 full-size wall tiles side by side with no seam between them — the left
 two swap to rubble as before, but the rightmost tile, marked by a red
 rope (Rahab's scarlet cord, Joshua 2:18-21), always renders intact and
@@ -1964,6 +1972,83 @@ precedent to extend elsewhere without asking again.
   `installDebug` and confirmed on-device by the user across several
   feedback rounds (movement speed, throw-arc animation, bandit art sizing/
   attack motion, and the pickup-vs-defeat-bonus randomization split above).
+
+### Chapter 3 addendum 10 — real "Road to Jericho" map art, patrolling/detecting bandits, replacing the placeholder 10x10 grid
+Addendum 9's `mapLayout` was a plain hand-typed 10x10 grid with generic
+`ic_wall_rock` tiles and a stationary bandit that was skippable via an
+alternate route (noted as a known gap above) — the user then supplied real
+illustrated Jerusalem-to-Jericho road art (Luke 10:30's own setting) plus
+three follow-up marked-up reference exports, and asked for the map to use
+that art with moving, avoidable-or-catchable bandits.
+- **Map traced from real art, not hand-typed**: a 56x30 grid (427 walkable
+  cells) rasterized from a blue-channel pixel mask of "The Road to Jericho
+  Map - walkable blue area.jpe" (re-supplied once by the artist to fix a
+  few missed areas), verified fully connected by BFS/flood-fill. The
+  background is now one full illustrated image
+  (`bg_good_samaritan_road_map.jpg`) panned under the existing camera
+  viewport via `Canvas`+`drawImage` pixel-space cropping — not tiled wall
+  sprites — a new pattern for this codebase's grid screens (a
+  `Modifier.size()`-scaled `Image` at this map's actual scale silently
+  failed to draw at all, exceeding a GPU texture/canvas size limit with no
+  visible error; the fix was cropping straight from the source bitmap's
+  pixel space instead of scaling a whole-grid-sized `Image`).
+- **Checkpoint and goal repositioned from two more artist-marked
+  references** ("... - Traveller and Inn.jpe", a blue ink marker for the
+  traveler and green for the Inn) rather than a visual estimate — an
+  earlier visual-estimate placement had the Inn wrong, caught by the user
+  ("i'm in the inn already but not sure if i have completed the game").
+- **Bandits now patrol closed loops instead of standing still**, per a
+  third reference ("... - Bandits.jpe", 5 red-ink rings marking where each
+  should circle) — `DungeonTrap` gained `patrolWaypoints`/`patrolTargetIndex`,
+  `DungeonGame.advancePatrol` moves a trap along its loop every tick
+  (`BANDIT_PATROL_SPEED_CELLS_PER_SECOND = 1.0f`, half the player's own
+  speed) regardless of the player's own joystick input — including below
+  `MIN_JOYSTICK_MAGNITUDE`, a real bug caught before shipping: the old
+  single-target `crossedInto` could never detect a moving bandit walking
+  into a *stationary* player, since "old distance > R, new distance <= R"
+  is never true against an unmoving target's own unchanging distance. Fixed
+  with a moving-target `crossedInto` overload checked against both the
+  trap's old and new position; regression-tested directly
+  (`a patrolling bandit walking into a stationary player still starts
+  combat`). 4 of the 5 loops are the *only* road through their stretch of
+  map (removing the loop disconnects the route), so passing through one is
+  unavoidable, but since the bandit is only ever near one point of its own
+  loop, timing a crossing for the far side can still avoid a fight.
+- **Detection widened from a touch to an actual sighting, on explicit user
+  request**: a follow-up ask ("create a region of visibility... not
+  needing to touch them") added `BANDIT_DETECTION_RADIUS = 1.2f` (vs.
+  `TRIGGER_RADIUS = 0.4f` for every other proximity check) — omnidirectional,
+  no facing/line-of-sight cone, being spotted starts the fight immediately
+  exactly like a direct collision always has (both simplifications
+  confirmed with the user before building, over a facing-cone/chase-first
+  alternative that would've needed real facing-angle math and more new
+  state for a 7+ audience to read on screen).
+- **Content placement**: 7 medical-supply pickups in genuine dead-end
+  pockets (up from an original 6 — a follow-up ask, "we forgot about the
+  medical supplies... place them where you think are good locations"; the
+  7th sits at the mouth of the same pocket as an existing one deeper in,
+  rewarding that detour's length with two pickups instead of one).
+- **Verification methodology**: `dungeonRouteWaypoints` (124 waypoints) was
+  not hand-traced — a faithful Python port of `DungeonGame.tick`'s exact
+  physics (including patrol movement and the wider detection radius) was
+  used to replay the route frame-by-frame and confirm it collects every
+  supply, survives every bandit fight it triggers, activates the
+  checkpoint, and reaches the Inn — the same verify-by-porting-the-real-
+  logic technique addendum 9's own waypoint route used, now extended to
+  cover time-dependent (patrolling) triggers rather than only static
+  ones. Caught a genuine level-design trap this way: the supply next to
+  the Inn is a true dead end whose only neighbor is the Inn's own cell, so
+  it has to be visited *before* the checkpoint is activated — visiting it
+  after would trip `isComplete` the moment the player gets close enough to
+  reach it, with no way to "pass through" first.
+- Confirmed: full `./gradlew build -x connectedAndroidTest` passes
+  (`DungeonGameTest`, `GoodSamaritanViewModelTest`, and the instrumented
+  `ChapterFlowHelpers`/`GoodSamaritanFlowTest` all updated for the new
+  positions/content — the latter two were already fully generic over
+  `GoodSamaritanContent.dungeonRouteWaypoints` and needed no logic
+  changes); installed via `installDebug` and confirmed on-device by the
+  user across two rounds (the map/bandit rework itself, then the wider
+  detection radius plus the 7th supply).
 
 ### Chapter 4 — Daniel and the Lions
 The fourth full chapter, unlocked automatically once the Good Samaritan is
@@ -4910,9 +4995,9 @@ preview (see above) — no further UI work on it for now. Open items:
 - Good Samaritan's Explore scene rework into a real-time joystick "mini
   dungeon" with bandit combat (Chapter 3 addendum 9) is implemented,
   unit-tested, confirmed compiling, and confirmed on-device by the user
-  across several feedback rounds. One known, accepted-as-fine-for-now gap:
-  one of the map's 3 bandit traps is skippable via an alternate route — the
-  user plans to replace the map layout themselves later.
+  across several feedback rounds. The map layout has since been replaced
+  entirely with real illustrated art and patrolling/sighting bandits — see
+  Chapter 3 addendum 10.
 - Daniel's "Hurrying to Pray" rework into "Open the Window" (Chapter 4
   addendum 1) is implemented, unit-tested (including a dedicated
   directional-variety regression test), confirmed compiling, and confirmed

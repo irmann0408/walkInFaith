@@ -2,6 +2,7 @@ package com.bibleadventures.ui.screens.goodsamaritan.explore
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,7 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -45,6 +48,8 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
@@ -64,13 +69,24 @@ import com.bibleadventures.ui.components.PuzzleTopBar
 import com.bibleadventures.ui.screens.goodsamaritan.GoodSamaritanViewModel
 import com.bibleadventures.ui.theme.BibleAdventuresTheme
 import kotlin.math.exp
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 private val JOYSTICK_MAX_KNOB_TRAVEL = 32.dp
 
-/** Cells visible across the (square) viewport at once — a window onto the map, not the whole 10x10 grid, so the camera actually has somewhere to pan. Tunable on-device. */
-private const val VIEWPORT_CELLS = 5f
+/**
+ * Cells visible across the (square) viewport at once — a window onto the
+ * map, not the whole grid, so the camera actually has somewhere to pan.
+ * Raised from the original map's `5f` once the 56x30 road map replaced the
+ * old 10x10 placeholder: at `5f`, the viewport only ever showed ~9% of the
+ * road's width at once, so the source art's own rocks/terrain (drawn at a
+ * scale meant to be seen as a wider overview, not a tight close-up) came out
+ * looking blown up next to the character. A larger value shows proportionally
+ * more of the map per frame instead of magnifying a tiny sliver of it.
+ * Tunable on-device.
+ */
+private const val VIEWPORT_CELLS = 14f
 
 /** Exponential-ease rate the camera chases the player at, matching Hamsterholm's own `CAMERA_FOLLOW_SPEED` constant for its dungeon mode. */
 private const val CAMERA_FOLLOW_SPEED = 4f
@@ -327,19 +343,58 @@ private fun DungeonWorld(
             val originY = cameraPosition.y.coerceIn(halfViewport, dungeonState.rows - halfViewport) - halfViewport
             val playerContentDescription = stringResource(R.string.good_samaritan_player_content_description)
 
-            dungeonState.walls.forEachIndexed { row, wallRow ->
-                wallRow.forEachIndexed { col, isWall ->
-                    if (isWall) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_wall_rock),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .offset(x = cellSize * (col - originX), y = cellSize * (row - originY))
-                                .size(cellSize),
-                        )
-                    }
-                }
+            // The real road-from-Jerusalem-to-Jericho map art, panned under
+            // this fixed-size viewport by the same camera math used above —
+            // one big image instead of tiling `ic_wall_rock` per wall cell,
+            // since this source art is one cohesive illustration, not
+            // tileable sprites (same call already made for Daniel's Race to
+            // the Den maze background). `dungeonState.walls`' own boolean
+            // grid is still the sole source of truth for collision; this is
+            // rendering only.
+            //
+            // Drawn as a cropped-and-scaled region of the source bitmap via
+            // a single `drawImage` call — deliberately *not* a plain `Image`
+            // sized to the map's full `cols * cellSize` extent. With this
+            // map's 56x30 grid, that naive approach asks Compose to lay out
+            // and rasterize one bitmap tens of thousands of pixels wide
+            // (`cellSize` is calibrated so `VIEWPORT_CELLS` fill the screen,
+            // so scaling it up to the map's full 56-column width is enormous
+            // regardless of the exact `VIEWPORT_CELLS` value), which
+            // silently fails to draw at all on real hardware (GPU
+            // texture/canvas size limits) — confirmed on-device as exactly
+            // why the map didn't appear at all on the first pass.
+            // `drawImage`'s `srcOffset`/`srcSize` crop the source bitmap
+            // directly in its own pixel space instead, so the bitmap that
+            // actually gets allocated/rasterized never grows past its real
+            // 2816x1536 size regardless of how large the logical map grid is.
+            val roadMapBitmap = ImageBitmap.imageResource(R.drawable.bg_good_samaritan_road_map)
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val srcCellWidth = roadMapBitmap.width / dungeonState.cols.toFloat()
+                val srcCellHeight = roadMapBitmap.height / dungeonState.rows.toFloat()
+                val srcOffset = IntOffset(
+                    (originX * srcCellWidth).roundToInt().coerceIn(0, roadMapBitmap.width),
+                    (originY * srcCellHeight).roundToInt().coerceIn(0, roadMapBitmap.height),
+                )
+                val srcSize = IntSize(
+                    (VIEWPORT_CELLS * srcCellWidth).roundToInt().coerceAtMost(roadMapBitmap.width - srcOffset.x),
+                    (VIEWPORT_CELLS * srcCellHeight).roundToInt().coerceAtMost(roadMapBitmap.height - srcOffset.y),
+                )
+                drawImage(
+                    image = roadMapBitmap,
+                    srcOffset = srcOffset,
+                    srcSize = srcSize,
+                    dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                )
             }
+
+            // Sized larger than a single cell on purpose (unlike the
+            // collision radius, which stays PLAYER_RADIUS regardless) so the
+            // character reads clearly at this map's zoom level — purely a
+            // visual choice, doesn't change where the player can actually
+            // walk. Tunable on-device. Declared here (not just below, next
+            // to the character itself) since the bandit icon now shares
+            // this same size.
+            val characterSize = cellSize * 2f
 
             dungeonState.supplies.forEach { supply ->
                 if (supply.id !in dungeonState.collectedSupplyIds) {
@@ -349,20 +404,28 @@ private fun DungeonWorld(
 
             dungeonState.traps.forEach { trap ->
                 if (trap.id !in dungeonState.resolvedTrapIds) {
-                    // A reduced scale, not a full cell — this sits on an
-                    // open, walkable tile now (not a wall variant, like it
-                    // used to be), so it shouldn't visually read as
-                    // impassable. Placeholder art; real bandit art to
-                    // follow later.
-                    CenteredCellIcon(R.drawable.ic_wall_bandit, trap.position, cellSize, cellSize * 0.6f, originX, originY)
+                    // The same bandit art as the turn-based fight overlay
+                    // (BanditCombatOverlay's idle pose), sized to match the
+                    // player's own character — replaces the old generic
+                    // ic_wall_bandit placeholder now that real bandit art
+                    // exists.
+                    CenteredCellIcon(R.drawable.ic_bandit_idle, trap.position, cellSize, characterSize, originX, originY)
                 }
             }
 
             if (!dungeonState.checkpointActivated) {
-                CenteredCellIcon(R.drawable.ic_traveler_injured, dungeonState.checkpointPosition, cellSize, cellSize * 0.7f, originX, originY)
+                // Grown from its original 0.7-cell size (first to 1.4x, then
+                // further here) for better visibility at this map's zoom
+                // level, same reasoning as the character/bandit sizing
+                // above. Tunable on-device.
+                CenteredCellIcon(R.drawable.ic_traveler_injured, dungeonState.checkpointPosition, cellSize, cellSize * 1.8f, originX, originY)
             }
 
-            CenteredCellIcon(R.drawable.ic_inn, dungeonState.goalPosition, cellSize, cellSize * 0.8f, originX, originY)
+            // No separate goal marker here — the map art already draws
+            // "THE INN" building at the goal position, so a second generic
+            // Inn icon on top would be redundant (mirrors dropping Daniel's
+            // own goal marker once his maze art started showing the den
+            // itself).
 
             // The player's own customized character, not a generic marker —
             // CharacterPreview applies `modifier.size(160.dp)` to whatever
@@ -370,15 +433,22 @@ private fun DungeonWorld(
             // constrains it first and the internal 160dp request is
             // clamped down to fit (same trick CharacterCallout already
             // relies on to show it at 96dp).
+            // Anchored near the feet, not the sprite's vertical center — the
+            // art has real headroom above the body, so centering it made the
+            // character visually sink below the actual walkable path,
+            // especially at this larger size (same fix already applied to
+            // Daniel's Race to the Den maze). X stays centered; only Y is
+            // pulled down toward the feet.
+            val characterFeetAnchorFraction = 0.85f
             CharacterPreview(
                 customization = characterCustomization,
                 posture = Posture.STANDING,
                 modifier = Modifier
                     .offset(
-                        x = cellSize * (dungeonState.playerPosition.x - originX) - cellSize * 0.4f,
-                        y = cellSize * (dungeonState.playerPosition.y - originY) - cellSize * 0.4f,
+                        x = cellSize * (dungeonState.playerPosition.x - originX) - characterSize / 2,
+                        y = cellSize * (dungeonState.playerPosition.y - originY) - characterSize * characterFeetAnchorFraction,
                     )
-                    .size(cellSize * 0.8f)
+                    .size(characterSize)
                     .semantics { contentDescription = playerContentDescription },
             )
         }

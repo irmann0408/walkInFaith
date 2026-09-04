@@ -377,7 +377,7 @@ class DungeonGameTest {
 
     @Test
     fun `replaying the production map's hand-verified waypoint route reaches isComplete`() {
-        var state = DungeonGame.fromLayout(GoodSamaritanContent.mapLayout)
+        var state = DungeonGame.fromLayout(GoodSamaritanContent.mapLayout, GoodSamaritanContent.banditPatrols)
 
         GoodSamaritanContent.dungeonRouteWaypoints.forEach { waypoint ->
             state = steerToward(state, waypoint)
@@ -387,7 +387,26 @@ class DungeonGameTest {
         }
 
         assertTrue(state.isComplete)
-        assertEquals(10, state.collectedSupplyIds.size)
+        assertEquals(7, state.collectedSupplyIds.size)
+    }
+
+    @Test
+    fun `a patrolling bandit walking into a stationary player still starts combat`() {
+        // A bandit patrolling back and forth between its spawn (col 4) and
+        // the player's own starting cell (col 0) — the player never touches
+        // the joystick, directly regression-testing the dead-zone-early-
+        // return bug: without the fix, a moving trap's approach was never
+        // checked at all when the player's own input was below
+        // MIN_JOYSTICK_MAGNITUDE, since `tick` returned before any trigger
+        // logic ran. T/I are required by fromLayout but otherwise unused
+        // here.
+        val layout = listOf("S...X", "..T.I")
+        val patrols = mapOf("trap_0_4" to listOf(Vector2(0.5f, 0.5f), Vector2(4.5f, 0.5f)))
+        val state = tickUntilEvent(DungeonGame.fromLayout(layout, patrols), direction = Vector2(0f, 0f))
+
+        assertEquals(DungeonOutcome.TRAP_ENTERED, state.lastOutcome)
+        assertEquals(DungeonCombatState(trapId = "trap_0_4", banditToughnessRemaining = DungeonGame.BANDIT_INITIAL_TOUGHNESS), state.combat)
+        assertEquals("the player never moved", Vector2(0.5f, 0.5f), state.playerPosition)
     }
 
     /**
