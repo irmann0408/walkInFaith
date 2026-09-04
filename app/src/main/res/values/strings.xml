@@ -48,6 +48,7 @@
 
     <string name="character_screen_title">Choose Your Character</string>
     <string name="character_preview_content_description">Your character</string>
+    <string name="character_tap_to_hear_content_description">Tap to hear from your character</string>
     <string name="character_section_appearance">Appearance</string>
     <string name="character_section_hairstyle">Hairstyle</string>
     <string name="character_section_clothing">Clothing</string>

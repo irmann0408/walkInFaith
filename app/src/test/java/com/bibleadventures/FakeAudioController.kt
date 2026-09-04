@@ -1,6 +1,7 @@
 package com.bibleadventures
 
 import com.bibleadventures.audio.AudioController
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.audio.MusicTrack
 import com.bibleadventures.audio.SoundEffect
 
@@ -8,6 +9,7 @@ import com.bibleadventures.audio.SoundEffect
 class FakeAudioController : AudioController {
     val playedEffects = mutableListOf<SoundEffect>()
     val spokenText = mutableListOf<String>()
+    val playedCharacterLines = mutableListOf<CharacterVoiceLine>()
 
     override fun playMusic(track: MusicTrack) = Unit
     override fun stopMusic() = Unit
@@ -18,4 +20,8 @@ class FakeAudioController : AudioController {
         spokenText += text
     }
     override fun stopSpeaking() = Unit
+    override fun playCharacterLine(line: CharacterVoiceLine, onCompletion: () -> Unit) {
+        playedCharacterLines += line
+        onCompletion()
+    }
 }

@@ -7,6 +7,7 @@ import android.media.SoundPool
 import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import com.bibleadventures.R
+import com.bibleadventures.domain.model.Appearance
 import com.bibleadventures.domain.model.AudioSettings
 import com.bibleadventures.domain.repository.PlayerProfileRepository
 import kotlinx.coroutines.CoroutineScope
@@ -63,6 +64,9 @@ class RealAudioController(
     @Volatile
     private var settings: AudioSettings = AudioSettings()
 
+    @Volatile
+    private var appearance: Appearance = Appearance.BOY
+
     private val soundPool: SoundPool = SoundPool.Builder()
         .setMaxStreams(4)
         .setAudioAttributes(
@@ -96,6 +100,45 @@ class RealAudioController(
     private var tts: TextToSpeech? = null
     private var ttsReady = false
 
+    /** (boy resId, girl resId) — only Noah's Ark and David & Goliath have real recordings so far. */
+    private val voiceLineResIds: Map<CharacterVoiceLine, Pair<Int, Int>> = mapOf(
+        CharacterVoiceLine.NOAH_INTRO to (R.raw.noahs_ark_warning_mandate_voice_b to R.raw.noahs_ark_warning_mandate_voice_g),
+        CharacterVoiceLine.NOAH_FIND_TOOLS_INTRO to (R.raw.noahs_ark_find_tools_intro_voice_b to R.raw.noahs_ark_find_tools_intro_voice_g),
+        CharacterVoiceLine.NOAH_NOT_A_TOOL to (R.raw.noahs_ark_not_a_tool_voice_b to R.raw.noahs_ark_not_a_tool_voice_g),
+        CharacterVoiceLine.NOAH_BUILDING_ARK to (R.raw.noahs_ark_building_ark_voice_b to R.raw.noahs_ark_building_ark_voice_g),
+        CharacterVoiceLine.NOAH_MATCHING_INTRO to (R.raw.noahs_ark_matching_intro_voice_b to R.raw.noahs_ark_matching_intro_voice_g),
+        CharacterVoiceLine.NOAH_ANIMALS_ENTERING to (R.raw.noahs_ark_animals_two_by_two_voice_b to R.raw.noahs_ark_animals_two_by_two_voice_g),
+        CharacterVoiceLine.NOAH_ORGANIZE_INTRO to (R.raw.noahs_ark_organize_intro_voice_b to R.raw.noahs_ark_organize_intro_voice_g),
+        CharacterVoiceLine.NOAH_GREAT_FLOOD to (R.raw.noahs_ark_great_flood_voice_b to R.raw.noahs_ark_great_flood_voice_g),
+        CharacterVoiceLine.NOAH_DOVE_AND_LAND to (R.raw.noahs_ark_dove_and_land_voice_b to R.raw.noahs_ark_dove_and_land_voice_g),
+        CharacterVoiceLine.NOAH_RAINBOW_PROMISE to (R.raw.noahs_ark_rainbow_promise_voice_b to R.raw.noahs_ark_rainbow_promise_voice_g),
+        CharacterVoiceLine.NOAH_LESSON to (R.raw.noahs_ark_thanks_be_to_god_voice_b to R.raw.noahs_ark_thanks_be_to_god_voice_g),
+        CharacterVoiceLine.DAVID_FAITHFUL_SHEPHERD to (R.raw.david_goliath_faithful_shepherd_voice_b to R.raw.david_goliath_faithful_shepherd_voice_g),
+        CharacterVoiceLine.DAVID_SHEEP_COUNTING_INTRO to (R.raw.david_goliath_sheep_counting_intro_voice_b to R.raw.david_goliath_sheep_counting_intro_voice_g),
+        CharacterVoiceLine.DAVID_GIANTS_CHALLENGE to (R.raw.david_goliath_giants_challenge_voice_b to R.raw.david_goliath_giants_challenge_voice_g),
+        CharacterVoiceLine.DAVID_ARRIVES to (R.raw.david_goliath_david_arrives_voice_b to R.raw.david_goliath_david_arrives_voice_g),
+        CharacterVoiceLine.DAVID_HEAVY_ARMOR to (R.raw.david_goliath_heavy_armor_voice_b to R.raw.david_goliath_heavy_armor_voice_g),
+        CharacterVoiceLine.DAVID_CHOOSE_STONES_INTRO to (R.raw.david_goliath_choose_stones_intro_voice_b to R.raw.david_goliath_choose_stones_intro_voice_g),
+        CharacterVoiceLine.DAVID_FIVE_SMOOTH_STONES to (R.raw.david_goliath_five_smooth_stones_voice_b to R.raw.david_goliath_five_smooth_stones_voice_g),
+        CharacterVoiceLine.DAVID_SLING_PRACTICE_INTRO to (R.raw.david_goliath_sling_practice_intro_voice_b to R.raw.david_goliath_sling_practice_intro_voice_g),
+        CharacterVoiceLine.DAVID_SLING_ESCAPED to (R.raw.david_goliath_sling_escaped_voice_b to R.raw.david_goliath_sling_escaped_voice_g),
+        CharacterVoiceLine.DAVID_VICTORY to (R.raw.david_goliath_victory_voice_b to R.raw.david_goliath_victory_voice_g),
+        CharacterVoiceLine.DAVID_LESSON to (R.raw.david_goliath_glory_to_god_voice_b to R.raw.david_goliath_glory_to_god_voice_g),
+        CharacterVoiceLine.FEEDBACK_GREAT_JOB to (R.raw.feedback_great_job_voice_b to R.raw.feedback_great_job_voice_g),
+        CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE to (R.raw.feedback_try_another_one_voice_b to R.raw.feedback_try_another_one_voice_g),
+    )
+    private var voiceLinePlayer: MediaPlayer? = null
+
+    /**
+     * A caller (e.g. `StoryVideoScreen`) can pass an [AudioController.playCharacterLine]
+     * completion callback to resume something it paused for this line. Cutting
+     * a still-playing line off (a new [playCharacterLine] call, or narration
+     * being disabled mid-line) must still fire *that* pending callback —
+     * stopping/releasing a [MediaPlayer] doesn't fire its own completion
+     * listener, so this is tracked explicitly rather than relying on that.
+     */
+    private var pendingVoiceLineCompletion: (() -> Unit)? = null
+
     init {
         soundPool.setOnLoadCompleteListener { _, sampleId, status ->
             if (status == 0) loadedSoundIds += sampleId
@@ -104,6 +147,11 @@ class RealAudioController(
             .map { it.audioSettings }
             .distinctUntilChanged()
             .onEach { newSettings -> applySettingsChange(newSettings) }
+            .launchIn(scope)
+        playerProfileRepository.profile
+            .map { it.character.appearance }
+            .distinctUntilChanged()
+            .onEach { newAppearance -> appearance = newAppearance }
             .launchIn(scope)
         initializeTts(preferGoogleEngine = true)
     }
@@ -179,6 +227,9 @@ class RealAudioController(
         }
         if (!newSettings.narrationEnabled) {
             tts?.stop()
+            runCatching { voiceLinePlayer?.stop() }
+            pendingVoiceLineCompletion?.invoke()
+            pendingVoiceLineCompletion = null
         }
     }
 
@@ -227,5 +278,40 @@ class RealAudioController(
 
     override fun stopSpeaking() {
         tts?.stop()
+        runCatching { voiceLinePlayer?.stop() }
+        pendingVoiceLineCompletion?.invoke()
+        pendingVoiceLineCompletion = null
+    }
+
+    override fun playCharacterLine(line: CharacterVoiceLine, onCompletion: () -> Unit) {
+        // Cutting off a still-playing line must still fire its own pending
+        // completion (e.g. a paused video narration waiting to resume).
+        pendingVoiceLineCompletion?.invoke()
+        pendingVoiceLineCompletion = onCompletion
+
+        if (!settings.narrationEnabled) {
+            pendingVoiceLineCompletion = null
+            onCompletion()
+            return
+        }
+        val (boyResId, girlResId) = voiceLineResIds[line] ?: run {
+            pendingVoiceLineCompletion = null
+            onCompletion()
+            return
+        }
+        val resId = if (appearance == Appearance.BOY) boyResId else girlResId
+
+        voiceLinePlayer?.release()
+        voiceLinePlayer = MediaPlayer().apply {
+            appContext.resources.openRawResourceFd(resId).use { afd ->
+                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+            }
+            setOnPreparedListener { player -> if (settings.narrationEnabled) player.start() }
+            setOnCompletionListener {
+                pendingVoiceLineCompletion?.invoke()
+                pendingVoiceLineCompletion = null
+            }
+            prepareAsync()
+        }
     }
 }

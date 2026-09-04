@@ -3,6 +3,7 @@ package com.bibleadventures.ui.screens.davidgoliath
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bibleadventures.audio.AudioController
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
@@ -16,6 +17,7 @@ import com.bibleadventures.game.puzzles.matching.MatchingGame
 import com.bibleadventures.game.puzzles.matching.MatchingGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGame
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
+import com.bibleadventures.game.puzzles.slingshot.SlingshotOutcome
 import com.bibleadventures.game.puzzles.slingshot.Vector2
 import com.bibleadventures.game.rewards.DavidGoliathReward
 import com.bibleadventures.game.rewards.RewardCalculator
@@ -99,8 +101,13 @@ class DavidGoliathViewModel(
     fun onSheepCountingItemTapped(itemId: String) {
         _uiState.update { current ->
             val next = MatchingGame.onItemTapped(current.sheepCountingState, itemId)
-            if (next.lastOutcome == MatchOutcome.CORRECT) {
-                audioController.playSfx(SoundEffect.MATCH_SUCCESS)
+            when (next.lastOutcome) {
+                MatchOutcome.CORRECT -> {
+                    audioController.playSfx(SoundEffect.MATCH_SUCCESS)
+                    audioController.playCharacterLine(CharacterVoiceLine.FEEDBACK_GREAT_JOB)
+                }
+                MatchOutcome.TRY_AGAIN -> audioController.playCharacterLine(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE)
+                MatchOutcome.NONE -> Unit
             }
             current.copy(sheepCountingState = next)
         }
@@ -112,13 +119,21 @@ class DavidGoliathViewModel(
             if (next.hits > current.slingshotState.hits) {
                 audioController.playSfx(SoundEffect.TARGET_HIT)
             }
+            when (next.lastOutcome) {
+                SlingshotOutcome.HIT -> audioController.playCharacterLine(CharacterVoiceLine.FEEDBACK_GREAT_JOB)
+                SlingshotOutcome.MISS -> audioController.playCharacterLine(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE)
+                SlingshotOutcome.ESCAPED, SlingshotOutcome.NONE -> Unit
+            }
             current.copy(slingshotState = next)
         }
     }
 
     /** Called by the screen once the current rat's fall duration elapses without being hit — never punished, the next rat simply appears. */
     fun onRatEscaped() {
-        _uiState.update { current -> current.copy(slingshotState = SlingshotGame.onRatEscaped(current.slingshotState)) }
+        _uiState.update { current ->
+            audioController.playCharacterLine(CharacterVoiceLine.DAVID_SLING_ESCAPED)
+            current.copy(slingshotState = SlingshotGame.onRatEscaped(current.slingshotState))
+        }
     }
 
     /** Records mid-adventure progress so "Continue Adventure" and a future resume can see it. */

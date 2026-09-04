@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -55,12 +56,14 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.puzzles.groupfill.FamilyGroup
 import com.bibleadventures.game.puzzles.groupfill.GroupFillGame
 import com.bibleadventures.game.puzzles.groupfill.GroupFillGameState
 import com.bibleadventures.game.puzzles.groupfill.GroupFillOutcome
 import com.bibleadventures.game.stories.NoahsArkContent
+import com.bibleadventures.ui.LocalAudioController
 import com.bibleadventures.ui.LocalReducedMotion
 import com.bibleadventures.ui.components.CharacterCallout
 import com.bibleadventures.ui.components.Posture
@@ -127,6 +130,9 @@ private fun NoahsArkOrganizeArkContent(
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val audioController = LocalAudioController.current
+    LaunchedEffect(Unit) { audioController.playCharacterLine(CharacterVoiceLine.NOAH_ORGANIZE_INTRO) }
+
     var deckCenters by remember { mutableStateOf(List(groupFillState.circleTargets.size) { Offset.Zero }) }
     val snapRadiusPx = with(LocalDensity.current) { SNAP_RADIUS.toPx() }
     val deckSums = groupFillState.circleTargets.indices.map { groupFillState.circleSum(it) }

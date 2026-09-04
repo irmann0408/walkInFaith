@@ -31,7 +31,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.bibleadventures.R
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.domain.model.CharacterCustomization
+import com.bibleadventures.ui.LocalAudioController
 import android.net.Uri
 
 /**
@@ -57,6 +59,13 @@ import android.net.Uri
  * character in the bottom-start corner for the whole scene, and once the
  * video finishes a full playthrough its speech bubble appears with a short
  * reflection line tying the scene to something it's learning.
+ *
+ * [characterVoiceLine], when supplied (currently only Noah's Ark and David
+ * & Goliath have real recordings), makes the character genuinely speak: its
+ * own recorded line plays automatically once the narration track finishes,
+ * or immediately if the player taps the character first — tapping pauses
+ * narration and resumes it once the character's own line finishes, so the
+ * two voices never overlap.
  */
 @OptIn(UnstableApi::class)
 @Composable
@@ -67,18 +76,32 @@ fun StoryVideoScreen(
     modifier: Modifier = Modifier,
     characterCustomization: CharacterCustomization? = null,
     reflectionRes: Int? = null,
+    characterVoiceLine: CharacterVoiceLine? = null,
 ) {
     val context = LocalContext.current
+    val audioController = LocalAudioController.current
     val videoPlayer = remember { ExoPlayer.Builder(context).build() }
     val narrationPlayer = remember { ExoPlayer.Builder(context).build() }
     var videoEnded by remember { mutableStateOf(false) }
+    // Guards against the character's own line playing twice for one scene —
+    // once from the auto-trigger below and again if the (resumed) narration
+    // later reaches its own natural end. Set the moment the line is
+    // triggered by either path, whichever happens first.
+    var characterLinePlayed by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         // Video is muted for as long as narration is playing, un-muted once it finishes.
+        // Once narration truly ends, the character's own recorded line (if
+        // any) plays automatically — unless the player already triggered it
+        // early by tapping the character (see CharacterCallout's onClick below).
         val narrationListener = object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_ENDED) {
                     videoPlayer.volume = 1f
+                    if (characterVoiceLine != null && !characterLinePlayed) {
+                        characterLinePlayed = true
+                        audioController.playCharacterLine(characterVoiceLine)
+                    }
                 }
             }
         }
@@ -100,11 +123,22 @@ fun StoryVideoScreen(
             videoPlayer.removeListener(videoListener)
             videoPlayer.release()
             narrationPlayer.release()
+            // Deliberately NOT audioController.stopSpeaking() here: Compose
+            // Navigation keeps the outgoing and incoming screens composed
+            // together during the transition, so this onDispose can — and,
+            // confirmed on-device, reliably did — fire *after* the next
+            // screen's own LaunchedEffect(Unit) had already started playing
+            // its own intro line, killing it a couple of words in on every
+            // single puzzle screen (every one of them is entered right after
+            // a video). Stopping this screen's own audio belongs at the
+            // moment *this* screen decides to leave (see the topBar's onNext
+            // below), which runs strictly before the next screen exists.
         }
     }
 
     LaunchedEffect(videoRes, narrationRes) {
         videoEnded = false
+        characterLinePlayed = false
         videoPlayer.setMediaItem(rawResMediaItem(context.packageName, videoRes))
         videoPlayer.repeatMode = Player.REPEAT_MODE_OFF
         videoPlayer.prepare()
@@ -127,7 +161,14 @@ fun StoryVideoScreen(
                 showBackButton = false,
                 onBackToMainMenu = {},
                 showNextButton = true,
-                onNext = onContinue,
+                // Stops this screen's own narration/character-line audio
+                // synchronously, strictly before navigating away — see the
+                // onDispose comment above for why that ordering matters and
+                // a same-instant stop in onDispose does not achieve it.
+                onNext = {
+                    audioController.stopSpeaking()
+                    onContinue()
+                },
             )
         },
     ) { innerPadding ->
@@ -153,12 +194,25 @@ fun StoryVideoScreen(
                     // enough to keep the bubble from growing down into the character.
                     bubbleAboveClearance = 76.dp,
                     modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                    onClick = if (characterVoiceLine != null) {
+                        {
+                            val wasNarrating = narrationPlayer.isPlaying
+                            if (wasNarrating) narrationPlayer.pause()
+                            characterLinePlayed = true
+                            audioController.playCharacterLine(characterVoiceLine) {
+                                if (wasNarrating) narrationPlayer.play()
+                            }
+                        }
+                    } else {
+                        null
+                    },
                 )
             }
 
             IconButton(
                 onClick = {
                     videoEnded = false
+                    characterLinePlayed = false
                     videoPlayer.seekTo(0)
                     videoPlayer.volume = 0f
                     videoPlayer.play()

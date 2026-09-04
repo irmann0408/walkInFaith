@@ -3,6 +3,7 @@ package com.bibleadventures.ui.screens.noahsark
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bibleadventures.audio.AudioController
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
@@ -10,6 +11,7 @@ import com.bibleadventures.domain.repository.PlayerProfileRepository
 import com.bibleadventures.game.puzzles.groupfill.FamilyGroup
 import com.bibleadventures.game.puzzles.groupfill.GroupFillGame
 import com.bibleadventures.game.puzzles.groupfill.GroupFillGameState
+import com.bibleadventures.game.puzzles.groupfill.GroupFillOutcome
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenItem
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGame
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
@@ -79,6 +81,7 @@ class NoahsArkViewModel(
 
     /** A tap on "Find the Tools" that landed outside every tool hotspot — never penalized, never blocks progress. */
     fun onFindToolsBackgroundTapped() {
+        audioController.playCharacterLine(CharacterVoiceLine.NOAH_NOT_A_TOOL)
         _uiState.update {
             it.copy(lastFindToolsWrongTapOutcome = DecoyTapOutcome.DECOY_TAPPED, lastFindToolsTapWasCorrect = false)
         }
@@ -87,8 +90,13 @@ class NoahsArkViewModel(
     fun onMatchItemTapped(itemId: String) {
         _uiState.update { current ->
             val newMatchingState = MatchingGame.onItemTapped(current.matchingState, itemId)
-            if (newMatchingState.lastOutcome == MatchOutcome.CORRECT) {
-                audioController.playSfx(SoundEffect.MATCH_SUCCESS)
+            when (newMatchingState.lastOutcome) {
+                MatchOutcome.CORRECT -> {
+                    audioController.playSfx(SoundEffect.MATCH_SUCCESS)
+                    audioController.playCharacterLine(CharacterVoiceLine.FEEDBACK_GREAT_JOB)
+                }
+                MatchOutcome.TRY_AGAIN -> audioController.playCharacterLine(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE)
+                MatchOutcome.NONE -> Unit
             }
             current.copy(matchingState = newMatchingState)
         }
@@ -100,6 +108,13 @@ class NoahsArkViewModel(
             val next = GroupFillGame.onFamilyDropped(current.groupFillState, basketId, deckIndex)
             if (next.placedFamilyIds.size > current.groupFillState.placedFamilyIds.size) {
                 audioController.playSfx(SoundEffect.ITEM_COLLECTED)
+            }
+            when (next.lastOutcome) {
+                GroupFillOutcome.ADDED, GroupFillOutcome.CIRCLE_COMPLETE, GroupFillOutcome.ALL_COMPLETE ->
+                    audioController.playCharacterLine(CharacterVoiceLine.FEEDBACK_GREAT_JOB)
+                GroupFillOutcome.REJECTED_OVERSHOOT, GroupFillOutcome.REJECTED_UNREACHABLE ->
+                    audioController.playCharacterLine(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE)
+                GroupFillOutcome.NONE -> Unit
             }
             current.copy(groupFillState = next)
         }

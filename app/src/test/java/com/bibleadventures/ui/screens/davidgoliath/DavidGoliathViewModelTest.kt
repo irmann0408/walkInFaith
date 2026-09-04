@@ -3,6 +3,7 @@ package com.bibleadventures.ui.screens.davidgoliath
 import com.bibleadventures.FakeAudioController
 import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.connectfour.ConnectFourOutcome
@@ -104,7 +105,7 @@ class DavidGoliathViewModelTest {
     }
 
     @Test
-    fun `onSheepCountingItemTapped plays a sound only on a correct pair`() {
+    fun `onSheepCountingItemTapped plays a sound and the great-job line only on a correct pair`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val state = viewModel.uiState.value.sheepCountingState
@@ -115,11 +116,16 @@ class DavidGoliathViewModelTest {
         viewModel.onSheepCountingItemTapped(samePair[0].id)
         viewModel.onSheepCountingItemTapped(mismatched.id)
         assertTrue(audioController.playedEffects.isEmpty())
+        assertEquals(listOf(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE), audioController.playedCharacterLines)
 
         // The next tap after a shown mismatch flips the pair back down and starts fresh.
         viewModel.onSheepCountingItemTapped(samePair[0].id)
         viewModel.onSheepCountingItemTapped(samePair[1].id)
         assertEquals(listOf(SoundEffect.MATCH_SUCCESS), audioController.playedEffects)
+        assertEquals(
+            listOf(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE, CharacterVoiceLine.FEEDBACK_GREAT_JOB),
+            audioController.playedCharacterLines,
+        )
     }
 
     @Test
@@ -139,7 +145,7 @@ class DavidGoliathViewModelTest {
     private val pullUp = Vector2(0f, -0.3f) // pulled up, toward the rat -> launches away from it
 
     @Test
-    fun `onStoneReleased plays a sound only on a hit`() {
+    fun `onStoneReleased plays a sound and the great-job line only on a hit`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val rat = Vector2(0.5f, 0.2f)
@@ -149,16 +155,18 @@ class DavidGoliathViewModelTest {
 
         viewModel.onStoneReleased(anchor, pullDown, rat)
         assertEquals(listOf(SoundEffect.TARGET_HIT), audioController.playedEffects)
+        assertEquals(listOf(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE, CharacterVoiceLine.FEEDBACK_GREAT_JOB), audioController.playedCharacterLines)
     }
 
     @Test
-    fun `onStoneReleased does not play a sound on a miss`() {
+    fun `onStoneReleased plays no sound but speaks the try-again line on a miss`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
         viewModel.onStoneReleased(anchor, pullUp, Vector2(0.5f, 0.2f))
 
         assertTrue(audioController.playedEffects.isEmpty())
+        assertEquals(listOf(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE), audioController.playedCharacterLines)
     }
 
     @Test
@@ -184,13 +192,14 @@ class DavidGoliathViewModelTest {
     }
 
     @Test
-    fun `onRatEscaped never plays a sound`() {
+    fun `onRatEscaped never plays a sound, but speaks the escaped line`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
 
         viewModel.onRatEscaped()
 
         assertTrue(audioController.playedEffects.isEmpty())
+        assertEquals(listOf(CharacterVoiceLine.DAVID_SLING_ESCAPED), audioController.playedCharacterLines)
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.bibleadventures.ui.screens.noahsark
 import com.bibleadventures.FakeAudioController
 import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.matching.MatchOutcome
@@ -53,7 +54,7 @@ class NoahsArkViewModelTest {
     }
 
     @Test
-    fun `onBasketDropped places a basket that fits its own deck, and plays a collected sound`() {
+    fun `onBasketDropped places a basket that fits its own deck, and plays a collected sound and a character line`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val firstBasketId = viewModel.uiState.value.groupFillState.remainingFamilyIds.first()
@@ -63,6 +64,30 @@ class NoahsArkViewModelTest {
 
         assertTrue(firstBasketId in viewModel.uiState.value.groupFillState.placedFamilyIds)
         assertEquals(listOf(SoundEffect.ITEM_COLLECTED), audioController.playedEffects)
+        assertEquals(listOf(CharacterVoiceLine.FEEDBACK_GREAT_JOB), audioController.playedCharacterLines)
+    }
+
+    @Test
+    fun `onBasketDropped that overshoots a deck's target plays no sound, but speaks the try-again line`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
+
+        // Fill deck 0 exactly to its target using its own baskets (they're
+        // guaranteed to partition it exactly), then try dropping any basket
+        // from a different deck into the now-full deck 0 — since every
+        // basket has a positive headcount, this is a guaranteed overshoot
+        // regardless of the random partition this playthrough generated.
+        viewModel.uiState.value.groupFillState.families
+            .filter { it.id.startsWith("basket_0_") }
+            .forEach { viewModel.onBasketDropped(it.id, 0) }
+        val otherDeckBasket = viewModel.uiState.value.groupFillState.remainingFamilyIds.first { !it.startsWith("basket_0_") }
+        audioController.playedCharacterLines.clear()
+        audioController.playedEffects.clear()
+
+        viewModel.onBasketDropped(otherDeckBasket, 0)
+
+        assertTrue(audioController.playedEffects.isEmpty())
+        assertEquals(listOf(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE), audioController.playedCharacterLines)
     }
 
     @Test
@@ -87,13 +112,15 @@ class NoahsArkViewModelTest {
     }
 
     @Test
-    fun `onFindToolsBackgroundTapped sets the wrong-tap outcome without marking any tool found`() {
-        val viewModel = createViewModel()
+    fun `onFindToolsBackgroundTapped sets the wrong-tap outcome, speaks the not-a-tool line, without marking any tool found`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
 
         viewModel.onFindToolsBackgroundTapped()
 
         assertEquals(DecoyTapOutcome.DECOY_TAPPED, viewModel.uiState.value.lastFindToolsWrongTapOutcome)
         assertTrue(viewModel.uiState.value.hiddenObjectState.foundIds.isEmpty())
+        assertEquals(listOf(CharacterVoiceLine.NOAH_NOT_A_TOOL), audioController.playedCharacterLines)
     }
 
     @Test
@@ -110,7 +137,7 @@ class NoahsArkViewModelTest {
     }
 
     @Test
-    fun `onMatchItemTapped plays a success sound only on a correct match`() {
+    fun `onMatchItemTapped plays a success sound and the great-job line only on a correct match`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val items = viewModel.uiState.value.matchingState.items
@@ -121,6 +148,23 @@ class NoahsArkViewModelTest {
 
         assertEquals(MatchOutcome.CORRECT, viewModel.uiState.value.matchingState.lastOutcome)
         assertEquals(listOf(SoundEffect.MATCH_SUCCESS), audioController.playedEffects)
+        assertEquals(listOf(CharacterVoiceLine.FEEDBACK_GREAT_JOB), audioController.playedCharacterLines)
+    }
+
+    @Test
+    fun `onMatchItemTapped speaks the try-again line on a mismatched pair`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
+        val pairs = viewModel.uiState.value.matchingState.items.groupBy { it.pairKey }.values.toList()
+        val mismatchedItemA = pairs[0][0]
+        val mismatchedItemB = pairs[1][0]
+
+        viewModel.onMatchItemTapped(mismatchedItemA.id)
+        viewModel.onMatchItemTapped(mismatchedItemB.id)
+
+        assertEquals(MatchOutcome.TRY_AGAIN, viewModel.uiState.value.matchingState.lastOutcome)
+        assertTrue(audioController.playedEffects.isEmpty())
+        assertEquals(listOf(CharacterVoiceLine.FEEDBACK_TRY_ANOTHER_ONE), audioController.playedCharacterLines)
     }
 
     @Test

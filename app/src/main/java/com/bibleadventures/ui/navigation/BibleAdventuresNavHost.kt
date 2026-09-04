@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.bibleadventures.R
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.EstherContent
@@ -202,6 +203,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.noahs_ark_warning_mandate,
+                characterVoiceLine = CharacterVoiceLine.NOAH_INTRO,
                 narrationRes = R.raw.noahs_ark_warning_mandate_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.noahs_ark_reflection_noah_intro,
@@ -229,6 +231,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.noahs_ark_building_ark,
+                characterVoiceLine = CharacterVoiceLine.NOAH_BUILDING_ARK,
                 narrationRes = R.raw.noahs_ark_building_ark_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.noahs_ark_reflection_building_ark,
@@ -256,6 +259,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.noahs_ark_animals_two_by_two,
+                characterVoiceLine = CharacterVoiceLine.NOAH_ANIMALS_ENTERING,
                 narrationRes = R.raw.noahs_ark_animals_two_by_two_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.noahs_ark_reflection_animals_entering,
@@ -283,6 +287,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.noahs_ark_great_flood,
+                characterVoiceLine = CharacterVoiceLine.NOAH_GREAT_FLOOD,
                 narrationRes = R.raw.noahs_ark_great_flood_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.noahs_ark_reflection_great_flood,
@@ -297,6 +302,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.noahs_ark_dove_and_land,
+                characterVoiceLine = CharacterVoiceLine.NOAH_DOVE_AND_LAND,
                 narrationRes = R.raw.noahs_ark_dove_and_land_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.noahs_ark_reflection_dove_and_land,
@@ -311,6 +317,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.noahs_ark_rainbow_promise,
+                characterVoiceLine = CharacterVoiceLine.NOAH_RAINBOW_PROMISE,
                 narrationRes = R.raw.noahs_ark_rainbow_promise_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.noahs_ark_reflection_rainbow_promise,
@@ -325,6 +332,7 @@ private fun NavGraphBuilder.noahsArkGraph(navController: NavHostController, onBa
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.noahs_ark_thanks_be_to_god,
+                characterVoiceLine = CharacterVoiceLine.NOAH_LESSON,
                 narrationRes = R.raw.noahs_ark_thanks_be_to_god_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.noahs_ark_reflection_lesson,
@@ -366,6 +374,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.david_goliath_faithful_shepherd,
+                characterVoiceLine = CharacterVoiceLine.DAVID_FAITHFUL_SHEPHERD,
                 narrationRes = R.raw.david_goliath_faithful_shepherd_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.david_goliath_reflection_faithful_shepherd,
@@ -393,6 +402,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.david_goliath_giants_challenge,
+                characterVoiceLine = CharacterVoiceLine.DAVID_GIANTS_CHALLENGE,
                 narrationRes = R.raw.david_goliath_giants_challenge_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.david_goliath_reflection_giants_challenge,
@@ -407,6 +417,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.david_goliath_david_arrives,
+                characterVoiceLine = CharacterVoiceLine.DAVID_ARRIVES,
                 narrationRes = R.raw.david_goliath_david_arrives_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.david_goliath_reflection_david_arrives,
@@ -431,6 +442,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.david_goliath_heavy_armor,
+                characterVoiceLine = CharacterVoiceLine.DAVID_HEAVY_ARMOR,
                 narrationRes = R.raw.david_goliath_heavy_armor_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.david_goliath_reflection_heavy_armor,
@@ -458,6 +470,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.david_goliath_five_smooth_stones,
+                characterVoiceLine = CharacterVoiceLine.DAVID_FIVE_SMOOTH_STONES,
                 narrationRes = R.raw.david_goliath_five_smooth_stones_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.david_goliath_reflection_five_smooth_stones,
@@ -485,6 +498,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.david_goliath_victory,
+                characterVoiceLine = CharacterVoiceLine.DAVID_VICTORY,
                 narrationRes = R.raw.david_goliath_victory_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.david_goliath_reflection_victory,
@@ -499,6 +513,7 @@ private fun NavGraphBuilder.davidGoliathGraph(navController: NavHostController, 
             val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
             StoryVideoScreen(
                 videoRes = R.raw.david_goliath_glory_to_god,
+                characterVoiceLine = CharacterVoiceLine.DAVID_LESSON,
                 narrationRes = R.raw.david_goliath_glory_to_god_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.david_goliath_reflection_glory_to_god,

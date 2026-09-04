@@ -1,5 +1,6 @@
 package com.bibleadventures.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -8,8 +9,12 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.bibleadventures.R
 import com.bibleadventures.domain.model.CharacterCustomization
 
 private val CHARACTER_CALLOUT_SIZE = 96.dp
@@ -55,6 +60,15 @@ private val DEFAULT_BUBBLE_ABOVE_CLEARANCE = 60.dp
  * outcome (e.g. [Posture.THUMBS_UP] on a correct answer) — see
  * [CharacterPreview] for why that's a transient parameter here rather than
  * part of [characterCustomization] itself.
+ *
+ * [onClick], when non-null, makes the character itself tappable (e.g.
+ * [StoryVideoScreen] lets the player tap the character to hear its own
+ * recorded line early, interrupting the video's narration). [CharacterPreview]
+ * already carries its own `character_preview_content_description` semantics
+ * internally — wrapping it in `.clickable` without overriding the
+ * description would leave two nodes reporting the same generic text, so
+ * this explicitly replaces it with [R.string.character_tap_to_hear_content_description]
+ * whenever a click handler is supplied.
  */
 @Composable
 fun CharacterCallout(
@@ -64,12 +78,20 @@ fun CharacterCallout(
     bubbleBelow: Boolean = false,
     posture: Posture = Posture.STANDING,
     bubbleAboveClearance: Dp = DEFAULT_BUBBLE_ABOVE_CLEARANCE,
+    onClick: (() -> Unit)? = null,
 ) {
     Box(modifier = modifier.size(CHARACTER_CALLOUT_SIZE)) {
+        var characterModifier = Modifier.size(CHARACTER_CALLOUT_SIZE)
+        if (onClick != null) {
+            val tapToHearDescription = stringResource(R.string.character_tap_to_hear_content_description)
+            characterModifier = characterModifier
+                .clickable(onClickLabel = tapToHearDescription, onClick = onClick)
+                .semantics(mergeDescendants = true) { contentDescription = tapToHearDescription }
+        }
         CharacterPreview(
             customization = characterCustomization,
             posture = posture,
-            modifier = Modifier.size(CHARACTER_CALLOUT_SIZE),
+            modifier = characterModifier,
         )
         if (message != null) {
             SpeechBubble(

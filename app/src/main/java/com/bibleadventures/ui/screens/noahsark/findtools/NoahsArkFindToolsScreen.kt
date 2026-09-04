@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -32,9 +33,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.puzzles.hiddenobject.HiddenObjectGameState
 import com.bibleadventures.game.stories.NoahsArkContent
+import com.bibleadventures.ui.LocalAudioController
 import com.bibleadventures.ui.components.AspectRatioFitBox
 import com.bibleadventures.ui.components.CharacterCallout
 import com.bibleadventures.ui.components.Posture
@@ -90,6 +93,9 @@ private fun NoahsArkFindToolsContent(
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val audioController = LocalAudioController.current
+    LaunchedEffect(Unit) { audioController.playCharacterLine(CharacterVoiceLine.NOAH_FIND_TOOLS_INTRO) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {

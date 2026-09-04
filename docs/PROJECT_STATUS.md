@@ -2332,6 +2332,81 @@ one deliberate difference kept:
   behavior.
 - Same as always: not unit-testable (real device/engine-dependent), `./gradlew build` still green, installed to the user's device to verify.
 
+### Audio, Narration & Settings addendum — real recorded character narration for Noah's Ark and David & Goliath
+The user recorded and added a `character message narration/` folder at the
+project root — 48 real MP3s (24 lines x Boy/Girl), resolving this app's own
+"no audio-recording capability" limitation for the first time (see above).
+Unlike TTS, these are the player's own customized character actually
+speaking, gendered to match the Boy/Girl appearance chosen at character
+creation. Scope is Noah's Ark and David & Goliath only, matching what's
+actually recorded; every other chapter's TTS narration is untouched.
+- **48 files renamed and copied into `res/raw/`** (source folder kept in
+  place as the archive, same precedent as `game art/`) — Android raw
+  resources can't have spaces/apostrophes/parens, so each file was renamed
+  to match this codebase's *existing* chapter/scene naming (not the
+  folder's own human labels) suffixed `_voice_b`/`_voice_g`, e.g. `Noah
+  Intro_B.mp3` -> `noahs_ark_warning_mandate_voice_b.mp3` (matching that
+  scene's existing video resource name), `Load the Ark (intro)_B.mp3` ->
+  `noahs_ark_organize_intro_voice_b.mp3` (the folder's label doesn't match
+  the screen's own "organize" naming, so the resource follows the code).
+- **New `CharacterVoiceLine` enum** (24 entries) and
+  `AudioController.playCharacterLine(line, onCompletion: () -> Unit = {})`,
+  implemented in `RealAudioController` via a dedicated single-shot
+  `MediaPlayer` (not `SoundPool` — these run longer than short SFX; not
+  looping like the music player), gated by the same `narrationEnabled`
+  setting as TTS. Reads the player's live `Appearance` from
+  `playerProfileRepository.profile` the same way `AudioSettings` is already
+  collected. `onCompletion` always fires exactly once — immediately if
+  narration is disabled or the line has no recording, otherwise on genuine
+  playback completion — and cutting a still-playing line off (a new
+  `playCharacterLine` call, or narration toggled off) explicitly invokes
+  the outgoing line's own pending completion first, since stopping/releasing
+  a `MediaPlayer` doesn't fire its completion listener itself.
+- **8 previously-silent puzzle screens now speak**: Find the Tools, Animal
+  Matching, Load the Ark, Sheep Counting, Choose the Stones, and Sling
+  Practice each play their intro line once via a screen-entry
+  `LaunchedEffect(Unit)` (mirrors `StoryBeatScreen`'s own established
+  `LaunchedEffect(lineRes) { audioController.speak(...) }` pattern, via the
+  same `LocalAudioController` composition local). Feedback lines ("Great
+  job!", "Try another one!", "That's not a tool!", "It got away") are
+  dispatched from `NoahsArkViewModel`/`DavidGoliathViewModel` right
+  alongside each outcome's existing `playSfx` call — a discrete
+  per-tap event, not a per-frame tick, so (unlike `dungeon`/`rhythmlane`)
+  no sticky-outcome comparison is needed to let repeats replay correctly.
+- **`CharacterCallout` gained an optional `onClick`**, used only by
+  `StoryVideoScreen`'s 14 Noah's-Ark/David-&-Goliath video scenes (per the
+  user's explicit design): the character's own recorded line plays
+  automatically once the video's existing narration finishes, or
+  immediately if the player taps the character first — which pauses
+  narration and resumes it once the character's own line ends, so the two
+  voices never overlap. `CharacterPreview`'s own built-in content
+  description is overridden with a distinct one when a click handler is
+  supplied (mirrors the exact fix already needed once this session for the
+  dungeon's combat overlay, for the same "two ambiguous nodes" reason).
+- **Real bug found and fixed after on-device testing**: every one of the 6
+  puzzle screens' intro lines cut off after only a couple of words, for
+  both genders, 100% reproducible. Root cause: `StoryVideoScreen`
+  originally called `audioController.stopSpeaking()` from its
+  `DisposableEffect`'s `onDispose` — but every one of those 6 puzzle
+  screens is entered immediately after a story-beat video, and Compose
+  Navigation keeps the outgoing and incoming screens composed together
+  during the transition, so that `onDispose` reliably fired *after* the new
+  puzzle screen's own `LaunchedEffect(Unit)` had already started playing
+  its own intro line, killing it moments in — a 100% hit rate since every
+  puzzle screen in scope has a video immediately before it. Fixed by moving
+  the stop to fire synchronously the instant "Next Page" is tapped
+  (`onNext = { audioController.stopSpeaking(); onContinue() }`), strictly
+  before the next screen is ever composed, instead of reactively on
+  disposal. General lesson: a cleanup call in `onDispose` is not
+  guaranteed to run *before* the next screen's own effects when Compose
+  Navigation briefly composes both screens together during a transition —
+  prefer stopping a resource at the moment the current screen decides to
+  leave, not reactively when it's torn down.
+- Confirmed: full `./gradlew compileDebugKotlin compileDebugUnitTestKotlin
+  testDebugUnitTest compileDebugAndroidTestKotlin` and `./gradlew build
+  -x connectedAndroidTest` both pass; installed via `installDebug` and
+  confirmed on-device by the user, including the cutoff-bug fix.
+
 ### Chapters 5a–5e — The Esther arc (5 short chapters, replacing the original single Esther chapter)
 Your daughter found the original single-chapter "Esther's Rescue of Her
 People" (one thin banquet-timing puzzle) too easy. Rebuilt from scratch as
@@ -4649,6 +4724,13 @@ preview (see above) — no further UI work on it for now. Open items:
   directional-variety regression test), confirmed compiling, and confirmed
   on-device by the user across 2 feedback rounds (board density, then
   direction variety).
+- Real recorded character narration for Noah's Ark and David & Goliath
+  ("Audio, Narration & Settings addendum" above) is implemented, confirmed
+  compiling, and confirmed on-device by the user — including a real
+  navigation-timing bug (puzzle intro lines cutting off after a couple
+  words) found and fixed during that on-device pass. Every other chapter's
+  TTS narration is untouched; extending real recordings to them is
+  future work, not scoped, and depends on the user recording more lines.
 
 ## Architectural decisions log
 
@@ -5151,3 +5233,23 @@ preview (see above) — no further UI work on it for now. Open items:
   distinction: dead code from a completed, working feature is left alone;
   a same-session authoring path immediately superseded by its own next
   iteration is fine to remove.
+- **A cleanup call placed in a Composable's `onDispose` is not guaranteed
+  to run *before* the next screen's own effects, when Compose Navigation
+  transitions between two destinations.** During the real recorded
+  character narration work, `StoryVideoScreen` called
+  `audioController.stopSpeaking()` from its `DisposableEffect`'s
+  `onDispose`, intending to stop a lingering voice line if the player left
+  mid-line. On-device this instead killed the *next* screen's own freshly
+  started audio 100% of the time for every one of the 6 puzzle screens
+  reached right after a video: Compose Navigation keeps the outgoing and
+  incoming destinations composed together for the transition, so the old
+  screen's `onDispose` can fire *after* the new screen's own
+  `LaunchedEffect(Unit)` has already started playing something — and a
+  global-singleton `AudioController` has no way to know the request to stop
+  arrived too late for the resource it's now holding. Fixed by moving the
+  stop to the moment the screen itself decides to leave (wrapping the
+  "Next Page" button's `onClick`, before calling through to navigate) —
+  guaranteed to run strictly before the next screen exists, rather than
+  reactively whenever disposal happens to actually fire. General rule: stop
+  a resource at the point of departure, not in `onDispose`, whenever
+  something else might start using that same resource immediately after.

@@ -32,10 +32,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.puzzles.connectfour.ConnectFourGameState
 import com.bibleadventures.game.puzzles.connectfour.ConnectFourOutcome
 import com.bibleadventures.game.puzzles.connectfour.Slot
+import com.bibleadventures.ui.LocalAudioController
 import com.bibleadventures.ui.components.CharacterCallout
 import com.bibleadventures.ui.components.Posture
 import com.bibleadventures.ui.components.PuzzleTopBar
@@ -94,6 +96,9 @@ private fun DavidGoliathChooseStonesContent(
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val audioController = LocalAudioController.current
+    LaunchedEffect(Unit) { audioController.playCharacterLine(CharacterVoiceLine.DAVID_CHOOSE_STONES_INTRO) }
+
     // The opponent's own move is a plain screen-owned timing concern (a brief
     // "thinking" pause), same split as every other engine in this app.
     LaunchedEffect(connectFourState.isPlayerTurn, connectFourState.outcome) {

@@ -46,11 +46,13 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bibleadventures.R
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGame
 import com.bibleadventures.game.puzzles.slingshot.SlingshotGameState
 import com.bibleadventures.game.puzzles.slingshot.SlingshotOutcome
 import com.bibleadventures.game.puzzles.slingshot.Vector2
+import com.bibleadventures.ui.LocalAudioController
 import com.bibleadventures.ui.components.AspectRatioFitBox
 import com.bibleadventures.ui.components.CharacterCallout
 import com.bibleadventures.ui.components.Posture
@@ -230,6 +232,9 @@ private fun DavidGoliathSlingPracticeContent(
     previouslyCompleted: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val audioController = LocalAudioController.current
+    LaunchedEffect(Unit) { audioController.playCharacterLine(CharacterVoiceLine.DAVID_SLING_PRACTICE_INTRO) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
