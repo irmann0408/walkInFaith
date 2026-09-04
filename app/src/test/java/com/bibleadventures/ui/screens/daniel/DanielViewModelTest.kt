@@ -5,9 +5,8 @@ import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
-import com.bibleadventures.game.puzzles.gridmaze.Direction
-import com.bibleadventures.game.puzzles.gridmaze.GridPosition
-import com.bibleadventures.game.puzzles.gridmaze.GridTileType
+import com.bibleadventures.game.puzzles.racemaze.RaceMazeGame
+import com.bibleadventures.game.puzzles.racemaze.Vector2
 import com.bibleadventures.game.puzzles.slideout.SlideOutOutcome
 import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.MathOperator
@@ -36,15 +35,13 @@ class DanielViewModelTest {
     ) = DanielViewModel(ProgressionService(repository), repository, audioController)
 
     @Test
-    fun `initial grid parses dariusMapLayout into the correct dimensions and start position`() {
-        val state = createViewModel().uiState.value.gridMazeState
+    fun `initial race maze state parses the wall grids into the correct dimensions and start position`() {
+        val state = createViewModel().uiState.value.raceMazeState
 
-        assertEquals(DanielContent.dariusMapLayout.size, state.grid.size)
-        assertEquals(DanielContent.dariusMapLayout[0].length, state.grid[0].size)
-        assertEquals(GridPosition(0, 0), state.playerPosition)
-        assertEquals(GridTileType.PATH, state.grid[0][0])
-        assertEquals(GridTileType.WALL, state.grid[1][0])
-        assertEquals(GridTileType.GOAL, state.grid[6][6])
+        assertEquals(DanielContent.RACE_MAZE_SIZE, state.rows)
+        assertEquals(DanielContent.RACE_MAZE_SIZE, state.cols)
+        assertEquals(DanielContent.raceMazeStart, state.playerPosition)
+        assertEquals(DanielContent.raceMazeGoal, state.goalPosition)
     }
 
     // --- Open the Window (slideout: tap a latch, it releases or gets stuck) ---
@@ -244,12 +241,49 @@ class DanielViewModelTest {
     }
 
     @Test
-    fun `onDirectionPressed moves King Darius through the maze`() {
+    fun `onRaceMazeTick moves the player toward the joystick direction`() {
         val viewModel = createViewModel()
+        val before = viewModel.uiState.value.raceMazeState.playerPosition
 
-        viewModel.onDirectionPressed(DanielContent.dariusSolutionPath[0])
+        viewModel.onRaceMazeTick(Vector2(0f, -1f), deltaSeconds = 0.1f)
 
-        assertEquals(GridPosition(0, 1), viewModel.uiState.value.gridMazeState.playerPosition)
+        val after = viewModel.uiState.value.raceMazeState.playerPosition
+        assertTrue("player should have moved", after.y < before.y)
+    }
+
+    @Test
+    fun `onRaceMazeTick into a wall does not move the player`() {
+        val viewModel = createViewModel()
+        val before = viewModel.uiState.value.raceMazeState.playerPosition
+
+        // The start cell (row 7, col 0) sits against the maze's left border
+        // — pushing further left is always blocked by the map edge.
+        viewModel.onRaceMazeTick(Vector2(-1f, 0f), deltaSeconds = 1f)
+
+        assertEquals(before, viewModel.uiState.value.raceMazeState.playerPosition)
+    }
+
+    @Test
+    fun `steering through the hand-verified waypoint route reaches isComplete`() {
+        val viewModel = createViewModel()
+        var previousWaypoint = DanielContent.raceMazeSolutionWaypoints.first()
+
+        DanielContent.raceMazeSolutionWaypoints.drop(1).forEach { waypoint ->
+            val dx = waypoint.x - previousWaypoint.x
+            val dy = waypoint.y - previousWaypoint.y
+            val legDistance = kotlin.math.hypot(dx, dy)
+            if (legDistance > 0f) {
+                val direction = Vector2(dx / legDistance, dy / legDistance)
+                var traveled = 0f
+                while (traveled < legDistance && !viewModel.uiState.value.raceMazeState.isComplete) {
+                    viewModel.onRaceMazeTick(direction, deltaSeconds = 1f / 60f)
+                    traveled += RaceMazeGame.PLAYER_SPEED_CELLS_PER_SECOND / 60f
+                }
+            }
+            previousWaypoint = waypoint
+        }
+
+        assertTrue(viewModel.uiState.value.raceMazeState.isComplete)
     }
 
     @Test

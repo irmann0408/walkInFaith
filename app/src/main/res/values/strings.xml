@@ -335,12 +335,11 @@
     <string name="good_samaritan_helping_beat_line_3">Then he helped the man onto his own animal to carry him the rest of the way.</string>
 
 
-    <string name="daniel_intro_line_1">Daniel served King Darius faithfully, and he prayed to God every single day.</string>
-    <string name="daniel_intro_line_2">Some jealous officials tricked the king into signing a law that could get Daniel thrown to the lions.</string>
-
-    <string name="daniel_window_context_title">A Shuttered Window</string>
-    <string name="daniel_window_context_line_1">When Daniel reached his upstairs room to pray, he found the window shuttered and latched tight.</string>
-    <string name="daniel_window_context_line_2">He would not pray in secret. Help him work the latches free so he can kneel with the window open, just as he always did.</string>
+    <string name="daniel_reflection_kings_decree">We can obey God, even when a new rule makes it risky.</string>
+    <string name="daniel_reflection_prays">We can keep praying, even when it\'s against the rules.</string>
+    <string name="daniel_reflection_thrown_to_lions">We can trust God to protect us, even in the scariest moments.</string>
+    <string name="daniel_reflection_next_morning">We can see God keep His promises, even after a long, hard night.</string>
+    <string name="daniel_reflection_new_proclamation">We can stay faithful to God, no matter what happens.</string>
 
     <string name="daniel_window_title">Open the Window</string>
     <string name="daniel_window_instructions">Tap a latch to release it. If another latch is in its way, it will get stuck — clear the outer ones first.</string>
@@ -361,10 +360,6 @@
     <string name="daniel_choice_reaction_2">Daniel prayed boldly, trusting God completely — even knowing the law.</string>
     <string name="daniel_choice_reaction_3">Daniel\'s prayer rang out through the open window, unafraid.</string>
 
-    <string name="daniel_lions_den_context_title">Into the Lions\' Den</string>
-    <string name="daniel_lions_den_context_line_1">The officials found Daniel praying, just as they hoped, and told the king.</string>
-    <string name="daniel_lions_den_context_line_2">King Darius was very sad, but the law could not be changed — Daniel was lowered into the lions\' den.</string>
-
     <string name="daniel_lions_den_title">The Angel\'s Shield</string>
     <string name="daniel_lions_den_instructions">Solve each problem to draw a ring of the shield around you. Answer wrong and the lions creep closer!</string>
     <string name="daniel_lions_den_progress_label">%1$d of %2$d shield rings drawn</string>
@@ -377,21 +372,12 @@
     <string name="daniel_lions_den_too_close_message">The lions got too close! Try again.</string>
     <string name="daniel_lions_den_try_again">Try Again</string>
 
-    <string name="daniel_darius_context_title">Darius\'s Long Night</string>
-    <string name="daniel_darius_context_line_1">King Darius could not eat or sleep all night, worried for Daniel.</string>
-    <string name="daniel_darius_context_line_2">As soon as the sun rose, he ran to the lions\' den as fast as he could.</string>
-
-    <string name="daniel_darius_maze_title">Race to the Den</string>
-    <string name="daniel_darius_maze_instructions">Use the arrows to help King Darius hurry through the palace to the lions\' den.</string>
-    <string name="daniel_darius_player_content_description">King Darius</string>
-    <string name="daniel_darius_den_content_description">The lions\' den</string>
-    <string name="daniel_darius_direction_up">Up</string>
-    <string name="daniel_darius_direction_down">Down</string>
-    <string name="daniel_darius_direction_left">Left</string>
-    <string name="daniel_darius_direction_right">Right</string>
-
-    <string name="daniel_lesson_title">Faithfulness and Prayer</string>
-    <string name="daniel_lesson_text">Daniel kept praying to God even when it was risky, and God kept him safe. When we stay faithful, God is with us no matter what happens.</string>
+    <string name="daniel_race_to_the_den_title">Race to the Den</string>
+    <string name="daniel_race_to_the_den_instructions">Use the joystick to race through the maze to the lions\' den.</string>
+    <string name="daniel_race_to_the_den_joystick_content_description">Move through the maze — drag in any direction</string>
+    <string name="daniel_race_to_the_den_player_content_description">You are here</string>
+    <string name="daniel_race_to_the_den_map_content_description">The maze to the lions\' den</string>
+    <string name="daniel_race_to_the_den_feedback_goal_reached">You reached the lions\' den!</string>
 
     <string name="esther_new_queen_intro_line_1">Esther was a Jewish orphan raised by her cousin Mordecai. When the king searched for a new queen, she was brought to the palace.</string>
     <string name="esther_new_queen_intro_line_2">Mordecai gave her wise advice: don\'t tell anyone you\'re Jewish, not yet.</string>

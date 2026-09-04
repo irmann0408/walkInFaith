@@ -30,10 +30,8 @@ import com.bibleadventures.ui.screens.character.CharacterScreen
 import com.bibleadventures.ui.screens.comingsoon.ComingSoonScreen
 import com.bibleadventures.ui.screens.daniel.DanielViewModel
 import com.bibleadventures.ui.screens.daniel.choice.DanielChoiceScreen
-import com.bibleadventures.ui.screens.daniel.dariusmaze.DanielDariusMazeScreen
-import com.bibleadventures.ui.screens.daniel.intro.DanielIntroScreen
-import com.bibleadventures.ui.screens.daniel.lesson.DanielLessonScreen
 import com.bibleadventures.ui.screens.daniel.lionsden.DanielLionsDenScreen
+import com.bibleadventures.ui.screens.daniel.racetotheden.DanielRaceToTheDenScreen
 import com.bibleadventures.ui.screens.daniel.reward.DanielRewardScreen
 import com.bibleadventures.ui.screens.daniel.window.DanielWindowScreen
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
@@ -155,7 +153,7 @@ fun BibleAdventuresNavHost(navController: NavHostController = rememberNavControl
                     } else if (chapterId == ChapterId.GOOD_SAMARITAN) {
                         navController.navigate(Destination.GoodSamaritan.DangerousRoadVideo.route)
                     } else if (chapterId == ChapterId.DANIEL) {
-                        navController.navigate(Destination.Daniel.Intro.route)
+                        navController.navigate(Destination.Daniel.IntroVideo.route)
                     } else if (chapterId == ChapterId.ESTHER) {
                         navController.navigate(Destination.Esther.Intro.route)
                     } else if (chapterId == ChapterId.JERICHO) {
@@ -656,24 +654,21 @@ private fun NavHostController.goodSamaritanViewModel(entry: NavBackStackEntry): 
 
 private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBackToMainMenu: () -> Unit) {
     navigation(
-        startDestination = Destination.Daniel.Intro.route,
+        startDestination = Destination.Daniel.IntroVideo.route,
         route = Destination.Daniel.GRAPH_ROUTE,
     ) {
-        composable(Destination.Daniel.Intro.route) { entry ->
+        composable(Destination.Daniel.IntroVideo.route) { entry ->
             val viewModel = navController.danielViewModel(entry)
-            DanielIntroScreen(
-                viewModel = viewModel,
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.daniel_kings_decree,
+                narrationRes = R.raw.daniel_kings_decree_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.daniel_reflection_kings_decree,
                 onContinue = {
-                    viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.Daniel.WindowContext.route)
+                    viewModel.onSceneCompleted("intro_video")
+                    navController.navigate(Destination.Daniel.Window.route)
                 },
-            )
-        }
-        composable(Destination.Daniel.WindowContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.daniel_window_context_title,
-                lineRes = DanielContent.windowContextLines,
-                onContinue = { navController.navigate(Destination.Daniel.Window.route) },
             )
         }
         composable(Destination.Daniel.Window.route) { entry ->
@@ -685,6 +680,20 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("window")
+                    navController.navigate(Destination.Daniel.PrayerVideo.route)
+                },
+            )
+        }
+        composable(Destination.Daniel.PrayerVideo.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.daniel_prays,
+                narrationRes = R.raw.daniel_prays_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.daniel_reflection_prays,
+                onContinue = {
+                    viewModel.onSceneCompleted("prayer_video")
                     navController.navigate(Destination.Daniel.Choice.route)
                 },
             )
@@ -695,15 +704,8 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 viewModel = viewModel,
                 onContinue = {
                     viewModel.onSceneCompleted("choice")
-                    navController.navigate(Destination.Daniel.LionsDenContext.route)
+                    navController.navigate(Destination.Daniel.LionsDen.route)
                 },
-            )
-        }
-        composable(Destination.Daniel.LionsDenContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.daniel_lions_den_context_title,
-                lineRes = DanielContent.lionsDenContextLines,
-                onContinue = { navController.navigate(Destination.Daniel.LionsDen.route) },
             )
         }
         composable(Destination.Daniel.LionsDen.route) { entry ->
@@ -715,35 +717,65 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("lions_den")
-                    navController.navigate(Destination.Daniel.DariusContext.route)
+                    navController.navigate(Destination.Daniel.ThrownToLionsVideo.route)
                 },
             )
         }
-        composable(Destination.Daniel.DariusContext.route) {
-            StoryBeatScreen(
-                titleRes = R.string.daniel_darius_context_title,
-                lineRes = DanielContent.dariusContextLines,
-                onContinue = { navController.navigate(Destination.Daniel.DariusMaze.route) },
+        composable(Destination.Daniel.ThrownToLionsVideo.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.daniel_thrown_to_lions,
+                narrationRes = R.raw.daniel_thrown_to_lions_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.daniel_reflection_thrown_to_lions,
+                onContinue = {
+                    viewModel.onSceneCompleted("thrown_to_lions_video")
+                    navController.navigate(Destination.Daniel.RaceToTheDen.route)
+                },
             )
         }
-        composable(Destination.Daniel.DariusMaze.route) { entry ->
+        composable(Destination.Daniel.RaceToTheDen.route) { entry ->
             val viewModel = navController.danielViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            DanielDariusMazeScreen(
+            DanielRaceToTheDenScreen(
                 viewModel = viewModel,
+                // Scene id kept as the original "darius_maze" — it's a
+                // persisted PlayerProfile key (completedActivities), not a
+                // display string, so renaming it here would silently lose
+                // existing players' progress on this scene.
                 previouslyCompleted = "darius_maze" in previouslyCompletedSceneIds,
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
                     viewModel.onSceneCompleted("darius_maze")
-                    navController.navigate(Destination.Daniel.Lesson.route)
+                    navController.navigate(Destination.Daniel.NextMorningVideo.route)
                 },
             )
         }
-        composable(Destination.Daniel.Lesson.route) { entry ->
+        composable(Destination.Daniel.NextMorningVideo.route) { entry ->
             val viewModel = navController.danielViewModel(entry)
-            DanielLessonScreen(
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.daniel_next_morning,
+                narrationRes = R.raw.daniel_next_morning_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.daniel_reflection_next_morning,
                 onContinue = {
-                    viewModel.onSceneCompleted("lesson")
+                    viewModel.onSceneCompleted("next_morning_video")
+                    navController.navigate(Destination.Daniel.ProclamationVideo.route)
+                },
+            )
+        }
+        composable(Destination.Daniel.ProclamationVideo.route) { entry ->
+            val viewModel = navController.danielViewModel(entry)
+            val characterCustomization by viewModel.characterCustomization.collectAsStateWithLifecycle()
+            StoryVideoScreen(
+                videoRes = R.raw.daniel_new_proclamation,
+                narrationRes = R.raw.daniel_new_proclamation_narration,
+                characterCustomization = characterCustomization,
+                reflectionRes = R.string.daniel_reflection_new_proclamation,
+                onContinue = {
+                    viewModel.onSceneCompleted("proclamation_video")
                     navController.navigate(Destination.Daniel.Reward.route)
                 },
             )

@@ -97,7 +97,8 @@ object JesusCalmsStormContent {
     // Hand-verified (BFS) 30-move solution from (0,0) to Jesus at (8,6).
     // Used by the instrumented flow test to replay a known-solvable path
     // deterministically, since the map itself is a fixed perfect maze, not
-    // shuffled per playthrough (same reasoning as Daniel's dariusSolutionPath).
+    // shuffled per playthrough (same reasoning as every other hand-authored
+    // gridmaze layout in this app, e.g. GoodSamaritanContent.mapLayout).
     val reachingJesusSolutionPath: List<Direction> = listOf(
         Direction.RIGHT, Direction.RIGHT, Direction.RIGHT, Direction.RIGHT,
         Direction.DOWN, Direction.DOWN,

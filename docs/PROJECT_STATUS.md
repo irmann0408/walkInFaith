@@ -2239,6 +2239,123 @@ completely unchanged, per the user's explicit "retain the math equations."
   on-device by the user across the initial pass plus 2 follow-up polish
   rounds (angel position, ring color on completion).
 
+### Chapter 4 addendum 3 — Race to the Den: joystick-driven maze replacing the old D-pad "Darius's Maze"
+Replaces the old `game/puzzles/gridmaze`-based D-pad "Darius's Maze" with a
+real hand-drawn corridor maze, navigated with the same real-time analog
+joystick as Good Samaritan's "mini dungeon" — reframed as Darius's own
+Daniel 6:19 dawn rush to the den.
+- **New `game/puzzles/racemaze` engine**, not a reuse of `DungeonGame`: this
+  art's walls are drawn *on* cell boundaries (a classic pen-and-paper maze),
+  the opposite of `DungeonGame`'s whole-cell-blocked model, so collision is a
+  point-vs-expanded-*segment* test instead of point-vs-expanded-*cell*.
+- **Tracing the maze took three rounds of user-provided art** before the
+  wall data could be trusted: the original hand-drawn artwork alone was too
+  faint for reliable pixel analysis; a thick red-ink outline (`Race to the
+  Den Maze outline.png`) let it be traced but wasn't a guaranteed
+  pixel-aligned crop of the real background; a second outline
+  ("outline 2.png", an exact overlay at the same size/crop) confirmed the
+  wall data was already correct and let the doorway/border measurements be
+  trusted precisely; a third outline with explicit green/blue start/goal
+  markers confirmed the exact row. Solvability was independently
+  cross-checked by BFS/flood-fill (192 of 196 cells one connected body, a
+  legitimate 4-cell dead end excluded) and against a user-provided blue-ink
+  solution-path overlay.
+- **Real bug, not a calibration issue, diagnosed from a user screen
+  recording**: this engine's walls are thin (a band only `PLAYER_RADIUS * 2`
+  wide) rather than `DungeonGame`'s opaque whole cells, and collision was
+  only ever checked at each frame's *destination* point, never swept along
+  the path — so a single oversized `deltaSeconds` (a one-time jank right as
+  this screen first composes and decodes its background image) could leap
+  the player clean across a wall in one step. Fixed by having `tick()`
+  internally split a large `deltaSeconds` into `MAX_STEP_SECONDS` (1/30s)
+  sub-steps, each collision-resolved — zero overhead at a real ~60fps (the
+  loop runs exactly once), with a regression test replaying the exact
+  oversized-delta scenario. `DungeonGame` has the same theoretical
+  vulnerability but far more margin (opaque cell-sized walls, not a thin
+  band) — not touched here, flagged for awareness only.
+- **The maze border itself has no real doorway in the collision model** —
+  the border is uniformly solid at every row; start/goal are just interior
+  points placed as close to their respective border as `PLAYER_RADIUS`
+  allows. The original art's drawn doorway gaps (matching the castle/den
+  icons) were therefore misleading — confirmed directly by the user tracing
+  "how the maze actually works right now," which showed the supposed gap as
+  blocked. Rather than build real passable-doorway collision logic, the
+  simpler fix (the user's own call) was shipping a corrected background
+  image (`Race to the Den Maze 2.png`) with a fully solid border matching
+  what the collision already does, instead of a misleading gap.
+- **Shared `Joystick` extracted** out of `GoodSamaritanExploreScreen.kt`'s
+  original `private fun Joystick` into `ui/components/Joystick.kt` now that
+  a second real consumer exists — same "share it once a second consumer
+  needs it" precedent as `MathProblem`/`ChoiceOptionDef`.
+- Files: `game/puzzles/racemaze/{RaceMazeGame,RaceMazeGameState}.kt`;
+  `ui/screens/daniel/racetotheden/DanielRaceToTheDenScreen.kt` (replaces the
+  deleted `ui/screens/daniel/dariusmaze/` package and its now-unused
+  `ic_darius_marker`/`ic_wall_palace`/`ic_den_goal` drawables);
+  `DanielContent.kt`'s `raceMazeVerticalWalls`/`raceMazeHorizontalWalls`/
+  `raceMazeStart`/`raceMazeGoal`/`raceMazeSolutionWaypoints`; new
+  `res/drawable/bg_daniel_race_to_the_den_maze.png`.
+- Tests: new `RaceMazeGameTest.kt` (collision, dead-zone, the tunneling
+  regression test, and a full BFS-waypoint replay that doubles as an
+  automatic re-verification the hand-traced maze is solvable); updated
+  `DanielViewModelTest.kt`; `ChapterFlowHelpers.completeRaceToTheDen()`
+  (new, dead-reckons the joystick through `raceMazeSolutionWaypoints`,
+  mirroring `completeExploreDungeon()`'s technique but simpler — no
+  scrolling camera, no encounters to pause for).
+- Confirmed on-device across several rounds of user feedback (character
+  sprite sized larger than the actual corridor width, start/goal not
+  landing on the visual doorway, the tunneling bug, and finally the
+  solid-border art swap above).
+
+### Chapter 4 addendum 4 — Daniel restructured into a video-narrated chapter
+Following the same restructuring already done for Noah's Ark, David &
+Goliath, and Good Samaritan: Daniel and the Lions now uses 5 real narrated
+`StoryVideoScreen` videos (sourced from `bibleStory/narration/Daniel in the
+Lion's Den`, Scenes 1-5) in place of the old text-only Intro, two
+`StoryBeatScreen` context cards, and the Lesson screen — all four removed.
+New flow: **IntroVideo** (Scene 1, "The King's Decree") → Open the Window →
+**PrayerVideo** (Scene 2, "Daniel Prays") → Choice ("Daniel's Prayer") →
+The Angel's Shield → **ThrownToLionsVideo** (Scene 3) → Race to the Den →
+**NextMorningVideo** (Scene 4) → **ProclamationVideo** (Scene 5, narrates
+the moral and Daniel 6:22 — replacing the text Lesson screen's content) →
+Reward.
+- The Reward screen already shows the chapter's scripture card
+  independently of the old Lesson screen, so removing Lesson lost no
+  content — confirmed by reading `DanielRewardScreen.kt` before deleting it.
+- Added 5 new `daniel_reflection_*` strings — one short "We can..."
+  character-speech-bubble reflection per video (`reflectionRes`), matching
+  the exact tone/shape of Noah's Ark/David & Goliath/Good Samaritan's own
+  reflection lines.
+- Deleted `DanielIntroScreen.kt`, `DanielLessonScreen.kt`, and the
+  `DanielContent.kt` lists that only they consumed (`introDialogueLines`,
+  `windowContextLines`, `lionsDenContextLines`, `dariusContextLines`) plus
+  their now-orphaned strings — confirmed single-consumer via grep before
+  removal, same discipline as every other dead-code removal this session.
+  `DanielIntroScreen`'s own `audioController.playMusic(MusicTrack.ADVENTURE)`
+  call was not preserved anywhere — matches the same accepted trade-off
+  Noah's Ark/David & Goliath already made when *their* intros became videos
+  (grepped: neither chapter calls `playMusic` anywhere anymore either).
+- New raw assets in `res/raw/`: `daniel_kings_decree`, `daniel_prays`,
+  `daniel_thrown_to_lions`, `daniel_next_morning`, `daniel_new_proclamation`
+  (each an `.mp4` + a `_narration.mp3`), renamed from the source `bibleStory`
+  project's "Scene 1..5" filenames to this app's `<chapter>_<scene>` raw
+  resource convention.
+- **Scene-id note, not a bug**: `onSceneCompleted` ids changed for the
+  removed/renamed scenes (`"intro"` → `"intro_video"`, `"lesson"` dropped
+  entirely in favor of `"next_morning_video"`/`"proclamation_video"`) — a
+  save file with the old ids just carries harmless orphaned strings
+  forever; since this app's "Continue Adventure" only ever routes to the
+  World Map (not an exact-scene resume, per Milestone 5's own explicit
+  decision), this has no user-visible effect beyond a `previouslyCompleted`
+  hint not firing for a *renamed* scene on a device with old progress data,
+  which is expected and acceptable pre-launch.
+- Tests: updated `DanielFlowTest.kt` and `ChapterFlowHelpers.completeDaniel()`
+  for the new flow (video screens are tapped past immediately via the
+  shared "Next Page" `PuzzleTopBar` convention, same as every other
+  chapter's own video scenes — no wait/skip logic needed).
+- Confirmed compiling (`compileDebugKotlin`/`compileDebugUnitTestKotlin`/
+  `compileDebugAndroidTestKotlin`), lint-clean (`./gradlew build -x
+  connectedAndroidTest`), unit tests passing, and on-device by the user.
+
 ### Audio, Narration & Settings
 Real audio, inserted ahead of its originally-planned Milestone 7 slot at the
 user's explicit request, specifically so Jericho's trumpets could actually
@@ -4813,6 +4930,16 @@ preview (see above) — no further UI work on it for now. Open items:
   is implemented, unit-tested, confirmed compiling, and confirmed on-device
   by the user across the initial pass plus 2 small polish rounds (angel
   vertical position, rings turning white on completion).
+- Race to the Den (Chapter 4 addendum 3) — the joystick-driven maze
+  replacing the old D-pad "Darius's Maze" — is implemented, unit-tested
+  (including a regression test for the wall-tunneling bug found and fixed
+  mid-session), confirmed compiling, and confirmed on-device by the user
+  across several rounds of feedback, ending with a corrected solid-border
+  background image.
+- Daniel restructured into a video-narrated chapter (Chapter 4 addendum 4)
+  — 5 real narrated videos replacing the old Intro/context cards/Lesson —
+  is implemented, confirmed compiling and lint-clean, and confirmed
+  on-device by the user, including the 5 new character-reflection lines.
 
 ## Architectural decisions log
 
@@ -5374,3 +5501,34 @@ preview (see above) — no further UI work on it for now. Open items:
   counter in the ViewModel decides what to accumulate across calls) for
   any future puzzle that needs an attempt-wide tally the underlying engine
   itself has no reason to know about.
+- **A thin-wall (edges, not whole cells) collision model needs its own
+  frame-delta safety margin — copying `DungeonGame.tick`'s per-frame
+  single-step structure verbatim isn't enough.** `DungeonGame`'s walls are
+  opaque whole cells, so even a fairly large one-off `deltaSeconds` spike
+  still leaves a full cell's worth of margin before a single un-swept
+  step could jump clean through one. `RaceMazeGame`'s walls are thin lines
+  (a collision band only `PLAYER_RADIUS * 2` wide), so the exact same
+  "compute one candidate position, check only the destination" approach
+  that's safe for `DungeonGame` is not safe here — confirmed on-device via
+  a real tunneling bug traced to a one-time jank right as the maze screen
+  first composed and decoded its background image. The general rule for
+  any future thin-wall/edge-based collision engine: either sweep the
+  actual path, or (the cheaper fix used here) have `tick()` internally cap
+  and sub-divide an oversized `deltaSeconds` into several small, safe
+  steps rather than trusting the caller's own per-frame delta to always be
+  small — a whole-cell-walled engine like `DungeonGame` can get away
+  without this; a thin-walled one cannot.
+- **When traced art and the actual collision model disagree about where a
+  "door" is, the pragmatic fix can be correcting the *art*, not building
+  real doorway logic into collision.** Race to the Den's maze border was
+  always uniformly solid in the engine (start/goal are just interior
+  points near their edge, not a literal passable gap), but the original
+  artwork drew visible doorway breaks next to the castle/den icons that
+  implied otherwise — confirmed by the user directly tracing "how the maze
+  actually works right now" against the collision model. Rather than add
+  real border-opening collision logic to match the misleading art, the
+  simpler and equally correct fix (the user's own call) was re-exporting
+  the background art with a fully solid border, so the visual and the
+  simulation finally agree. Worth remembering for any future
+  art-vs-collision mismatch: check which side is actually cheaper and
+  safer to change before assuming the code must bend to match the art.

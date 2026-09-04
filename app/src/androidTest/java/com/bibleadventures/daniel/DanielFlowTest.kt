@@ -16,7 +16,7 @@ import com.bibleadventures.R
 import com.bibleadventures.completeDavidGoliath
 import com.bibleadventures.completeGoodSamaritan
 import com.bibleadventures.completeNoahsArk
-import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.completeRaceToTheDen
 import com.bibleadventures.game.puzzles.slideout.SlideDirection
 import com.bibleadventures.game.stories.DanielContent
 import org.junit.Rule
@@ -48,10 +48,9 @@ class DanielFlowTest {
         // World Map -> Daniel and the Lions (now unlocked).
         composeTestRule.onNodeWithText(activity.getString(R.string.chapter_daniel_title)).performClick()
 
-        // Scene 1: Intro.
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        // Scene 1b: A Shuttered Window context card.
+        // Scene 1: Intro video ("The King's Decree") — video screens are
+        // tappable past at any time regardless of playback state, same as
+        // every other chapter's own video scenes.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 2: Open the Window — a fully tiled 6x6 board where every
@@ -72,11 +71,11 @@ class DanielFlowTest {
         }
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 3: Choice — Daniel's prayer, flavor-only.
-        composeTestRule.onNodeWithText(activity.getString(R.string.daniel_choice_option_1)).performClick()
+        // Scene 2b: "Daniel Prays" video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 3b: Into the Lions' Den context card.
+        // Scene 3: Choice — Daniel's prayer, flavor-only.
+        composeTestRule.onNodeWithText(activity.getString(R.string.daniel_choice_option_1)).performClick()
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
         // Scene 4: The Angel's Shield — 5 random math problems, one per
@@ -90,38 +89,25 @@ class DanielFlowTest {
         }
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 4b: Darius's Long Night context card.
+        // Scene 4b: "Thrown to the Lions" video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 5: Darius's Maze — solve with a hand-verified move sequence.
-        val upLabel = activity.getString(R.string.daniel_darius_direction_up)
-        val downLabel = activity.getString(R.string.daniel_darius_direction_down)
-        val mazeLeftLabel = activity.getString(R.string.daniel_darius_direction_left)
-        val mazeRightLabel = activity.getString(R.string.daniel_darius_direction_right)
-
-        // The start tile (0,0) is the map's top-left corner, so pressing Up
-        // walks off the edge — a deliberate, harmless BLOCKED move (doesn't
-        // change position) confirming the maze's new accessibility feedback
-        // text actually renders, not just that the engine reports it.
-        composeTestRule.onNodeWithContentDescription(upLabel).performClick()
-        composeTestRule.onNodeWithText(activity.getString(R.string.grid_maze_feedback_blocked)).assertExists()
-
-        DanielContent.dariusSolutionPath.forEach { direction ->
-            val label = when (direction) {
-                Direction.UP -> upLabel
-                Direction.DOWN -> downLabel
-                Direction.LEFT -> mazeLeftLabel
-                Direction.RIGHT -> mazeRightLabel
-            }
-            composeTestRule.onNodeWithContentDescription(label).performClick()
-        }
+        // Scene 5: Race to the Den — steer the real joystick through
+        // DanielContent.raceMazeSolutionWaypoints, mirroring
+        // completeExploreDungeon()'s dead-reckon-by-duration technique
+        // (this maze has no scrolling camera, so it's simpler: no
+        // encounters to pause for mid-leg).
+        composeTestRule.completeRaceToTheDen()
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 6: Lesson.
-        composeTestRule.onNodeWithText(activity.getString(R.string.daniel_lesson_title)).assertExists()
+        // Scene 5b: "The Next Morning" video.
         composeTestRule.onNodeWithText(nextPageLabel).performClick()
 
-        // Scene 7: Reward.
+        // Scene 5c: "A New Proclamation" video — replaces the old text-only
+        // Lesson screen; the moral and Daniel 6:22 are narrated in it now.
+        composeTestRule.onNodeWithText(nextPageLabel).performClick()
+
+        // Scene 6: Reward.
         composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.badge_faithful_heart_title)).assertExists()
         composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()

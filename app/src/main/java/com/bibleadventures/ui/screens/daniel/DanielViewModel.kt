@@ -7,11 +7,9 @@ import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
 import com.bibleadventures.domain.repository.PlayerProfileRepository
-import com.bibleadventures.game.puzzles.gridmaze.Direction
-import com.bibleadventures.game.puzzles.gridmaze.GridMazeGame
-import com.bibleadventures.game.puzzles.gridmaze.GridMazeState
-import com.bibleadventures.game.puzzles.gridmaze.GridPosition
-import com.bibleadventures.game.puzzles.gridmaze.GridTileType
+import com.bibleadventures.game.puzzles.racemaze.RaceMazeGame
+import com.bibleadventures.game.puzzles.racemaze.RaceMazeGameState
+import com.bibleadventures.game.puzzles.racemaze.Vector2
 import com.bibleadventures.game.puzzles.decisionpath.DecisionOutcome
 import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGame
 import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
@@ -51,7 +49,7 @@ data class DanielUiState(
     val lionsDenProblems: List<MathProblem>,
     /** 0 = lions at their starting outer position; increments by 1 on every wrong Angel's Shield answer, cumulative across the whole attempt (unlike [DecisionPathGameState.wrongAttemptsOnCurrentStep], this is never reset by [DecisionPathGame.replaceCurrentStep]). Reaching [LION_PROXIMITY_MAX] means "too close" — further taps are ignored until [DanielViewModel.onLionsDenRetry]. */
     val lionsDenLionProximity: Int = 0,
-    val gridMazeState: GridMazeState,
+    val raceMazeState: RaceMazeGameState,
     val reward: DanielRewardResult? = null,
 )
 
@@ -175,8 +173,9 @@ class DanielViewModel(
         }
     }
 
-    fun onDirectionPressed(direction: Direction) {
-        _uiState.update { current -> current.copy(gridMazeState = GridMazeGame.onDirectionPressed(current.gridMazeState, direction)) }
+    /** One frame of Race to the Den movement — see [RaceMazeGame.tick] for the collision/dead-zone details. A no-op once [RaceMazeGameState.isComplete]. */
+    fun onRaceMazeTick(joystickInput: Vector2, deltaSeconds: Float) {
+        _uiState.update { current -> current.copy(raceMazeState = RaceMazeGame.tick(current.raceMazeState, joystickInput, deltaSeconds)) }
     }
 
     /** Records mid-adventure progress so "Continue Adventure" and a future resume can see it. */
@@ -203,18 +202,6 @@ class DanielViewModel(
     }
 
     private fun createInitialState(): DanielUiState {
-        val grid = DanielContent.dariusMapLayout.map { row ->
-            row.map { cell ->
-                when (cell) {
-                    '#' -> GridTileType.WALL
-                    'D' -> GridTileType.GOAL
-                    else -> GridTileType.PATH
-                }
-            }
-        }
-        val startRow = DanielContent.dariusMapLayout.indexOfFirst { it.contains('S') }
-        val startCol = DanielContent.dariusMapLayout[startRow].indexOf('S')
-
         val lionsDenProblems = newLionsDenProblems()
         return DanielUiState(
             lionsDenState = DecisionPathGameState(
@@ -227,7 +214,12 @@ class DanielViewModel(
                 },
             ),
             lionsDenProblems = lionsDenProblems,
-            gridMazeState = GridMazeState(grid = grid, playerPosition = GridPosition(startRow, startCol)),
+            raceMazeState = RaceMazeGame.fromWalls(
+                DanielContent.raceMazeVerticalWalls,
+                DanielContent.raceMazeHorizontalWalls,
+                DanielContent.raceMazeStart,
+                DanielContent.raceMazeGoal,
+            ),
         )
     }
 

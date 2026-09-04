@@ -17,7 +17,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import com.bibleadventures.game.puzzles.dungeon.DungeonGame
-import com.bibleadventures.game.puzzles.gridmaze.Direction as GridMazeDirection
+import com.bibleadventures.game.puzzles.racemaze.RaceMazeGame
 import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
 import com.bibleadventures.game.puzzles.slideout.SlideDirection
 import com.bibleadventures.game.stories.DanielContent
@@ -539,6 +539,45 @@ internal fun FlowTestRule.completeExploreDungeon() {
 }
 
 /**
+ * Steers the real on-screen joystick through
+ * [DanielContent.raceMazeSolutionWaypoints] to reach the lions' den — the
+ * same dead-reckon-by-duration technique as [completeExploreDungeon], simpler
+ * here since there's no scrolling camera (this maze shows uncropped) and no
+ * encounters to pause for mid-leg.
+ */
+internal fun FlowTestRule.completeRaceToTheDen() {
+    val activity = this.activity
+    val joystickNode = onNodeWithContentDescription(activity.getString(R.string.daniel_race_to_the_den_joystick_content_description))
+    val maxKnobTravelPx = with(activity.resources.displayMetrics) { JOYSTICK_MAX_KNOB_TRAVEL_DP * density }
+
+    mainClock.autoAdvance = false
+    mainClock.advanceTimeByFrame()
+
+    var previousWaypoint = DanielContent.raceMazeSolutionWaypoints.first()
+    DanielContent.raceMazeSolutionWaypoints.drop(1).forEach { waypoint ->
+        val dx = waypoint.x - previousWaypoint.x
+        val dy = waypoint.y - previousWaypoint.y
+        val legDistance = kotlin.math.hypot(dx, dy)
+        if (legDistance > 0f) {
+            val knobOffset = Offset(dx / legDistance, dy / legDistance) * maxKnobTravelPx
+            var remainingMs = (legDistance / RaceMazeGame.PLAYER_SPEED_CELLS_PER_SECOND * 1000).toLong() + DUNGEON_STEER_LEG_MARGIN_MS
+
+            joystickNode.performTouchInput { down(center) }
+            joystickNode.performTouchInput { moveTo(center + knobOffset) }
+            while (remainingMs > 0) {
+                val step = minOf(remainingMs, DUNGEON_STEER_FRAME_STEP_MS)
+                mainClock.advanceTimeBy(step)
+                remainingMs -= step
+            }
+            joystickNode.performTouchInput { up() }
+        }
+        previousWaypoint = waypoint
+    }
+
+    mainClock.autoAdvance = true
+}
+
+/**
  * Open-loop dead reckoning by duration, not by reading the player's on-screen
  * position: since the world now scrolls under a follow camera (see
  * `GoodSamaritanExploreScreen.kt`'s camera-follow addition), a waypoint's
@@ -644,43 +683,27 @@ fun FlowTestRule.completeDaniel() {
     scrollToChapterOnWorldMap(activity.getString(R.string.chapter_daniel_title))
     onNodeWithText(activity.getString(R.string.chapter_daniel_title)).performClick()
 
-    onNodeWithText(nextPageLabel).performClick() // Intro -> A Shuttered Window context
-    onNodeWithText(nextPageLabel).performClick() // context -> Open the Window
+    onNodeWithText(nextPageLabel).performClick() // "The King's Decree" intro video -> Open the Window
 
     completeOpenTheWindow()
-    onNodeWithText(nextPageLabel).performClick()
+    onNodeWithText(nextPageLabel).performClick() // Open the Window -> "Daniel Prays" video
+    onNodeWithText(nextPageLabel).performClick() // "Daniel Prays" video -> Choice
 
     onNodeWithText(activity.getString(R.string.daniel_choice_option_1)).performClick()
-    onNodeWithText(nextPageLabel).performClick()
-
-    onNodeWithText(nextPageLabel).performClick() // Into the Lions' Den context
+    onNodeWithText(nextPageLabel).performClick() // Choice -> Angel's Shield
 
     // The Angel's Shield — 5 random math problems. Two wrong answers in a
     // row replace the problem instead of leaving the last choice a
     // guaranteed-correct guess, so compute the real answer instead of
     // trying all 3 choices blind.
     repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) { solveLionsDenProblem() }
-    onNodeWithText(nextPageLabel).performClick()
+    onNodeWithText(nextPageLabel).performClick() // Angel's Shield -> "Thrown to the Lions" video
+    onNodeWithText(nextPageLabel).performClick() // "Thrown to the Lions" video -> Race to the Den
 
-    onNodeWithText(nextPageLabel).performClick() // Darius's Long Night context
-
-    val upLabel = activity.getString(R.string.daniel_darius_direction_up)
-    val downLabel = activity.getString(R.string.daniel_darius_direction_down)
-    val mazeLeftLabel = activity.getString(R.string.daniel_darius_direction_left)
-    val mazeRightLabel = activity.getString(R.string.daniel_darius_direction_right)
-    DanielContent.dariusSolutionPath.forEach { direction ->
-        val label = when (direction) {
-            GridMazeDirection.UP -> upLabel
-            GridMazeDirection.DOWN -> downLabel
-            GridMazeDirection.LEFT -> mazeLeftLabel
-            GridMazeDirection.RIGHT -> mazeRightLabel
-        }
-        onNodeWithContentDescription(label).performClick()
-    }
-    onNodeWithText(nextPageLabel).performClick()
-
-    onNodeWithText(activity.getString(R.string.daniel_lesson_title)).assertExists()
-    onNodeWithText(nextPageLabel).performClick()
+    completeRaceToTheDen()
+    onNodeWithText(nextPageLabel).performClick() // Race to the Den -> "The Next Morning" video
+    onNodeWithText(nextPageLabel).performClick() // "The Next Morning" video -> "A New Proclamation" video
+    onNodeWithText(nextPageLabel).performClick() // "A New Proclamation" video (replaces the old text Lesson screen) -> Reward
 
     onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
     onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()

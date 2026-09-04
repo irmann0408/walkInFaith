@@ -1,7 +1,8 @@
 package com.bibleadventures.game.stories
 
 import com.bibleadventures.R
-import com.bibleadventures.game.puzzles.gridmaze.Direction
+import com.bibleadventures.game.puzzles.racemaze.RaceMazeGame
+import com.bibleadventures.game.puzzles.racemaze.Vector2
 import com.bibleadventures.game.puzzles.slideout.CellPosition
 import com.bibleadventures.game.puzzles.slideout.LatchBlock
 import com.bibleadventures.game.puzzles.slideout.SlideDirection
@@ -35,16 +36,6 @@ data class MathProblem(val id: String, val operandA: Int, val operandB: Int, val
  * Daniel-specific.
  */
 object DanielContent {
-
-    val introDialogueLines: List<Int> = listOf(
-        R.string.daniel_intro_line_1,
-        R.string.daniel_intro_line_2,
-    )
-
-    val windowContextLines: List<Int> = listOf(
-        R.string.daniel_window_context_line_1,
-        R.string.daniel_window_context_line_2,
-    )
 
     /**
      * The window is a fully packed [WINDOW_LATCH_ROWS] x [WINDOW_LATCH_COLS]
@@ -133,51 +124,109 @@ object DanielContent {
         ChoiceOptionDef("unafraid", R.string.daniel_choice_option_3, R.string.daniel_choice_reaction_3),
     )
 
-    val lionsDenContextLines: List<Int> = listOf(
-        R.string.daniel_lions_den_context_line_1,
-        R.string.daniel_lions_den_context_line_2,
-    )
-
     /** How many math problems (one shield ring each) form the Angel's Shield puzzle. */
     const val LIONS_DEN_PROBLEM_COUNT = 5
 
-    val dariusContextLines: List<Int> = listOf(
-        R.string.daniel_darius_context_line_1,
-        R.string.daniel_darius_context_line_2,
+    // Daniel's dawn hurry through the palace to the lions' den (6:19),
+    // reframed with the player's own joystick-driven "Race to the Den" maze
+    // — replaces the older blocky D-pad maze (was "Darius's Maze") with a
+    // real hand-drawn corridor maze (game art/Race to the Den Maze.png),
+    // navigated by the same continuous-movement joystick engine as Good
+    // Samaritan's "mini dungeon" (game/puzzles/racemaze, a thin-wall
+    // adaptation of game/puzzles/dungeon's collision model — walls here are
+    // drawn ON cell boundaries, not whole blocked cells).
+    //
+    // Traced from "Race to the Den Maze outline 2.png" (a thick red-ink
+    // tracing laid directly over the real background art, at the same size
+    // and crop — supersedes an earlier, separately-exported outline image
+    // that traced the same walls but wasn't guaranteed pixel-aligned to
+    // `bg_daniel_race_to_the_den_maze.png`, the actual shipped background;
+    // re-tracing from this exact overlay confirmed the wall data itself was
+    // already correct — only one far corner cell differed — but is what let
+    // the doorway/border measurements below be trusted precisely) and
+    // independently cross-checked against "Race to the Den Maze successful
+    // path.png" (a blue-ink solution overlay of one valid route,
+    // entering/exiting at the same row 7 this trace resolved to). Verified
+    // solvable by BFS/flood-fill: 192 of the 196 cells form one connected
+    // body; the excluded 4 cells (5,10)/(5,11)/(6,11)/(7,11) are a
+    // legitimate dead-end pocket, not on any required path.
+    const val RACE_MAZE_SIZE = 14
+
+    /**
+     * The castle/den doorways are drawn straddling the row 6/7 boundary
+     * line in the art (not centered inside row 7's own cell) and pushed
+     * out horizontally as close to their own border as
+     * [RaceMazeGame.PLAYER_RADIUS] safely allows, rather than that cell's
+     * usual `col + 0.5` center — both measured directly from the exact
+     * overlay: the doorway gap in both borders centers almost exactly on
+     * grid line 7 (row 6/7's shared boundary), not row 7's own cell-center
+     * line. Using the ordinary `(col + 0.5, row + 0.5)` cell-center
+     * convention here visually placed the character about half a cell
+     * below the real opening and well short of the border itself.
+     */
+    val raceMazeStart: Vector2 = Vector2(RaceMazeGame.PLAYER_RADIUS, 7.0f)
+    val raceMazeGoal: Vector2 = Vector2(RACE_MAZE_SIZE - RaceMazeGame.PLAYER_RADIUS, 7.0f)
+
+    /** `raceMazeVerticalWalls[row]`'s char at index `col` = wall between `(row,col)` and `(row,col+1)`. `1` = wall, `.` = open. */
+    val raceMazeVerticalWalls: List<String> = listOf(
+        "...11..1.....",
+        "1...11..1.1.1",
+        "1.....11..111",
+        ".1...111..1.1",
+        "1.1...1..1..1",
+        "11..111111.11",
+        "11..1..11.111",
+        "111...11.1111",
+        "...11....11.1",
+        ".1.111.11.11.",
+        "1.11111.11111",
+        "11111.11.1.11",
+        ".11..1...11..",
+        ".....1....1..",
     )
 
-    // 7x7 map, row-major. '.' path, '#' wall, 'S' the start (a walkable path
-    // tile), 'D' the lions' den (goal). No collectible/checkpoint tile —
-    // this reframes the blueprint's "decree maze to find a stamp" (Darius
-    // could not revoke his own sealed law, Daniel 6:8/6:15) as his dawn
-    // hurry through the palace to the den (6:19): just reach the goal.
-    // Verified solvable by hand (BFS from start): a single connected
-    // component reaches (6,6) from (0,0). Not shuffled per playthrough,
-    // same reasoning as GoodSamaritanContent.mapLayout.
-    val dariusMapLayout: List<String> = listOf(
-        "S..#...",
-        "##.#.#.",
-        "...#.#.",
-        ".###.#.",
-        ".#...#.",
-        ".#.###.",
-        "......D",
+    /** `raceMazeHorizontalWalls[row]`'s char at index `col` = wall between `(row,col)` and `(row+1,col)`. `1` = wall, `.` = open. */
+    val raceMazeHorizontalWalls: List<String> = listOf(
+        ".11...1.1.111.",
+        ".1.11....1....",
+        "..1111...1.1..",
+        ".1.111..1.11..",
+        "..1.1.1...11..",
+        "..111..1..1...",
+        "....11...1....",
+        "..11.111...1..",
+        "1..1..11.1..1.",
+        ".......11.....",
+        ".1...1..1.1...",
+        "......1.1..11.",
+        "11.111.111..11",
     )
 
-    // A hand-verified 28-move BFS solution from (0,0) to the den at (6,6).
-    // Used by the instrumented flow test to replay a known-solvable path
-    // deterministically, since the map itself is intentionally not shuffled.
-    val dariusSolutionPath: List<Direction> = listOf(
-        Direction.RIGHT, Direction.RIGHT,
-        Direction.DOWN, Direction.DOWN,
-        Direction.LEFT, Direction.LEFT,
-        Direction.DOWN, Direction.DOWN, Direction.DOWN, Direction.DOWN,
-        Direction.RIGHT, Direction.RIGHT,
-        Direction.UP, Direction.UP,
-        Direction.RIGHT, Direction.RIGHT,
-        Direction.UP, Direction.UP, Direction.UP, Direction.UP,
-        Direction.RIGHT, Direction.RIGHT,
-        Direction.DOWN, Direction.DOWN, Direction.DOWN, Direction.DOWN, Direction.DOWN,
-        Direction.DOWN,
+    /**
+     * A hand-verified 31-move BFS shortest solution from [raceMazeStart] to
+     * [raceMazeGoal], collapsed into straight-line waypoints (cell-center
+     * coordinates, matching [GoodSamaritanContent.dungeonRouteWaypoints]'s
+     * own `Vector2(col + 0.5f, row + 0.5f)` convention, except the first and
+     * last points which reuse [raceMazeStart]/[raceMazeGoal] directly (their
+     * own doorway-aligned position, not a plain cell center). Used by the
+     * instrumented flow test to steer the real joystick deterministically,
+     * and doubles as an automatic re-verification that the hand-traced wall
+     * data above is actually solvable.
+     */
+    val raceMazeSolutionWaypoints: List<Vector2> = listOf(
+        raceMazeStart,
+        Vector2(0.5f, 3.5f),
+        Vector2(1.5f, 3.5f),
+        Vector2(1.5f, 2.5f),
+        Vector2(6.5f, 2.5f),
+        Vector2(6.5f, 1.5f),
+        Vector2(8.5f, 1.5f),
+        Vector2(8.5f, 2.5f),
+        Vector2(10.5f, 2.5f),
+        Vector2(10.5f, 1.5f),
+        Vector2(9.5f, 1.5f),
+        Vector2(9.5f, 0.5f),
+        Vector2(13.5f, 0.5f),
+        raceMazeGoal,
     )
 }

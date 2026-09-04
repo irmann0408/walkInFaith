@@ -49,11 +49,10 @@ import com.bibleadventures.ui.theme.BibleAdventuresTheme
 /**
  * "Jesus was in the stern, sleeping on a cushion. The disciples woke him"
  * (Mark 4:38) — a reuse of the generalized
- * [com.bibleadventures.game.puzzles.gridmaze] engine, mirroring
- * `DanielDariusMazeScreen`'s structure exactly: no collectible/checkpoint
- * tile, just PATH/WALL/GOAL. [JesusCalmsStormContent.reachingJesusMapLayout]
- * is a genuine perfect maze (real dead-end branches, single solution),
- * deliberately longer (30 moves) than Daniel's Darius maze (28).
+ * [com.bibleadventures.game.puzzles.gridmaze] engine: a D-pad-driven
+ * discrete grid with no collectible/checkpoint tile, just PATH/WALL/GOAL.
+ * [JesusCalmsStormContent.reachingJesusMapLayout] is a genuine perfect maze
+ * (real dead-end branches, single solution), 30 hand-verified moves long.
  */
 @Composable
 fun JesusCalmsStormReachingJesusScreen(
@@ -127,8 +126,9 @@ private fun JesusCalmsStormReachingJesusContent(
                 )
             }
 
-            // Non-interactive grid, same reasoning as DanielDariusMazeScreen:
-            // movement is via the D-pad below, not tap-on-tile. weight(1f, fill =
+            // Non-interactive grid, same reasoning as every other gridmaze
+            // screen: movement is via the D-pad below, not tap-on-tile.
+            // weight(1f, fill =
             // true) hands this element exactly the space left over after every
             // other (naturally-sized) sibling in this Column, and
             // AspectRatioFitBox letterbox-fits within that bounded box —
