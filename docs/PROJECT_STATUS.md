@@ -2162,6 +2162,83 @@ already-removed hide mechanic) to `ui/screens/daniel/window/`.
   -x connectedAndroidTest` both pass; installed via `installDebug` and
   confirmed on-device by the user across both feedback rounds above.
 
+### Chapter 4 addendum 2 — Angel's Shield rework: character in the center, concentric shield rings, approaching lions
+The user added real art (`game art/angel.png` + 6 lion images — 3 poses x
+left/right) and asked for a much more literal staging than the old abstract
+dot-arc: the player's own character now stands in the center of the puzzle;
+each correct answer draws one shield-of-light ring around them (innermost/
+dimmest first, up to 5, outermost/brightest last), and the 5th ring also
+reveals the angel — previously nonexistent art despite the puzzle's own
+name — behind the character. Each **wrong** answer steps the two lions
+(starting at the outer corners) visibly closer; closing the full distance
+ends the attempt and requires a manual "Try Again," a full penalty-free
+restart of just this one puzzle. Math problem generation/operand ranges are
+completely unchanged, per the user's explicit "retain the math equations."
+- **The app's third explicit exception to the standing "no failure states"
+  rule** (after David & Goliath's Connect Four and Good Samaritan's dungeon
+  bandit fights) — this time proposed by the user themselves, not a redesign
+  I suggested. Kept in the exact same "gentle failure" shape as the other
+  two: no chapter progress lost outside the current attempt, unlimited
+  retries, and — deliberately — a **manual** Try Again button rather than
+  an automatic reset, directly reusing the lesson Connect Four's own
+  addendum already learned and documented (an early auto-reset there felt
+  like "taking the board away before the player was ready").
+- **New Daniel-local state, not the shared engine**: `game/puzzles/decisionpath`
+  (`DecisionPathGameState`/`DecisionPathGame`) is also used by Jericho's
+  Blow the Shofar and Feeding 5,000's Miracle Multiplication, so the lion-
+  proximity mechanic stays entirely in `DanielViewModel`/`DanielUiState` —
+  a new `lionsDenLionProximity: Int` (0 = starting outer position,
+  increments once per wrong answer) and a new `LION_PROXIMITY_MAX = 5`
+  (proposed default, tunable) constant. This is a genuinely independent
+  counter from the engine's own `wrongAttemptsOnCurrentStep` (which still
+  swaps in a fresh problem after 2 wrong tries on the same one, to avoid a
+  guaranteed-correct guess by elimination on the last remaining choice) —
+  confirmed by a dedicated test that proximity keeps climbing across a
+  problem replacement rather than resetting with it. `onLionsDenAnswerTapped`
+  is a no-op once proximity hits the max (awaiting `onLionsDenRetry()`),
+  matching the "once resolved, further taps do nothing" convention every
+  other engine in this app already follows.
+- **New Canvas-drawn concentric rings** — the first `drawCircle` usage
+  anywhere in this codebase (the only two prior `Canvas` blocks, here and
+  in Sling Practice's aim line, only ever used `drawLine`). Radius and
+  alpha both scale with ring index (dim/small innermost to bright/large
+  outermost); once the shield is fully complete, a follow-up round of
+  feedback changed every ring to blaze fully bright **white** together
+  (not just the outermost ring being marginally brighter) — a single
+  unmistakable "it's finished" moment.
+- **Lion approach**: position and size both interpolate from a far/small
+  outer placement to a large, close placement as proximity rises, with a
+  brief stand/roar frame-alternation (skipped under `LocalReducedMotion`,
+  and on first composition where proximity is already 0) playing on each
+  step closer. On completion, both lions switch to their `_relaxed` pose at
+  a fixed symmetric flanking position, independent of wherever proximity
+  had actually reached — "the lions are calmed," not "wherever they
+  happened to stop."
+- **Angel positioning, fixed after on-device feedback**: centering the
+  angel and the character on the exact same point lined up their feet
+  instead of the angel visibly rising up behind the character's back — a
+  fixed upward offset (`ANGEL_Y_OFFSET_FRACTION`) was added after the
+  user's own on-device look, since the angel's art sits lower within its
+  own transparent canvas than the character's does within theirs.
+- **Old placeholder art deleted, not left in place**: `ic_lion_pacing.xml`/
+  `ic_lion_calm.xml` (the old binary lion-state swap) and `ic_light_point.xml`/
+  `ic_light_point_lit.xml` (the old dot-arc lights) are gone — all four were
+  confirmed single-consumer (only this screen), directly superseded within
+  this same change, matching the "a same-session/same-feature authoring
+  path superseded by its own next iteration is fine to remove" precedent
+  (vs. a completed, working feature's dead code, which stays). `DanielContent.lionsDenLightPositions`
+  (the old dot-arc's fixed positions) is likewise removed — the new rings
+  are computed from the character's own center point + radius, no discrete
+  positions needed.
+- Confirmed: full `./gradlew compileDebugKotlin compileDebugUnitTestKotlin
+  testDebugUnitTest compileDebugAndroidTestKotlin` and `./gradlew build
+  -x connectedAndroidTest` both pass (including `DecisionPathGameTest.kt`,
+  `ChapterFlowHelpers.kt`, and `DanielFlowTest.kt`, all confirmed unaffected
+  since the shared engine and the happy-path instrumented walkthrough don't
+  touch lion proximity at all); installed via `installDebug` and confirmed
+  on-device by the user across the initial pass plus 2 follow-up polish
+  rounds (angel position, ring color on completion).
+
 ### Audio, Narration & Settings
 Real audio, inserted ahead of its originally-planned Milestone 7 slot at the
 user's explicit request, specifically so Jericho's trumpets could actually
@@ -4731,6 +4808,11 @@ preview (see above) — no further UI work on it for now. Open items:
   words) found and fixed during that on-device pass. Every other chapter's
   TTS narration is untouched; extending real recordings to them is
   future work, not scoped, and depends on the user recording more lines.
+- The Angel's Shield rework (Chapter 4 addendum 2) — character in the
+  center, concentric shield rings, lions that approach on wrong answers —
+  is implemented, unit-tested, confirmed compiling, and confirmed on-device
+  by the user across the initial pass plus 2 small polish rounds (angel
+  vertical position, rings turning white on completion).
 
 ## Architectural decisions log
 
@@ -5253,3 +5335,42 @@ preview (see above) — no further UI work on it for now. Open items:
   reactively whenever disposal happens to actually fire. General rule: stop
   a resource at the point of departure, not in `onDispose`, whenever
   something else might start using that same resource immediately after.
+- **A third explicit exception to the "no failure states" rule can come
+  from the user themselves proposing the failure mechanic, not just from
+  me redesigning around a request — and the same "gentle failure" shape
+  from the first two exceptions still applies.** The Angel's Shield's lion-
+  proximity mechanic (Chapter 4 addendum 2) is this app's third genuine
+  failure state (after Connect Four's win/lose and the dungeon's bandit
+  fights), and unlike those two, the user designed the mechanic itself
+  (lions approach on wrong answers, "too close" ends the attempt) rather
+  than me proposing a design and checking it against the rule. The
+  mitigation shape stayed identical anyway: no chapter progress lost
+  outside the current attempt, unlimited retries, and — reusing a lesson
+  already learned and documented from Connect Four's own addendum — a
+  **manual** Try Again press, never an automatic reset (Connect Four's
+  first pass auto-reset after a short delay and on-device feedback said it
+  felt like the board was taken away before the player was ready; every
+  failure state built since has gone straight to manual). Don't infer a
+  general relaxation of the rule from three exceptions now existing —
+  every other mini-game in the app still has zero failure state, and a
+  fourth would still need the same explicit, on-the-record confirmation
+  the first three each got.
+- **A new whole-attempt counter that must persist across a sub-mechanic's
+  own resets belongs in the *screen's owning ViewModel*, not the shared
+  pure engine, even when it's driven by that engine's own outcomes.**
+  `DecisionPathGameState.wrongAttemptsOnCurrentStep` (shared by Daniel,
+  Jericho, and Feeding 5,000's math-quiz puzzles) resets to 0 every time
+  `replaceCurrentStep` swaps in a fresh problem — exactly the right
+  behavior for its own job (stopping a 3-choice question from becoming a
+  guaranteed-correct guess by elimination), but wrong for a "how close are
+  the lions across the *whole* puzzle" counter, which must keep climbing
+  through those same problem replacements. Rather than complicating the
+  shared engine with a second, differently-scoped counter its other two
+  consumers don't need, `lionsDenLionProximity` lives entirely in
+  `DanielUiState`, incremented by `DanielViewModel` alongside its existing
+  `DecisionPathGame.onOptionTapped` call — the shared engine stays exactly
+  as simple as Jericho's and Feeding 5,000's own puzzles still need it to
+  be. Reuse this split (engine emits an outcome per call; a chapter-local
+  counter in the ViewModel decides what to accumulate across calls) for
+  any future puzzle that needs an attempt-wide tally the underlying engine
+  itself has no reason to know about.

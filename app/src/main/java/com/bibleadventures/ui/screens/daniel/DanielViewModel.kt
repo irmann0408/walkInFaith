@@ -37,6 +37,9 @@ import kotlin.random.Random
 
 data class DanielRewardResult(val stars: Int)
 
+/** How many wrong answers (cumulative across the whole Angel's Shield attempt, not per-problem) the lions tolerate before closing all the way in — an explicit, user-requested exception to this app's "no failure states" rule, kept gentle: no lost chapter progress, unlimited retries via [DanielViewModel.onLionsDenRetry], never an automatic reset. */
+const val LION_PROXIMITY_MAX = 5
+
 data class DanielUiState(
     val windowLatchState: SlideOutGameState = SlideOutGame.fromGrid(
         DanielContent.WINDOW_LATCH_ROWS,
@@ -46,6 +49,8 @@ data class DanielUiState(
     val selectedChoiceId: String? = null,
     val lionsDenState: DecisionPathGameState,
     val lionsDenProblems: List<MathProblem>,
+    /** 0 = lions at their starting outer position; increments by 1 on every wrong Angel's Shield answer, cumulative across the whole attempt (unlike [DecisionPathGameState.wrongAttemptsOnCurrentStep], this is never reset by [DecisionPathGame.replaceCurrentStep]). Reaching [LION_PROXIMITY_MAX] means "too close" — further taps are ignored until [DanielViewModel.onLionsDenRetry]. */
+    val lionsDenLionProximity: Int = 0,
     val gridMazeState: GridMazeState,
     val reward: DanielRewardResult? = null,
 )
@@ -105,14 +110,28 @@ class DanielViewModel(
      * remaining choice would be a guaranteed-correct guess by elimination,
      * so a fresh problem replaces it instead (same id, so the screen's
      * `problems.first { it.id == step.id }` lookup keeps working unchanged).
+     * Separately, every wrong tap also steps the lions one increment closer
+     * ([DanielUiState.lionsDenLionProximity]) — a whole-attempt counter,
+     * independent of the per-problem one above. A no-op once the lions have
+     * already closed all the way in (awaiting [onLionsDenRetry]), same
+     * "once resolved, further taps do nothing" convention every other
+     * engine in this app follows.
      */
     fun onLionsDenAnswerTapped(choiceValue: Int) {
         _uiState.update { current ->
+            if (current.lionsDenLionProximity >= LION_PROXIMITY_MAX) return@update current
+
             val afterTap = DecisionPathGame.onOptionTapped(current.lionsDenState, choiceValue.toString())
             when (afterTap.lastOutcome) {
                 DecisionOutcome.CORRECT, DecisionOutcome.COMPLETE -> audioController.playSfx(SoundEffect.ITEM_COLLECTED)
                 else -> Unit
             }
+            val newProximity = if (afterTap.lastOutcome == DecisionOutcome.INCORRECT) {
+                current.lionsDenLionProximity + 1
+            } else {
+                current.lionsDenLionProximity
+            }
+
             if (afterTap.wrongAttemptsOnCurrentStep >= DecisionPathGame.WRONG_ATTEMPTS_BEFORE_NEW_STEP) {
                 val newProblem = newLionsDenProblem(problemNumber = afterTap.currentStepIndex + 1)
                 val newStep = DecisionStep(
@@ -123,10 +142,36 @@ class DanielViewModel(
                 current.copy(
                     lionsDenState = DecisionPathGame.replaceCurrentStep(afterTap, newStep),
                     lionsDenProblems = current.lionsDenProblems.map { if (it.id == newProblem.id) newProblem else it },
+                    lionsDenLionProximity = newProximity,
                 )
             } else {
-                current.copy(lionsDenState = afterTap)
+                current.copy(lionsDenState = afterTap, lionsDenLionProximity = newProximity)
             }
+        }
+    }
+
+    /**
+     * The lions closing all the way in ends the attempt, but never
+     * permanently — a full, penalty-free restart of just this puzzle: a
+     * fresh set of 5 problems, and the lions back at their starting outer
+     * position. No chapter progress is ever at stake here.
+     */
+    fun onLionsDenRetry() {
+        _uiState.update { current ->
+            val freshProblems = newLionsDenProblems()
+            current.copy(
+                lionsDenState = DecisionPathGameState(
+                    steps = freshProblems.map { problem ->
+                        DecisionStep(
+                            id = problem.id,
+                            correctOptionId = problem.correctValue.toString(),
+                            optionIds = problem.choiceValues.map { it.toString() },
+                        )
+                    },
+                ),
+                lionsDenProblems = freshProblems,
+                lionsDenLionProximity = 0,
+            )
         }
     }
 

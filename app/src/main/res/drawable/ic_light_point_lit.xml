@@ -1,9 +1,0 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="64dp"
-    android:height="64dp"
-    android:viewportWidth="64"
-    android:viewportHeight="64">
-    <!-- A connected light: a filled star with a glow, shape-distinct from ic_light_point's dim ring, never color-only. -->
-    <path android:fillColor="#FFFFD54A" android:fillAlpha="0.35" android:pathData="M32,32 m-18,0 a18,18 0 1,0 36,0 a18,18 0 1,0 -36,0" />
-    <path android:fillColor="#FFFFD54A" android:pathData="M32,10 L38,26 L54,26 L41,36 L46,52 L32,42 L18,52 L23,36 L10,26 L26,26 Z" />
-</vector>

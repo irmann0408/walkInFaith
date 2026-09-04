@@ -1,6 +1,5 @@
 package com.bibleadventures.game.stories
 
-import androidx.compose.ui.geometry.Offset
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.slideout.CellPosition
@@ -139,21 +138,8 @@ object DanielContent {
         R.string.daniel_lions_den_context_line_2,
     )
 
-    /** How many math problems (one per light) form the Angel's Shield puzzle. */
+    /** How many math problems (one shield ring each) form the Angel's Shield puzzle. */
     const val LIONS_DEN_PROBLEM_COUNT = 5
-
-    // Five positions arranged in an arc/dome over Daniel, so lighting them in
-    // order reads as a shield of light forming overhead once complete. Purely
-    // visual/progress now — the lights themselves aren't tappable; solving
-    // [com.bibleadventures.ui.screens.daniel.DanielViewModel]'s randomly
-    // generated math problems is what advances them.
-    val lionsDenLightPositions: List<Offset> = listOf(
-        Offset(0.15f, 0.55f),
-        Offset(0.3f, 0.3f),
-        Offset(0.5f, 0.18f),
-        Offset(0.7f, 0.3f),
-        Offset(0.85f, 0.55f),
-    )
 
     val dariusContextLines: List<Int> = listOf(
         R.string.daniel_darius_context_line_1,

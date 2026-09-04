@@ -109,7 +109,7 @@ class DanielViewModelTest {
     }
 
     @Test
-    fun `onLionsDenAnswerTapped with a wrong value does not advance and never fails`() {
+    fun `onLionsDenAnswerTapped with a wrong value does not advance, never fails, but steps the lions closer`() {
         val viewModel = createViewModel()
         val step = viewModel.uiState.value.lionsDenState.currentStep!!
         val wrongValue = step.optionIds.map { it.toInt() }.first { it.toString() != step.correctOptionId }
@@ -117,10 +117,11 @@ class DanielViewModelTest {
         viewModel.onLionsDenAnswerTapped(wrongValue)
 
         assertEquals(0, viewModel.uiState.value.lionsDenState.currentStepIndex)
+        assertEquals(1, viewModel.uiState.value.lionsDenLionProximity)
     }
 
     @Test
-    fun `two wrong answers on the same problem replace it with a fresh one, still not advanced`() {
+    fun `two wrong answers on the same problem replace it with a fresh one, still not advanced, lion proximity keeps accumulating`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
         val step = viewModel.uiState.value.lionsDenState.currentStep!!
@@ -130,11 +131,16 @@ class DanielViewModelTest {
         viewModel.onLionsDenAnswerTapped(wrongValue) // 1st wrong: same problem, just re-prompts
         assertEquals(0, viewModel.uiState.value.lionsDenState.currentStepIndex)
         assertEquals(originalProblem, viewModel.uiState.value.lionsDenProblems.first { it.id == originalProblem.id })
+        assertEquals(1, viewModel.uiState.value.lionsDenLionProximity)
 
         viewModel.onLionsDenAnswerTapped(wrongValue) // 2nd wrong: replaced with a fresh problem
         val afterSecondWrong = viewModel.uiState.value
         assertEquals(0, afterSecondWrong.lionsDenState.currentStepIndex)
         assertTrue(audioController.playedEffects.isEmpty())
+        // The per-problem wrong count reset to 0 when the problem was replaced,
+        // but lion proximity is a whole-attempt counter — it keeps climbing.
+        assertEquals(0, afterSecondWrong.lionsDenState.wrongAttemptsOnCurrentStep)
+        assertEquals(2, afterSecondWrong.lionsDenLionProximity)
 
         val newProblem = afterSecondWrong.lionsDenProblems.first { it.id == originalProblem.id }
         assertTrue("expected a different problem after 2 wrong answers", newProblem != originalProblem)
@@ -142,6 +148,50 @@ class DanielViewModelTest {
             newProblem.choiceValues.map { it.toString() }.toSet(),
             afterSecondWrong.lionsDenState.currentStep!!.optionIds.toSet(),
         )
+    }
+
+    @Test
+    fun `LION_PROXIMITY_MAX wrong answers stops accepting further taps until retry`() {
+        val viewModel = createViewModel()
+
+        repeat(LION_PROXIMITY_MAX) {
+            val step = viewModel.uiState.value.lionsDenState.currentStep!!
+            val wrongValue = step.optionIds.map { it.toInt() }.first { it.toString() != step.correctOptionId }
+            viewModel.onLionsDenAnswerTapped(wrongValue)
+        }
+        assertEquals(LION_PROXIMITY_MAX, viewModel.uiState.value.lionsDenLionProximity)
+        val stateAfterMaxed = viewModel.uiState.value
+
+        // Further taps — even a correct one — are ignored while awaiting retry.
+        val correctValue = viewModel.uiState.value.lionsDenState.currentStep!!.correctOptionId.toInt()
+        viewModel.onLionsDenAnswerTapped(correctValue)
+
+        assertEquals(stateAfterMaxed, viewModel.uiState.value)
+    }
+
+    @Test
+    fun `onLionsDenRetry resets lion proximity and generates a fresh problem set after the lions closed in`() {
+        val viewModel = createViewModel()
+        repeat(LION_PROXIMITY_MAX) {
+            val step = viewModel.uiState.value.lionsDenState.currentStep!!
+            val wrongValue = step.optionIds.map { it.toInt() }.first { it.toString() != step.correctOptionId }
+            viewModel.onLionsDenAnswerTapped(wrongValue)
+        }
+        val problemsBeforeRetry = viewModel.uiState.value.lionsDenProblems
+
+        viewModel.onLionsDenRetry()
+
+        assertEquals(0, viewModel.uiState.value.lionsDenLionProximity)
+        assertEquals(0, viewModel.uiState.value.lionsDenState.currentStepIndex)
+        assertEquals(DanielContent.LIONS_DEN_PROBLEM_COUNT, viewModel.uiState.value.lionsDenProblems.size)
+        // Not a strict requirement that every problem differs (random draws could
+        // coincidentally repeat), but tapping the *old* problems' now-stale
+        // correct answers should no longer resolve anything unexpected — the new
+        // state's own currentStep should match the newly generated problem set.
+        val newStep = viewModel.uiState.value.lionsDenState.currentStep!!
+        val newCurrentProblem = viewModel.uiState.value.lionsDenProblems.first { it.id == newStep.id }
+        assertEquals(newCurrentProblem.correctValue.toString(), newStep.correctOptionId)
+        assertTrue(problemsBeforeRetry.isNotEmpty())
     }
 
     @Test
