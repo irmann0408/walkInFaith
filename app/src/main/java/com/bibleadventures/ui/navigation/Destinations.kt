@@ -71,8 +71,8 @@ sealed class Destination(val route: String) {
     /** Nested graph — every scene shares one graph-scoped `DanielViewModel`. */
     sealed class Daniel(route: String) : Destination(route) {
         data object Intro : Daniel("daniel/intro")
-        data object StealthContext : Daniel("daniel/stealth_context")
-        data object Stealth : Daniel("daniel/stealth")
+        data object WindowContext : Daniel("daniel/window_context")
+        data object Window : Daniel("daniel/window")
         data object Choice : Daniel("daniel/choice")
         data object LionsDenContext : Daniel("daniel/lions_den_context")
         data object LionsDen : Daniel("daniel/lions_den")

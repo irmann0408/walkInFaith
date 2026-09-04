@@ -2059,6 +2059,109 @@ scene's flavor text instead.
   `GoodSamaritanFlowTest.kt` and `DavidGoliathFlowTest.kt` were re-run
   specifically to confirm the gridmaze rename caused zero regression.
 
+### Chapter 4 addendum 1 — Hurrying to Pray reworked into "Open the Window," an Arrow-Block Slide Out puzzle
+The `rhythmlane`-based "Hurrying to Pray" (steer Daniel between 3 lanes to
+avoid officials, 7 avoids) was replaced outright with a new mechanic and a
+new narrative on the user's request: "Arrow Block: Slide Out" (aka "Tap
+Away") — every tile has one fixed exit direction shown by an arrow; tapping
+a tile either flies it off the board (its path is clear) or leaves it stuck
+in place, turning red/shaking, if something else is in the way. The new
+story framing: Daniel finds his upstairs window shuttered and latched, and
+must work the latches free before he can kneel and pray with it open toward
+Jerusalem "as he did before" (Daniel 6:10) — a better fit for that verse's
+actual point (he deliberately did *not* hide) than the old "hurry past
+officials" framing. Full rename, not a copy-only tweak: scene title is now
+**"Open the Window,"** routes renamed `Daniel.WindowContext`/`Daniel.Window`
+(was `StealthContext`/`Stealth`), screen moved from the stale
+`ui/screens/daniel/stealth/` package (a leftover name from an even earlier,
+already-removed hide mechanic) to `ui/screens/daniel/window/`.
+- **New pure engine: `game/puzzles/slideout/`** (`SlideOutGame.kt`,
+  `SlideOutGameState.kt`) — single-cell-only latches (simpler than
+  `roadblock`: no orientation/length concept at all), `SlideOutOutcome {
+  NONE, RELEASED, BLOCKED, COMPLETE }` (never a hard fail — a stuck latch
+  is just retriable, same "no failure states" spirit as every other
+  engine). Unlike the real-time engines (`dungeon`, `rhythmlane`),
+  `lastOutcome` does **not** need sticky no-repeat handling: every call is
+  a discrete tap event, not a per-frame tick, so the ViewModel dispatches
+  SFX unconditionally on each result.
+- **Board went through 2 rounds of on-device feedback, both changing only
+  the content generator, not the engine**: v1 shipped as an 8-latch plus-
+  shape (4 hand-authored outer/inner pairs) via `SlideOutGame.fromLayout`
+  (an ASCII-letter parser mirroring `RoadblockGame.fromLayout`). Round 1
+  feedback: "that was a game for 2-3 year olds... more difficult and filled
+  with tiles" — the board became a **fully packed 6x6 grid (36 latches, no
+  empty cells)**, which needed a different content-authoring path since 36
+  distinct letters exceeds the alphabet;
+  `SlideOutGame.fromLayout`/`SlideOutBlockSpec` were deleted outright (this
+  session's own addition, no other consumer, no reason to keep two
+  authoring paths for one puzzle) and replaced with
+  `SlideOutGame.fromGrid(rows, cols, direction: (row, col) -> SlideDirection?)`,
+  a per-cell generator function. The first fully-tiled version assigned
+  each latch to point at its single geometrically nearest edge (a
+  "pinwheel," ties broken UP>DOWN>LEFT>RIGHT) — provably solvable, since
+  every cell between a latch and its own nearest edge is, by definition,
+  strictly closer to *some* edge, so sorting all cells by that distance
+  ascending is always a valid release order regardless of grid size.
+- **Round 2 feedback: "let's have some variety of directions — top tiles
+  does not necessarily have to be arrows pointing up."** The nearest-edge
+  rule is mathematically the *only* direction provably safe for a generic
+  cell (the second-nearest edge's path can cross same-or-later-priority
+  cells — confirmed by hand-checking a concrete counterexample before
+  ruling it out), so real variety needed a fundamentally different
+  construction, not a tweak: **`DanielContent.windowLatchGeneration`
+  decides the release order first, cell by cell**, starting from the full
+  36-cell board — at each step, collect every (still-unassigned cell,
+  direction) pair whose path to the edge is currently clear of every
+  *other* unassigned cell, pick one at random (fixed seed, so the board
+  never reshuffles per playthrough — same static-content convention as
+  every hand-authored map in this file), assign it, and shrink the pool.
+  This *guarantees* solvability by construction — a cell's direction can
+  only ever depend on cells assigned strictly earlier — while giving real
+  freedom: a top-row cell isn't limited to pointing up, since by the time
+  it's its turn, pointing down/left/right may just as easily already be
+  clear, depending on what's already been claimed. `windowLatchDirection`/
+  `windowLatchSolutionOrder` are now both derived from this one generation
+  pass. `SlideOutGameTest` gained a dedicated test asserting the top row,
+  bottom row, left column, and right column are each *not* uniformly
+  pointing straight out — a regression guard for the actual property the
+  user asked for, not just "is it solvable."
+- **Content-description strategy changed with the board size**: 8
+  hand-written per-latch strings (`daniel_window_latch_top_outer_..._content_description`,
+  etc.) don't scale to 36+ tiles, so they were replaced with 4 generic,
+  parameterized ones (`daniel_window_latch_{up,down,left,right}_content_description`,
+  each taking a 1-indexed row/column) — the screen and every test compute
+  the right one from a `LatchBlock`'s own position + direction instead of
+  a per-id lookup table.
+- **Screen (`DanielWindowScreen.kt`)**: reuses the established
+  `Animatable`/`tween`/trigger-counter idiom (Sling Practice, the dungeon's
+  thrown-supply arc) — tapping calls the ViewModel immediately (engine
+  commits synchronously), then a `LaunchedEffect` reads back the result to
+  play either a fly-off animation (tile keeps rendering via a
+  `releasingBlock` last-known-good snapshot after the engine has already
+  removed it from state, exact same decoupling `BanditCombatOverlay` uses)
+  or a brief shake + red-flash + thicker border (color paired with motion
+  and a border-width change, not color alone, per the accessibility rule).
+  Only one latch resolves at a time. No new art for v1 — plain colored
+  tiles + existing Material arrow icons (`KeyboardArrowUp/Down`, the
+  auto-mirrored `Left/Right`), matching Good Samaritan Passing By's own
+  placeholder-first visual style.
+- **Test centralization, done opportunistically while already touching all
+  5 files**: every other chapter's flow test that needs Daniel as a
+  prerequisite (`EstherFlowTest`, `Feeding5000FlowTest`, `JerichoFlowTest`,
+  `JesusCalmsStormFlowTest`) carried its own private `completeDaniel()` +
+  `completeLaneAvoid()` (+3 helper functions) copy — since the mechanic
+  swap meant editing all 5 copies (`DanielFlowTest`'s own included) anyway,
+  centralized into a single `fun FlowTestRule.completeDaniel()` in the
+  shared `ChapterFlowHelpers.kt`, mirroring the exact precedent already
+  established for `completeGoodSamaritan()`. `completeLaneAvoid` and its 3
+  support functions turned out to have **no other consumer** in any of the
+  5 files once Daniel's own call site was gone (confirmed by grep before
+  deleting) — removed outright rather than left as orphaned dead test code.
+- Confirmed: full `./gradlew compileDebugKotlin compileDebugUnitTestKotlin
+  testDebugUnitTest compileDebugAndroidTestKotlin` and `./gradlew build
+  -x connectedAndroidTest` both pass; installed via `installDebug` and
+  confirmed on-device by the user across both feedback rounds above.
+
 ### Audio, Narration & Settings
 Real audio, inserted ahead of its originally-planned Milestone 7 slot at the
 user's explicit request, specifically so Jericho's trumpets could actually
@@ -4541,6 +4644,11 @@ preview (see above) — no further UI work on it for now. Open items:
   across several feedback rounds. One known, accepted-as-fine-for-now gap:
   one of the map's 3 bandit traps is skippable via an alternate route — the
   user plans to replace the map layout themselves later.
+- Daniel's "Hurrying to Pray" rework into "Open the Window" (Chapter 4
+  addendum 1) is implemented, unit-tested (including a dedicated
+  directional-variety regression test), confirmed compiling, and confirmed
+  on-device by the user across 2 feedback rounds (board density, then
+  direction variety).
 
 ## Architectural decisions log
 
@@ -5005,3 +5113,41 @@ preview (see above) — no further UI work on it for now. Open items:
   rolls in one test) instead of depending on `Random.Default`'s real odds
   and risking flaky tests. Reuse this exact shape for any future engine
   that adds its own randomness rather than inventing a new one.
+- **A tile-based puzzle's tap-dependency board can have genuine direction
+  variety and be provably deadlock-free at the same time, but only if the
+  release *order* is decided before (or together with) each tile's
+  direction — not the other way around.** `SlideOutGame`'s "Open the
+  Window" board (Chapter 4 addendum 1) first shipped with every latch
+  pointing at its single geometrically nearest edge, which is provably
+  always safe (every cell on the path to a cell's own nearest edge is, by
+  definition, strictly closer to *some* edge) but gives zero real variety —
+  a top-row cell always points up. Trying to also allow a cell's *second*-
+  nearest edge as an occasional alternate breaks the proof (a concrete
+  6x6 counterexample confirmed its path can cross a same-or-later-priority
+  cell) and risks a genuine mutual deadlock. The fix wasn't a smarter
+  geometric rule — it was inverting the construction: decide the release
+  order cell-by-cell first (`DanielContent.windowLatchGeneration`), picking
+  at each step any (unassigned cell, direction) pair whose path is
+  currently clear of every other *unassigned* cell, so a cell's direction
+  can only ever depend on cells that will be released strictly before it.
+  This generalizes to any board shape/size with a fixed seed for
+  determinism (not reshuffled per playthrough) and is the pattern to reuse
+  for any future "must clear tiles in a dependency order" puzzle that wants
+  real per-tile variety rather than a single uniform rule.
+- **When a puzzle's content-authoring format stops fitting after a scale
+  change, delete the old format rather than keeping two authoring paths
+  for one consumer.** `SlideOutGame.fromLayout`/`SlideOutBlockSpec` (an
+  ASCII-letter parser, mirroring `RoadblockGame.fromLayout`) was this
+  session's own original authoring path for "Open the Window," replaced
+  within the same session once the board grew from 8 hand-named latches to
+  a fully tiled 36-cell grid (36 distinct letters doesn't fit the
+  alphabet, and named-letter authoring stopped making sense for a
+  procedurally generated board anyway). Since it was a brand-new,
+  single-consumer addition (not a long-standing convention anything else
+  depended on), it was deleted outright along with its tests rather than
+  left in place unreferenced — unlike genuinely-orphaned-but-still-useful
+  engine code from an earlier milestone (e.g. `game/puzzles/dodge`), which
+  stays per this app's "leave unused code alone" precedent. The
+  distinction: dead code from a completed, working feature is left alone;
+  a same-session authoring path immediately superseded by its own next
+  iteration is fine to remove.

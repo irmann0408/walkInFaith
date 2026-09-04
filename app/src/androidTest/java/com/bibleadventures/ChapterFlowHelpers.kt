@@ -2,6 +2,7 @@ package com.bibleadventures
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
@@ -16,7 +17,10 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import com.bibleadventures.game.puzzles.dungeon.DungeonGame
+import com.bibleadventures.game.puzzles.gridmaze.Direction as GridMazeDirection
 import com.bibleadventures.game.puzzles.roadblock.Direction as RoadblockDirection
+import com.bibleadventures.game.puzzles.slideout.SlideDirection
+import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.DavidGoliathContent
 import com.bibleadventures.game.stories.GoodSamaritanContent
 import com.bibleadventures.game.stories.NoahsArkContent
@@ -621,4 +625,101 @@ private fun FlowTestRule.completePassingBy() {
             swipe(start = center, end = center + delta, durationMillis = 200)
         }
     }
+}
+
+/**
+ * Walks Daniel and the Lions end to end so Esther unlocks. See
+ * `DanielFlowTest` for the thorough walkthrough that also asserts the
+ * chapter's own reward/badge details; this only needs to clear it as a
+ * prerequisite. Centralized here for the same reason as
+ * [completeGoodSamaritan] above: every other chapter's flow test that needs
+ * Daniel as a prerequisite previously carried its own private copy, and the
+ * "Open the Window" rework (replacing the old rhythmlane-based "Hurrying to
+ * Pray") needed all 5 of those copies updated at once anyway.
+ */
+fun FlowTestRule.completeDaniel() {
+    val activity = this.activity
+    val nextPageLabel = activity.getString(R.string.action_next_page)
+
+    scrollToChapterOnWorldMap(activity.getString(R.string.chapter_daniel_title))
+    onNodeWithText(activity.getString(R.string.chapter_daniel_title)).performClick()
+
+    onNodeWithText(nextPageLabel).performClick() // Intro -> A Shuttered Window context
+    onNodeWithText(nextPageLabel).performClick() // context -> Open the Window
+
+    completeOpenTheWindow()
+    onNodeWithText(nextPageLabel).performClick()
+
+    onNodeWithText(activity.getString(R.string.daniel_choice_option_1)).performClick()
+    onNodeWithText(nextPageLabel).performClick()
+
+    onNodeWithText(nextPageLabel).performClick() // Into the Lions' Den context
+
+    // The Angel's Shield — 5 random math problems. Two wrong answers in a
+    // row replace the problem instead of leaving the last choice a
+    // guaranteed-correct guess, so compute the real answer instead of
+    // trying all 3 choices blind.
+    repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) { solveLionsDenProblem() }
+    onNodeWithText(nextPageLabel).performClick()
+
+    onNodeWithText(nextPageLabel).performClick() // Darius's Long Night context
+
+    val upLabel = activity.getString(R.string.daniel_darius_direction_up)
+    val downLabel = activity.getString(R.string.daniel_darius_direction_down)
+    val mazeLeftLabel = activity.getString(R.string.daniel_darius_direction_left)
+    val mazeRightLabel = activity.getString(R.string.daniel_darius_direction_right)
+    DanielContent.dariusSolutionPath.forEach { direction ->
+        val label = when (direction) {
+            GridMazeDirection.UP -> upLabel
+            GridMazeDirection.DOWN -> downLabel
+            GridMazeDirection.LEFT -> mazeLeftLabel
+            GridMazeDirection.RIGHT -> mazeRightLabel
+        }
+        onNodeWithContentDescription(label).performClick()
+    }
+    onNodeWithText(nextPageLabel).performClick()
+
+    onNodeWithText(activity.getString(R.string.daniel_lesson_title)).assertExists()
+    onNodeWithText(nextPageLabel).performClick()
+
+    onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
+    onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
+}
+
+/**
+ * Taps every latch in [DanielContent.windowLatchSolutionOrder] by its own
+ * content description. Each tap's fly-off/shake reaction is a plain
+ * `Animatable`/`tween` animation with no extra `delay()` calls (see
+ * `DanielWindowScreen.LatchBoard`), so — unlike the dungeon's bandit-attack
+ * sequence, which needed an explicit `waitUntil` poll because of its
+ * `delay()` calls — Compose's own idle-sync after each `performClick()`
+ * already waits out the animation before the next tap fires.
+ */
+private fun FlowTestRule.completeOpenTheWindow() {
+    val activity = this.activity
+    DanielContent.windowLatchSolutionOrder.forEach { latch ->
+        val stringRes = when (latch.direction) {
+            SlideDirection.UP -> R.string.daniel_window_latch_up_content_description
+            SlideDirection.DOWN -> R.string.daniel_window_latch_down_content_description
+            SlideDirection.LEFT -> R.string.daniel_window_latch_left_content_description
+            SlideDirection.RIGHT -> R.string.daniel_window_latch_right_content_description
+        }
+        val description = activity.getString(stringRes, latch.position.row + 1, latch.position.col + 1)
+        onNodeWithContentDescription(description).performClick()
+    }
+}
+
+/**
+ * Reads the displayed "%d + %d = ?" / "%d − %d = ?" problem, computes the
+ * real answer, and taps the matching choice by its content description
+ * (each answer choice exposes its own value as its content description).
+ * Deterministic by construction, so it also stays correct once wrong
+ * answers can replace the problem mid-attempt.
+ */
+private fun FlowTestRule.solveLionsDenProblem() {
+    val problemText = onNodeWithTag("lions_den_problem").fetchSemanticsNode()
+        .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
+    val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
+    val correctValue = if ("−" in problemText) operands[0] - operands[1] else operands[0] + operands[1]
+    onNodeWithContentDescription(correctValue.toString()).performClick()
 }

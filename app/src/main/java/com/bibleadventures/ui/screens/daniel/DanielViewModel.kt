@@ -16,8 +16,9 @@ import com.bibleadventures.game.puzzles.decisionpath.DecisionOutcome
 import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGame
 import com.bibleadventures.game.puzzles.decisionpath.DecisionPathGameState
 import com.bibleadventures.game.puzzles.decisionpath.DecisionStep
-import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGame
-import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneGameState
+import com.bibleadventures.game.puzzles.slideout.SlideOutGame
+import com.bibleadventures.game.puzzles.slideout.SlideOutGameState
+import com.bibleadventures.game.puzzles.slideout.SlideOutOutcome
 import com.bibleadventures.game.rewards.DanielReward
 import com.bibleadventures.game.rewards.RewardCalculator
 import com.bibleadventures.game.stories.DanielContent
@@ -36,16 +37,12 @@ import kotlin.random.Random
 
 data class DanielRewardResult(val stars: Int)
 
-/** Only screen-level movement math needs this — the engine only ever sees caller-supplied bounds, never a lane count. */
-private const val HURRY_TO_PRAY_LANE_COUNT = 3
-
 data class DanielUiState(
-    val hurryToPrayState: RhythmLaneGameState = RhythmLaneGameState(
-        chart = DanielContent.hurryToPrayChart,
-        requiredHits = DanielContent.HURRY_TO_PRAY_REQUIRED_AVOIDS,
+    val windowLatchState: SlideOutGameState = SlideOutGame.fromGrid(
+        DanielContent.WINDOW_LATCH_ROWS,
+        DanielContent.WINDOW_LATCH_COLS,
+        DanielContent::windowLatchDirection,
     ),
-    /** Which of the 3 lanes Daniel currently stands in — moved one lane at a time via [DanielViewModel.onHurryToPrayLaneMoved]. Starts centered so both edges are one move away. */
-    val characterLane: Int = 1,
     val selectedChoiceId: String? = null,
     val lionsDenState: DecisionPathGameState,
     val lionsDenProblems: List<MathProblem>,
@@ -79,27 +76,22 @@ class DanielViewModel(
             initialValue = emptySet(),
         )
 
-    /** Moves Daniel by [deltaLane] (-1 left, +1 right), clamped to the 3 lanes — never a no-op-that-looks-broken, it just stops at the edge. */
-    fun onHurryToPrayLaneMoved(deltaLane: Int) {
-        _uiState.update { current ->
-            current.copy(characterLane = (current.characterLane + deltaLane).coerceIn(0, HURRY_TO_PRAY_LANE_COUNT - 1))
-        }
-    }
-
     /**
-     * Same role as every other `rhythmlane` screen's per-frame time-advance
-     * tick (marks a fully-passed official MISSED, feedback only), plus the
-     * actual avoid judgment via `RhythmLaneGame.onLaneAvoided` — a literal
-     * reskin of `DavidGoliathViewModel.onCrossingValleyTimeAdvanced`.
+     * Tapping a latch is always a real, discrete event (not a per-frame
+     * tick), so unlike the real-time engines (`dungeon`, `rhythmlane`) no
+     * "did the outcome actually change" comparison is needed before playing
+     * a sound — every call here is a genuine attempt. Nothing plays on
+     * [SlideOutOutcome.BLOCKED]; a stuck latch is neither a celebration nor
+     * a punishment, just feedback the screen shows directly.
      */
-    fun onHurryToPrayTimeAdvanced(nowMs: Long) {
+    fun onLatchTapped(blockId: String) {
         _uiState.update { current ->
-            val afterMisses = RhythmLaneGame.onTimeAdvanced(current.hurryToPrayState, nowMs)
-            val afterAvoid = RhythmLaneGame.onLaneAvoided(afterMisses, current.characterLane, nowMs)
-            if (afterAvoid.hits > current.hurryToPrayState.hits) {
-                audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
+            val next = SlideOutGame.onBlockTapped(current.windowLatchState, blockId)
+            when (next.lastOutcome) {
+                SlideOutOutcome.RELEASED, SlideOutOutcome.COMPLETE -> audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
+                else -> Unit
             }
-            current.copy(hurryToPrayState = afterAvoid)
+            current.copy(windowLatchState = next)
         }
     }
 

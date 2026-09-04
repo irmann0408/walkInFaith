@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import com.bibleadventures.MainActivity
 import com.bibleadventures.R
+import com.bibleadventures.completeDaniel
 import com.bibleadventures.completeDavidGoliath
 import com.bibleadventures.completeGoodSamaritan
 import com.bibleadventures.completeNoahsArk
@@ -25,7 +26,6 @@ import com.bibleadventures.game.puzzles.gridmaze.Direction
 import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGame
 import com.bibleadventures.game.puzzles.slidingpuzzle.SlidingPuzzleGameState
-import com.bibleadventures.game.stories.DanielContent
 import com.bibleadventures.game.stories.EstherContent
 import com.bibleadventures.game.stories.Feeding5000Content
 import com.bibleadventures.game.stories.JerichoContent
@@ -74,7 +74,7 @@ class Feeding5000FlowTest {
         composeTestRule.completeNoahsArk()
         composeTestRule.completeDavidGoliath()
         composeTestRule.completeGoodSamaritan()
-        completeDaniel()
+        composeTestRule.completeDaniel()
         completeEsther()
         completeJericho()
 
@@ -160,66 +160,6 @@ class Feeding5000FlowTest {
 
         // Back on the World Map: Feeding the 5,000 completed.
         composeTestRule.onNodeWithText(activity.getString(R.string.world_map_title)).assertExists()
-    }
-
-    /** Walks Daniel and the Lions end to end (mirrors DanielFlowTest) so Esther unlocks. */
-    private fun completeDaniel() {
-        val activity = composeTestRule.activity
-        val nextPageLabel = activity.getString(R.string.action_next_page)
-
-        scrollToChapterOnWorldMap(activity.getString(R.string.chapter_daniel_title))
-        composeTestRule.onNodeWithText(activity.getString(R.string.chapter_daniel_title)).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Intro
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Hurrying to Pray context
-
-        completeLaneAvoid(
-            chart = DanielContent.hurryToPrayChart,
-            requiredAvoids = DanielContent.HURRY_TO_PRAY_REQUIRED_AVOIDS,
-            titleRes = R.string.daniel_stealth_title,
-            progressLabelRes = R.string.daniel_stealth_progress_label,
-            characterContentDescriptionRes = R.string.daniel_stealth_character_content_description,
-            moveLeftLabelRes = R.string.daniel_stealth_move_left_content_description,
-            moveRightLabelRes = R.string.daniel_stealth_move_right_content_description,
-        )
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.daniel_choice_option_1)).performClick()
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Into the Lions' Den context
-
-        // The Angel's Shield — 5 random math problems. Two wrong answers in a
-        // row now replace the problem instead of leaving the last choice a
-        // guaranteed-correct guess, so compute the real answer instead of
-        // trying all 3 choices blind.
-        repeat(DanielContent.LIONS_DEN_PROBLEM_COUNT) {
-            solveLionsDenProblem()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(nextPageLabel).performClick() // Darius's Long Night context
-
-        val upLabel = activity.getString(R.string.daniel_darius_direction_up)
-        val downLabel = activity.getString(R.string.daniel_darius_direction_down)
-        val mazeLeftLabel = activity.getString(R.string.daniel_darius_direction_left)
-        val mazeRightLabel = activity.getString(R.string.daniel_darius_direction_right)
-        DanielContent.dariusSolutionPath.forEach { direction ->
-            val label = when (direction) {
-                Direction.UP -> upLabel
-                Direction.DOWN -> downLabel
-                Direction.LEFT -> mazeLeftLabel
-                Direction.RIGHT -> mazeRightLabel
-            }
-            composeTestRule.onNodeWithContentDescription(label).performClick()
-        }
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.daniel_lesson_title)).assertExists()
-        composeTestRule.onNodeWithText(nextPageLabel).performClick()
-
-        composeTestRule.onNodeWithText(activity.getString(R.string.reward_title)).assertExists()
-        composeTestRule.onNodeWithText(activity.getString(R.string.action_return_to_map)).performClick()
     }
 
     /**
@@ -779,88 +719,6 @@ class Feeding5000FlowTest {
         val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
         val correctValue = if ("÷" in problemText) operands[0] / operands[1] else operands[0] * operands[1]
         composeTestRule.onNodeWithContentDescription(correctValue.toString()).performClick()
-    }
-
-    /** Same technique as [solveShofarProblem], for Daniel's Angel's Shield "%d + %d = ?" / "%d − %d = ?" problems. */
-    private fun solveLionsDenProblem() {
-        val problemText = composeTestRule.onNodeWithTag("lions_den_problem").fetchSemanticsNode()
-            .config[SemanticsProperties.Text].joinToString(separator = "") { it.text }
-        val operands = Regex("\\d+").findAll(problemText).map { it.value.toInt() }.toList()
-        val correctValue = if ("−" in problemText) operands[0] - operands[1] else operands[0] + operands[1]
-        composeTestRule.onNodeWithContentDescription(correctValue.toString()).performClick()
-    }
-
-    /**
-     * Crossing the Valley / Hurrying to Pray's rhythmlane "avoid" mechanic
-     * auto-judges every frame purely from the character's current lane (see
-     * `RhythmLaneGame.onLaneAvoided`) — same shape as Gathering the
-     * Leftovers' catch mechanic, so it inherits the same implicit-idle-sync
-     * unpredictability [completeCatching] documents. Sidesteps it the same
-     * way: freeze the clock, then for each of the 3 lanes, park the
-     * character there and advance the clock by one full
-     * `chart.loopDurationMs` — since every note recurs exactly once per
-     * loop, a full-loop dwell in a lane is guaranteed to pass through (and
-     * avoid) every note assigned to that lane exactly once, regardless of
-     * where in the loop the clock actually started. Progress is read live
-     * off the progress-label text after every sweep.
-     */
-    private fun completeLaneAvoid(
-        chart: RhythmLaneChart,
-        requiredAvoids: Int,
-        titleRes: Int,
-        progressLabelRes: Int,
-        characterContentDescriptionRes: Int,
-        moveLeftLabelRes: Int,
-        moveRightLabelRes: Int,
-    ) {
-        val activity = composeTestRule.activity
-        val lanes = chart.notes.map { it.lane }.distinct().sorted()
-
-        // Let the screen fully compose (with the clock still auto-advancing)
-        // before freezing it — freezing immediately after navigating can
-        // catch the new screen before its first frame lands, so even static
-        // elements like the progress label aren't in the semantics tree yet.
-        composeTestRule.onNodeWithText(activity.getString(titleRes)).assertExists()
-
-        composeTestRule.mainClock.autoAdvance = false
-        var safetyRounds = 0
-        while (currentLaneAvoidHits(progressLabelRes, requiredAvoids) < requiredAvoids) {
-            check(safetyRounds++ < 20) { "Lane-avoid puzzle didn't reach $requiredAvoids avoids after 20 full sweep rounds — stuck at ${currentLaneAvoidHits(progressLabelRes, requiredAvoids)}" }
-            lanes.forEach { lane ->
-                if (currentLaneAvoidHits(progressLabelRes, requiredAvoids) < requiredAvoids) {
-                    moveCharacterToLane(lane, characterContentDescriptionRes, moveLeftLabelRes, moveRightLabelRes)
-                    composeTestRule.mainClock.advanceTimeBy(chart.loopDurationMs)
-                }
-            }
-        }
-        composeTestRule.mainClock.autoAdvance = true
-    }
-
-    private fun currentLaneAvoidHits(progressLabelRes: Int, requiredAvoids: Int): Int {
-        val activity = composeTestRule.activity
-        return (0..requiredAvoids).first { candidateHits ->
-            val label = activity.getString(progressLabelRes, candidateHits, requiredAvoids)
-            composeTestRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
-        }
-    }
-
-    private fun currentCharacterLane(characterContentDescriptionRes: Int): Int {
-        val activity = composeTestRule.activity
-        return (1..3).first { candidateLane ->
-            val label = activity.getString(characterContentDescriptionRes, candidateLane)
-            composeTestRule.onAllNodesWithContentDescription(label).fetchSemanticsNodes().isNotEmpty()
-        } - 1
-    }
-
-    private fun moveCharacterToLane(targetLane: Int, characterContentDescriptionRes: Int, moveLeftLabelRes: Int, moveRightLabelRes: Int) {
-        val activity = composeTestRule.activity
-        val moveLeftLabel = activity.getString(moveLeftLabelRes)
-        val moveRightLabel = activity.getString(moveRightLabelRes)
-
-        while (currentCharacterLane(characterContentDescriptionRes) != targetLane) {
-            val label = if (currentCharacterLane(characterContentDescriptionRes) < targetLane) moveRightLabel else moveLeftLabel
-            composeTestRule.onNodeWithContentDescription(label).performClick()
-        }
     }
 
     private fun dragOntoContentDescription(itemNode: SemanticsNodeInteraction, targetContentDescription: String) {

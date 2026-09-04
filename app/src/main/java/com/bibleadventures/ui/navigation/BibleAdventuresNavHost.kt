@@ -34,7 +34,7 @@ import com.bibleadventures.ui.screens.daniel.intro.DanielIntroScreen
 import com.bibleadventures.ui.screens.daniel.lesson.DanielLessonScreen
 import com.bibleadventures.ui.screens.daniel.lionsden.DanielLionsDenScreen
 import com.bibleadventures.ui.screens.daniel.reward.DanielRewardScreen
-import com.bibleadventures.ui.screens.daniel.stealth.DanielStealthScreen
+import com.bibleadventures.ui.screens.daniel.window.DanielWindowScreen
 import com.bibleadventures.ui.screens.davidgoliath.DavidGoliathViewModel
 import com.bibleadventures.ui.screens.davidgoliath.choice.DavidGoliathChoiceScreen
 import com.bibleadventures.ui.screens.davidgoliath.choosestones.DavidGoliathChooseStonesScreen
@@ -650,26 +650,26 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 viewModel = viewModel,
                 onContinue = {
                     viewModel.onSceneCompleted("intro")
-                    navController.navigate(Destination.Daniel.StealthContext.route)
+                    navController.navigate(Destination.Daniel.WindowContext.route)
                 },
             )
         }
-        composable(Destination.Daniel.StealthContext.route) {
+        composable(Destination.Daniel.WindowContext.route) {
             StoryBeatScreen(
-                titleRes = R.string.daniel_stealth_context_title,
-                lineRes = DanielContent.stealthContextLines,
-                onContinue = { navController.navigate(Destination.Daniel.Stealth.route) },
+                titleRes = R.string.daniel_window_context_title,
+                lineRes = DanielContent.windowContextLines,
+                onContinue = { navController.navigate(Destination.Daniel.Window.route) },
             )
         }
-        composable(Destination.Daniel.Stealth.route) { entry ->
+        composable(Destination.Daniel.Window.route) { entry ->
             val viewModel = navController.danielViewModel(entry)
             val previouslyCompletedSceneIds by viewModel.previouslyCompletedSceneIds.collectAsStateWithLifecycle()
-            DanielStealthScreen(
+            DanielWindowScreen(
                 viewModel = viewModel,
-                previouslyCompleted = "stealth" in previouslyCompletedSceneIds,
+                previouslyCompleted = "window" in previouslyCompletedSceneIds,
                 onBackToMainMenu = onBackToMainMenu,
                 onContinue = {
-                    viewModel.onSceneCompleted("stealth")
+                    viewModel.onSceneCompleted("window")
                     navController.navigate(Destination.Daniel.Choice.route)
                 },
             )

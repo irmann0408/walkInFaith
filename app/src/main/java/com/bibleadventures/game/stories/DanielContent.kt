@@ -3,8 +3,10 @@ package com.bibleadventures.game.stories
 import androidx.compose.ui.geometry.Offset
 import com.bibleadventures.R
 import com.bibleadventures.game.puzzles.gridmaze.Direction
-import com.bibleadventures.game.puzzles.rhythmlane.RhythmLaneChart
-import com.bibleadventures.game.puzzles.rhythmlane.RhythmNote
+import com.bibleadventures.game.puzzles.slideout.CellPosition
+import com.bibleadventures.game.puzzles.slideout.LatchBlock
+import com.bibleadventures.game.puzzles.slideout.SlideDirection
+import kotlin.random.Random
 
 /** Shared across chapters (also used by Jericho's Blow the Shofar) — same shape everywhere, same reason [MathProblem] is. */
 enum class MathOperator { ADD, SUBTRACT, MULTIPLY, DIVIDE }
@@ -40,27 +42,88 @@ object DanielContent {
         R.string.daniel_intro_line_2,
     )
 
-    val stealthContextLines: List<Int> = listOf(
-        R.string.daniel_stealth_context_line_1,
-        R.string.daniel_stealth_context_line_2,
+    val windowContextLines: List<Int> = listOf(
+        R.string.daniel_window_context_line_1,
+        R.string.daniel_window_context_line_2,
     )
 
     /**
-     * A literal reskin of [DavidGoliathContent.crossingValleyChart] — same
-     * `rhythmlane`-via-`onLaneAvoided` shape, same 3 lanes/7 required
-     * avoids, only the hazard (an official blocking the hallway instead of
-     * a rolling rock) and background differ. Framed as getting past, not
-     * hiding — Daniel 6:10 has him praying openly.
+     * The window is a fully packed [WINDOW_LATCH_ROWS] x [WINDOW_LATCH_COLS]
+     * grid of latches — no empty background cells — up from the original
+     * 8-latch plus-shaped board, which on-device testing found trivially
+     * easy for the intended 7+ audience. Every single cell holds a latch.
      */
-    val hurryToPrayChart = RhythmLaneChart(
-        notes = listOf(
-            RhythmNote("official_1", lane = 1, hitTimeMs = 800),
-            RhythmNote("official_2", lane = 0, hitTimeMs = 1800),
-            RhythmNote("official_3", lane = 2, hitTimeMs = 2800),
-        ),
-        loopDurationMs = 3600,
-    )
-    const val HURRY_TO_PRAY_REQUIRED_AVOIDS = 7
+    const val WINDOW_LATCH_ROWS = 6
+    const val WINDOW_LATCH_COLS = 6
+
+    private const val WINDOW_LATCH_SEED = 20260904L
+
+    /**
+     * Generated once with a fixed seed (never reshuffled per playthrough,
+     * same "static, hand-verified" spirit as every other hand-authored
+     * layout in this file) via a "decide the release order first" build:
+     * starting from the full board, repeatedly collect every (cell,
+     * direction) pair whose path to the board edge is currently clear of
+     * every other *not-yet-assigned* cell, pick one at random, assign that
+     * cell that direction, and remove it from the pool — then repeat until
+     * every cell has a direction. Because a cell is only ever assigned a
+     * direction whose path is already clear of everything still left in the
+     * pool, and the pool only ever shrinks, the resulting order is
+     * *guaranteed* to be a valid release sequence: a cell's direction can
+     * depend only on cells that get assigned (and thus released) strictly
+     * before it. This is what gives real variety — a top-row cell isn't
+     * limited to pointing up; once enough of the board around it has
+     * already been claimed by earlier picks, pointing down, left, or right
+     * can just as easily be the one that happens to be clear — while still
+     * ruling out hand-authored deadlocks by construction, not by luck.
+     * `SlideOutGameTest` both replays [windowLatchSolutionOrder] and
+     * independently re-verifies the resulting board with the engine's own
+     * greedy solver as a second check.
+     */
+    private val windowLatchGeneration: List<LatchBlock> = run {
+        val random = Random(WINDOW_LATCH_SEED)
+        val remaining = (0 until WINDOW_LATCH_ROWS).flatMap { row ->
+            (0 until WINDOW_LATCH_COLS).map { col -> CellPosition(row, col) }
+        }.toMutableSet()
+
+        fun isClear(cell: CellPosition, direction: SlideDirection): Boolean {
+            var current = cell
+            while (true) {
+                current = when (direction) {
+                    SlideDirection.UP -> current.copy(row = current.row - 1)
+                    SlideDirection.DOWN -> current.copy(row = current.row + 1)
+                    SlideDirection.LEFT -> current.copy(col = current.col - 1)
+                    SlideDirection.RIGHT -> current.copy(col = current.col + 1)
+                }
+                if (current.row !in 0 until WINDOW_LATCH_ROWS || current.col !in 0 until WINDOW_LATCH_COLS) return true
+                if (current in remaining) return false
+            }
+        }
+
+        val order = mutableListOf<LatchBlock>()
+        while (remaining.isNotEmpty()) {
+            val candidates = remaining.flatMap { cell -> SlideDirection.values().filter { isClear(cell, it) }.map { cell to it } }
+            check(candidates.isNotEmpty()) { "windowLatchGeneration deadlocked with ${remaining.size} cells left: $remaining" }
+            val (cell, direction) = candidates[random.nextInt(candidates.size)]
+            order += LatchBlock(id = "latch_${cell.row}_${cell.col}", position = cell, direction = direction)
+            remaining -= cell
+        }
+        order
+    }
+
+    private val windowLatchDirectionByPosition: Map<CellPosition, SlideDirection> =
+        windowLatchGeneration.associate { it.position to it.direction }
+
+    fun windowLatchDirection(row: Int, col: Int): SlideDirection = windowLatchDirectionByPosition.getValue(CellPosition(row, col))
+
+    /**
+     * The exact order [windowLatchGeneration] assigned latches in — already
+     * a valid release order by construction (see that property's doc
+     * comment). Used by both `SlideOutGameTest`'s end-to-end replay and the
+     * instrumented flow test's tap sequence, the same role
+     * `dariusSolutionPath`/`passingBySolution` play for their own puzzles.
+     */
+    val windowLatchSolutionOrder: List<LatchBlock> = windowLatchGeneration
 
     // Flavor-only responses at Daniel 6:10's real decision point — he "went
     // to his house... and prayed, and gave thanks before his God, as he did

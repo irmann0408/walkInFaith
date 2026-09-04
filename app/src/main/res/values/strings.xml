@@ -337,17 +337,19 @@
     <string name="daniel_intro_line_1">Daniel served King Darius faithfully, and he prayed to God every single day.</string>
     <string name="daniel_intro_line_2">Some jealous officials tricked the king into signing a law that could get Daniel thrown to the lions.</string>
 
-    <string name="daniel_stealth_context_title">Hurrying to Pray</string>
-    <string name="daniel_stealth_context_line_1">When Daniel heard about the new law, he did not hide his faith — he went to pray just as he always did.</string>
-    <string name="daniel_stealth_context_line_2">Some officials were watching, hoping to catch him. Help Daniel hurry to his prayer room.</string>
+    <string name="daniel_window_context_title">A Shuttered Window</string>
+    <string name="daniel_window_context_line_1">When Daniel reached his upstairs room to pray, he found the window shuttered and latched tight.</string>
+    <string name="daniel_window_context_line_2">He would not pray in secret. Help him work the latches free so he can kneel with the window open, just as he always did.</string>
 
-    <string name="daniel_stealth_title">Hurry to the Prayer Room</string>
-    <string name="daniel_stealth_instructions">Use the arrows to move Daniel out of the way before each official arrives.</string>
-    <string name="daniel_stealth_progress_label">Avoided %1$d of %2$d officials</string>
-    <string name="daniel_stealth_character_content_description">Daniel, lane %1$d</string>
-    <string name="daniel_stealth_move_left_content_description">Move Daniel left</string>
-    <string name="daniel_stealth_move_right_content_description">Move Daniel right</string>
-    <string name="daniel_stealth_official_content_description">An official blocking the way</string>
+    <string name="daniel_window_title">Open the Window</string>
+    <string name="daniel_window_instructions">Tap a latch to release it. If another latch is in its way, it will get stuck — clear the outer ones first.</string>
+    <string name="daniel_window_progress_label">Opened %1$d of %2$d latches</string>
+    <string name="daniel_window_feedback_released">The latch came free!</string>
+    <string name="daniel_window_feedback_stuck">That latch is stuck — clear what\'s blocking it first.</string>
+    <string name="daniel_window_latch_up_content_description">Latch, row %1$d column %2$d, slides up</string>
+    <string name="daniel_window_latch_down_content_description">Latch, row %1$d column %2$d, slides down</string>
+    <string name="daniel_window_latch_left_content_description">Latch, row %1$d column %2$d, slides left</string>
+    <string name="daniel_window_latch_right_content_description">Latch, row %1$d column %2$d, slides right</string>
 
     <string name="daniel_choice_title">Daniel\'s Prayer</string>
     <string name="daniel_choice_instructions">Choose what Daniel says as he kneels to pray.</string>
