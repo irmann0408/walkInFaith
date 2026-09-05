@@ -9,8 +9,9 @@ enum class SoundEffect { MATCH_SUCCESS, SCENE_TRANSITION, REWARD_CELEBRATION, IT
  * A real recorded line for the player's own character (not the generic
  * narrator TTS voice) — recorded twice per line, once for each
  * [com.bibleadventures.domain.model.Appearance], so it matches whichever
- * character the player customized. Currently only Noah's Ark and David &
- * Goliath have recordings; every other chapter still uses [AudioController.speak].
+ * character the player customized. Noah's Ark, David & Goliath, Good
+ * Samaritan, and Daniel and the Lions all have recordings now; every other
+ * chapter still uses [AudioController.speak].
  */
 enum class CharacterVoiceLine {
     NOAH_INTRO,
@@ -35,6 +36,22 @@ enum class CharacterVoiceLine {
     DAVID_SLING_ESCAPED,
     DAVID_VICTORY,
     DAVID_LESSON,
+    GOOD_SAMARITAN_DANGEROUS_ROAD,
+    GOOD_SAMARITAN_THE_PRIEST,
+    GOOD_SAMARITAN_THE_LEVITE,
+    GOOD_SAMARITAN_SAMARITAN_ARRIVES,
+    GOOD_SAMARITAN_PASSING_BY_INSTRUCTIONS,
+    GOOD_SAMARITAN_PASSING_BY_LEVEL_COMPLETE,
+    GOOD_SAMARITAN_PASSING_BY_MORAL,
+    DANIEL_KINGS_DECREE,
+    DANIEL_PRAYS,
+    DANIEL_THROWN_TO_LIONS,
+    DANIEL_NEXT_MORNING,
+    DANIEL_NEW_PROCLAMATION,
+    /** The exact option text the player picked on [com.bibleadventures.game.stories.DanielContent.choiceOptions] — the character speaks their own chosen line aloud, not a separate reaction. */
+    DANIEL_CHOICE_THANKFUL,
+    DANIEL_CHOICE_TRUSTING,
+    DANIEL_CHOICE_UNAFRAID,
     FEEDBACK_GREAT_JOB,
     FEEDBACK_TRY_ANOTHER_ONE,
 }

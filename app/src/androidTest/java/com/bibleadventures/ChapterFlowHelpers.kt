@@ -630,38 +630,53 @@ private fun FlowTestRule.fightBanditToResolution(throwSupplyDescription: String,
 }
 
 /**
- * Replays `GoodSamaritanContent.passingBySolution` as real drag gestures.
- * Each block's own content description (the protagonist's, or an excuse
- * block's own label) is unique on screen, and the exit gate's rendered
- * width — a single grid cell — gives the exact pixels-per-cell needed to
- * turn a hand-verified (direction, distance) move into a real swipe.
+ * Replays every one of `GoodSamaritanContent.passingByLevels`' own hand-
+ * verified `solution`s as real drag gestures, in order, tapping the
+ * character itself between levels to advance in place (see
+ * `GoodSamaritanViewModel.onPassingByNextLevel`) — "Next Page" is reserved
+ * for actually leaving this scene once the last level is solved, per
+ * on-device feedback that reusing it for "advance to the next of the 4
+ * puzzles" too read as leaving the scene early every time a level
+ * finished. Every non-target tile in a level now shares one visible label
+ * (that level's own spotlighted excuse — see `GoodSamaritanPassingByScreen`'s
+ * own tile-labeling logic), so a specific tile is found by its
+ * `Modifier.testTag(block.id)` instead of by content description, which is
+ * no longer unique enough to disambiguate. The exit gate's rendered width —
+ * a single grid cell — gives the exact pixels-per-cell needed to turn a
+ * hand-verified (direction, distance) move into a real swipe. Re-queried
+ * fresh for every level (not hoisted above the loop) since each level's own
+ * board has different dimensions, so the same viewport renders a different
+ * pixels-per-cell each time.
  */
 private fun FlowTestRule.completePassingBy() {
     val activity = this.activity
-    val gateBounds = onNodeWithContentDescription(activity.getString(R.string.good_samaritan_passing_by_exit_gate_content_description))
-        .fetchSemanticsNode()
-        .boundsInRoot
-    val cellSizePx = gateBounds.width
+    val nextLevelDescription = activity.getString(R.string.good_samaritan_passing_by_next_level_content_description)
 
-    val blockContentDescriptions = mapOf(
-        "religious_leader" to activity.getString(R.string.good_samaritan_passing_by_protagonist_content_description),
-        "ritual_purity" to activity.getString(R.string.good_samaritan_passing_by_excuse_ritual_purity),
-        "fear_of_ambush" to activity.getString(R.string.good_samaritan_passing_by_excuse_fear_of_ambush),
-        "strict_schedule" to activity.getString(R.string.good_samaritan_passing_by_excuse_strict_schedule),
-        "not_my_problem" to activity.getString(R.string.good_samaritan_passing_by_excuse_not_my_problem),
-    )
+    GoodSamaritanContent.passingByLevels.forEachIndexed { index, level ->
+        val gateBounds = onNodeWithContentDescription(activity.getString(R.string.good_samaritan_passing_by_exit_gate_content_description))
+            .fetchSemanticsNode()
+            .boundsInRoot
+        val cellSizePx = gateBounds.width
 
-    GoodSamaritanContent.passingBySolution.forEach { move ->
-        val description = blockContentDescriptions.getValue(move.blockId)
-        val magnitude = cellSizePx * move.distance
-        val delta = when (move.direction) {
-            RoadblockDirection.UP -> Offset(0f, -magnitude)
-            RoadblockDirection.DOWN -> Offset(0f, magnitude)
-            RoadblockDirection.LEFT -> Offset(-magnitude, 0f)
-            RoadblockDirection.RIGHT -> Offset(magnitude, 0f)
+        level.solution.forEach { move ->
+            val magnitude = cellSizePx * move.distance
+            val delta = when (move.direction) {
+                RoadblockDirection.UP -> Offset(0f, -magnitude)
+                RoadblockDirection.DOWN -> Offset(0f, magnitude)
+                RoadblockDirection.LEFT -> Offset(-magnitude, 0f)
+                RoadblockDirection.RIGHT -> Offset(magnitude, 0f)
+            }
+            onNodeWithTag(move.blockId).performTouchInput {
+                swipe(start = center, end = center + delta, durationMillis = 200)
+            }
         }
-        onNodeWithContentDescription(description).performTouchInput {
-            swipe(start = center, end = center + delta, durationMillis = 200)
+
+        // Only levels before the last one advance in place by tapping the
+        // character — the last level's own "Next Page" (leaving the whole
+        // scene) is the caller's job, same as every other video/puzzle
+        // transition in this chapter's flow.
+        if (index != GoodSamaritanContent.passingByLevels.lastIndex) {
+            onNodeWithContentDescription(nextLevelDescription).performClick()
         }
     }
 }

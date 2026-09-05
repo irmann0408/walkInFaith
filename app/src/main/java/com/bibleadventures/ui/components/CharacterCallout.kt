@@ -67,8 +67,13 @@ private val DEFAULT_BUBBLE_ABOVE_CLEARANCE = 60.dp
  * already carries its own `character_preview_content_description` semantics
  * internally — wrapping it in `.clickable` without overriding the
  * description would leave two nodes reporting the same generic text, so
- * this explicitly replaces it with [R.string.character_tap_to_hear_content_description]
- * whenever a click handler is supplied.
+ * this explicitly replaces it with [onClickContentDescription] (defaulting
+ * to [R.string.character_tap_to_hear_content_description], right for every
+ * existing caller) whenever a click handler is supplied. A caller whose tap
+ * means something other than "hear the character speak" — e.g.
+ * [com.bibleadventures.ui.screens.goodsamaritan.passingby.GoodSamaritanPassingByScreen]'s
+ * "tap to advance to the next puzzle" — should pass its own description
+ * here instead, so a screen reader announces what the tap actually does.
  */
 @Composable
 fun CharacterCallout(
@@ -79,14 +84,15 @@ fun CharacterCallout(
     posture: Posture = Posture.STANDING,
     bubbleAboveClearance: Dp = DEFAULT_BUBBLE_ABOVE_CLEARANCE,
     onClick: (() -> Unit)? = null,
+    onClickContentDescription: String? = null,
 ) {
     Box(modifier = modifier.size(CHARACTER_CALLOUT_SIZE)) {
         var characterModifier = Modifier.size(CHARACTER_CALLOUT_SIZE)
         if (onClick != null) {
-            val tapToHearDescription = stringResource(R.string.character_tap_to_hear_content_description)
+            val tapDescription = onClickContentDescription ?: stringResource(R.string.character_tap_to_hear_content_description)
             characterModifier = characterModifier
-                .clickable(onClickLabel = tapToHearDescription, onClick = onClick)
-                .semantics(mergeDescendants = true) { contentDescription = tapToHearDescription }
+                .clickable(onClickLabel = tapDescription, onClick = onClick)
+                .semantics(mergeDescendants = true) { contentDescription = tapDescription }
         }
         CharacterPreview(
             customization = characterCustomization,

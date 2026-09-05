@@ -293,6 +293,9 @@
 
     <string name="good_samaritan_passing_by_title">Passing By</string>
     <string name="good_samaritan_passing_by_instructions">Slide the pieces out of the way to help the Priest/Levite tile reach Jericho.</string>
+    <string name="good_samaritan_passing_by_level_label">Level %1$d of %2$d</string>
+    <string name="good_samaritan_passing_by_level_complete">Well done! Tap me for the next puzzle.</string>
+    <string name="good_samaritan_passing_by_next_level_content_description">Tap to go to the next puzzle</string>
     <string name="good_samaritan_passing_by_moral_message">That\'s what the priest and the Levite did… but we shouldn\'t be like them. When we see someone hurt, we should stop and help.</string>
     <string name="good_samaritan_passing_by_protagonist_content_description">Priest/Levite</string>
     <string name="good_samaritan_passing_by_excuse_ritual_purity">Ritual Purity</string>

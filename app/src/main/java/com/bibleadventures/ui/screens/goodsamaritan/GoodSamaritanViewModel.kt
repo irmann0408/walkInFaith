@@ -3,6 +3,7 @@ package com.bibleadventures.ui.screens.goodsamaritan
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bibleadventures.audio.AudioController
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
@@ -33,6 +34,8 @@ data class GoodSamaritanRewardResult(val stars: Int)
 data class GoodSamaritanUiState(
     val dungeonState: DungeonGameState,
     val roadblockState: RoadblockGameState,
+    /** Which of [GoodSamaritanContent.passingByLevels] [roadblockState] currently holds — advances via [GoodSamaritanViewModel.onPassingByNextLevel] once a level's own [RoadblockGameState.isComplete] is true. */
+    val passingByLevelIndex: Int = 0,
     /** Whether the player has dismissed the "helping" story beat shown once the traveler is treated. */
     val helpingBeatAcknowledged: Boolean = false,
     val reward: GoodSamaritanRewardResult? = null,
@@ -131,11 +134,39 @@ class GoodSamaritanViewModel(
      * "Passing By": no celebratory SFX on [com.bibleadventures.game.puzzles.roadblock.RoadblockOutcome.EXITED] —
      * unlike every other puzzle's completion, this one isn't a moment to
      * celebrate (see [com.bibleadventures.ui.screens.goodsamaritan.passingby.GoodSamaritanPassingByScreen]
-     * for the character's own non-celebratory completion message).
+     * for the character's own non-celebratory completion message). The
+     * character's own recorded line for that moment — "well done, tap for
+     * the next puzzle" on an earlier level, or the parable's moral on the
+     * last one — plays exactly once, right on the false-to-true completion
+     * edge, so it never re-fires on an unrelated recomposition.
      */
     fun onSlideAttempted(blockId: String, direction: RoadblockDirection, cellsAttempted: Int) {
         _uiState.update { current ->
-            current.copy(roadblockState = RoadblockGame.onSlideAttempted(current.roadblockState, blockId, direction, cellsAttempted))
+            val newRoadblockState = RoadblockGame.onSlideAttempted(current.roadblockState, blockId, direction, cellsAttempted)
+            if (newRoadblockState.isComplete && !current.roadblockState.isComplete) {
+                val isLastLevel = current.passingByLevelIndex == GoodSamaritanContent.passingByLevels.lastIndex
+                audioController.playCharacterLine(
+                    if (isLastLevel) CharacterVoiceLine.GOOD_SAMARITAN_PASSING_BY_MORAL else CharacterVoiceLine.GOOD_SAMARITAN_PASSING_BY_LEVEL_COMPLETE,
+                )
+            }
+            current.copy(roadblockState = newRoadblockState)
+        }
+    }
+
+    /**
+     * Advances from one solved [com.bibleadventures.game.stories.GoodSamaritanContent.PassingByLevel]
+     * to the next — a fresh [RoadblockGameState] built from that level's own
+     * layout, same "solve step N, move to N+1 in place" shape as Daniel's
+     * Lions Den math sequence. A no-op if the current level isn't actually
+     * solved yet, or there's no next level to advance to (the screen's own
+     * "Continue" button calls [onSceneCompleted] instead once
+     * [GoodSamaritanContent.passingByLevels]'s last level is solved).
+     */
+    fun onPassingByNextLevel() {
+        _uiState.update { current ->
+            val nextIndex = current.passingByLevelIndex + 1
+            if (!current.roadblockState.isComplete || nextIndex !in GoodSamaritanContent.passingByLevels.indices) return@update current
+            current.copy(roadblockState = buildRoadblockState(nextIndex), passingByLevelIndex = nextIndex)
         }
     }
 
@@ -167,17 +198,20 @@ class GoodSamaritanViewModel(
         }
     }
 
-    private fun createInitialState(): GoodSamaritanUiState {
-        val roadblockState = RoadblockGame.fromLayout(
-            layout = GoodSamaritanContent.passingByLayout,
-            blockSpecs = GoodSamaritanContent.passingByBlockSpecs,
+    private fun buildRoadblockState(levelIndex: Int): RoadblockGameState {
+        val level = GoodSamaritanContent.passingByLevels[levelIndex]
+        return RoadblockGame.fromLayout(
+            layout = level.layout,
+            blockSpecs = level.blockSpecs,
             protagonistId = GoodSamaritanContent.passingByProtagonistId,
-            exitColumns = GoodSamaritanContent.passingByExitColumns,
+            exitColumns = level.exitColumns,
         )
+    }
 
+    private fun createInitialState(): GoodSamaritanUiState {
         return GoodSamaritanUiState(
             dungeonState = DungeonGame.fromLayout(GoodSamaritanContent.mapLayout, GoodSamaritanContent.banditPatrols),
-            roadblockState = roadblockState,
+            roadblockState = buildRoadblockState(levelIndex = 0),
         )
     }
 }

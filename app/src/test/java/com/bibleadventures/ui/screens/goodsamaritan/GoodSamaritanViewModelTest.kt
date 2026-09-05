@@ -170,37 +170,55 @@ class GoodSamaritanViewModelTest {
     }
 
     @Test
-    fun `initial roadblockState parses passingByLayout into the correct dimensions and blocks`() {
-        val state = createViewModel().uiState.value.roadblockState
+    fun `initial roadblockState parses passingByLevels' first level into the correct dimensions and blocks`() {
+        val viewModel = createViewModel()
+        val state = viewModel.uiState.value.roadblockState
+        val level1 = GoodSamaritanContent.passingByLevels[0]
 
-        assertEquals(GoodSamaritanContent.passingByLayout.size, state.rows)
-        assertEquals(GoodSamaritanContent.passingByLayout[0].length, state.cols)
-        assertEquals(GoodSamaritanContent.passingByBlockSpecs.size, state.blocks.size)
+        assertEquals(level1.layout.size, state.rows)
+        assertEquals(level1.layout[0].length, state.cols)
+        assertEquals(level1.blockSpecs.size, state.blocks.size)
         assertEquals(GoodSamaritanContent.passingByProtagonistId, state.protagonistId)
-        assertEquals(GoodSamaritanContent.passingByExitColumns, state.exitColumns)
+        assertEquals(level1.exitColumns, state.exitColumns)
         assertTrue(state.blocks.first { it.id == "injured_man" }.isFixed)
+        assertEquals(0, viewModel.uiState.value.passingByLevelIndex)
     }
 
     @Test
     fun `onSlideAttempted delegates to RoadblockGame and updates uiState`() {
         val viewModel = createViewModel()
 
-        // "fear_of_ambush" sliding down is the first move of the hand-verified solution.
-        viewModel.onSlideAttempted("fear_of_ambush", com.bibleadventures.game.puzzles.roadblock.Direction.DOWN, 1)
+        // "obstacle_1" sliding down is the first move of level 1's hand-verified solution.
+        viewModel.onSlideAttempted("obstacle_1", com.bibleadventures.game.puzzles.roadblock.Direction.DOWN, 1)
 
         assertEquals(RoadblockOutcome.MOVED, viewModel.uiState.value.roadblockState.lastOutcome)
     }
 
     @Test
-    fun `passingBySolution replayed end to end reaches isComplete`() {
+    fun `all 4 passingByLevels solved back to back advances the level index each time and never leaves the roadblock scene early`() {
         val viewModel = createViewModel()
 
-        GoodSamaritanContent.passingBySolution.forEach { move ->
-            viewModel.onSlideAttempted(move.blockId, move.direction, move.distance)
+        GoodSamaritanContent.passingByLevels.forEachIndexed { index, level ->
+            level.solution.forEach { move -> viewModel.onSlideAttempted(move.blockId, move.direction, move.distance) }
+            assertTrue(viewModel.uiState.value.roadblockState.isComplete)
+            assertEquals(index, viewModel.uiState.value.passingByLevelIndex)
+
+            viewModel.onPassingByNextLevel()
         }
 
-        assertTrue(viewModel.uiState.value.roadblockState.isComplete)
-        assertEquals(RoadblockOutcome.EXITED, viewModel.uiState.value.roadblockState.lastOutcome)
+        // onPassingByNextLevel is a no-op past the last level — there's no 5th level to advance into.
+        assertEquals(GoodSamaritanContent.passingByLevels.lastIndex, viewModel.uiState.value.passingByLevelIndex)
+        assertTrue("the final level's own board should stay solved, not reset", viewModel.uiState.value.roadblockState.isComplete)
+    }
+
+    @Test
+    fun `onPassingByNextLevel is a no-op before the current level is actually solved`() {
+        val viewModel = createViewModel()
+
+        viewModel.onPassingByNextLevel()
+
+        assertEquals(0, viewModel.uiState.value.passingByLevelIndex)
+        assertFalse(viewModel.uiState.value.roadblockState.isComplete)
     }
 
     @Test
