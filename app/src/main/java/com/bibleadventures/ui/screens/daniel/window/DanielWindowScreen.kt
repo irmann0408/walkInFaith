@@ -185,7 +185,7 @@ private fun DanielWindowContent(
  * [SlideOutGameState.blocks] the instant the tap resolved, so
  * [releasingBlock] keeps it visible here until its own fly-off animation
  * genuinely finishes (same "commit immediately, animate cosmetically"
- * decoupling as `GoodSamaritanExploreScreen`'s `BanditCombatOverlay`).
+ * decoupling as `GoodSamaritanExploreScreen`'s `BanditPartyBattleOverlay`).
  * Only one latch resolves at a time — [pendingBlock] blocks further taps
  * until the current one's animation completes.
  */

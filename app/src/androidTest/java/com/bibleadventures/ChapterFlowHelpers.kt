@@ -500,8 +500,13 @@ fun FlowTestRule.completeGoodSamaritan() {
  */
 internal fun FlowTestRule.completeExploreDungeon() {
     val activity = this.activity
+    val continueLabel = activity.getString(R.string.action_continue)
     val throwSupplyDescription = activity.getString(R.string.good_samaritan_throw_supply_content_description)
     val banditEncounterTitle = activity.getString(R.string.good_samaritan_bandit_encounter_title)
+    val yourTurnLabel = activity.getString(R.string.good_samaritan_battle_your_turn)
+    val retreatLabel = activity.getString(R.string.good_samaritan_retreat_button)
+    val supplyPreviewTitle = activity.getString(R.string.good_samaritan_supply_preview_title)
+    val banditPreviewTitle = activity.getString(R.string.good_samaritan_bandit_preview_title)
     val joystickNode = onNodeWithContentDescription(activity.getString(R.string.good_samaritan_joystick_content_description))
     val maxKnobTravelPx = with(activity.resources.displayMetrics) { JOYSTICK_MAX_KNOB_TRAVEL_DP * density }
 
@@ -520,9 +525,15 @@ internal fun FlowTestRule.completeExploreDungeon() {
             joystickNode.performTouchInput { down(center) }
             joystickNode.performTouchInput { moveTo(center + knobOffset) }
             while (remainingMs > 0) {
-                if (onAllNodesWithText(banditEncounterTitle).fetchSemanticsNodes().isNotEmpty()) {
+                if (onAllNodesWithText(supplyPreviewTitle).fetchSemanticsNodes().isNotEmpty() ||
+                    onAllNodesWithText(banditPreviewTitle).fetchSemanticsNodes().isNotEmpty() ||
+                    onAllNodesWithText(banditEncounterTitle).fetchSemanticsNodes().isNotEmpty()
+                ) {
                     joystickNode.performTouchInput { up() }
-                    fightBanditToResolution(throwSupplyDescription, banditEncounterTitle)
+                    dismissMapItemPreviewsIfShown(continueLabel, supplyPreviewTitle, banditPreviewTitle)
+                    if (onAllNodesWithText(banditEncounterTitle).fetchSemanticsNodes().isNotEmpty()) {
+                        fightBanditToResolution(throwSupplyDescription, banditEncounterTitle, yourTurnLabel, retreatLabel)
+                    }
                     joystickNode.performTouchInput { down(center) }
                     joystickNode.performTouchInput { moveTo(center + knobOffset) }
                 }
@@ -536,6 +547,28 @@ internal fun FlowTestRule.completeExploreDungeon() {
     }
 
     mainClock.autoAdvance = true
+}
+
+/**
+ * Dismisses the medical-supply and/or bandit first-encounter explainer
+ * popups (see [com.bibleadventures.ui.screens.goodsamaritan.explore.GoodSamaritanExploreScreen])
+ * if either is currently showing — each shows at most once, automatically,
+ * the first time the player ever collects a supply or is ever ambushed, so
+ * [completeExploreDungeon]'s route walk only ever needs to clear them
+ * early on. Both consume all touches like every other overlay in that
+ * screen, so the joystick can't be re-armed until they're gone.
+ */
+private fun FlowTestRule.dismissMapItemPreviewsIfShown(continueLabel: String, supplyPreviewTitle: String, banditPreviewTitle: String) {
+    mainClock.autoAdvance = true
+    if (onAllNodesWithText(supplyPreviewTitle).fetchSemanticsNodes().isNotEmpty()) {
+        onNodeWithText(continueLabel).performClick()
+        waitUntil(timeoutMillis = 3_000) { onAllNodesWithText(supplyPreviewTitle).fetchSemanticsNodes().isEmpty() }
+    }
+    if (onAllNodesWithText(banditPreviewTitle).fetchSemanticsNodes().isNotEmpty()) {
+        onNodeWithText(continueLabel).performClick()
+        waitUntil(timeoutMillis = 3_000) { onAllNodesWithText(banditPreviewTitle).fetchSemanticsNodes().isEmpty() }
+    }
+    mainClock.autoAdvance = false
 }
 
 /**
@@ -599,31 +632,57 @@ private const val DUNGEON_STEER_LEG_MARGIN_MS = 200L
 private const val DUNGEON_STEER_FRAME_STEP_MS = 16L
 
 /**
- * Taps the bandit-fight character button until the encounter resolves.
- * Deliberately the least-invested part of this whole helper: combat is now
- * a real roll on both sides (`DungeonGame.PLAYER_HIT_CHANCE`/`BANDIT_STEAL_CHANCE`)
- * with an animated counter-attack sequence in between taps (see
- * `BanditCombatOverlay`'s `isResolving` gate), and the production
- * `GoodSamaritanViewModel` has no test-injectable `Random` (only the unit
- * tests get that), so there's no way to make this deterministic from here.
+ * Taps the player's own character to attack until the encounter resolves —
+ * or retreats if the map's natural supply trickle didn't leave enough
+ * banked to finish this particular fight by throwing alone. Deliberately
+ * the least-invested part of this whole helper: combat is now a real
+ * multi-actor turn (player throw → the Good Samaritan's own melee turn →
+ * the bandit's counter, see `BanditPartyBattleOverlay`) with an animated
+ * sequence between taps, and the production `GoodSamaritanViewModel` has
+ * no test-injectable `Random` (only the unit tests get that), so there's no
+ * way to make this deterministic from here.
+ *
+ * The throw button stays visible but disabled for most of each round now
+ * (while the Samaritan's and bandit's automatic turns play out) rather than
+ * disappearing, so — unlike the old 2-actor version of this helper —
+ * merely checking "is the button present" no longer means "is this
+ * actually the player's turn": [yourTurnLabel] is the real signal.
+ * [retreatLabel] covers the other real outcome now that
+ * `BANDIT_INITIAL_TOUGHNESS` no longer always fits comfortably within
+ * whatever supply the route has banked by a given encounter (see
+ * `DungeonGameTest`'s own route-replay test for the same consideration) —
+ * retreating costs nothing but the encounter itself, exactly like a real
+ * player choosing to walk away and find more supplies.
+ *
  * Switches to real-time (`mainClock.autoAdvance = true`) for this stretch
- * specifically, since the counter-attack sequence is driven by plain
+ * specifically, since the turn sequence is driven by plain
  * `kotlinx.coroutines.delay`, not `withFrameNanos` — a frozen clock would
- * never let it progress. [ComposeTestRule.waitUntil] polls in real time
- * for the throw button to become tappable again (or the fight to end)
- * rather than guessing a fixed wait per throw.
+ * never let it progress. [ComposeTestRule.waitUntil] polls in real time for
+ * the player's own turn to come back around (or the fight to end, or
+ * Retreat to become available) rather than guessing a fixed wait per round.
  */
-private fun FlowTestRule.fightBanditToResolution(throwSupplyDescription: String, banditEncounterTitle: String, maxThrows: Int = 40) {
+private fun FlowTestRule.fightBanditToResolution(
+    throwSupplyDescription: String,
+    banditEncounterTitle: String,
+    yourTurnLabel: String,
+    retreatLabel: String,
+    maxThrows: Int = 40,
+) {
     mainClock.autoAdvance = true
     var throws = 0
     while (onAllNodesWithText(banditEncounterTitle).fetchSemanticsNodes().isNotEmpty()) {
         check(throws++ < maxThrows) { "Bandit encounter did not resolve after $maxThrows throws" }
-        if (onAllNodesWithContentDescription(throwSupplyDescription).fetchSemanticsNodes().isNotEmpty()) {
+        if (onAllNodesWithText(retreatLabel).fetchSemanticsNodes().isNotEmpty()) {
+            onNodeWithText(retreatLabel).performClick()
+        } else if (onAllNodesWithText(yourTurnLabel).fetchSemanticsNodes().isNotEmpty() &&
+            onAllNodesWithContentDescription(throwSupplyDescription).fetchSemanticsNodes().isNotEmpty()
+        ) {
             onNodeWithContentDescription(throwSupplyDescription).performClick()
         }
-        waitUntil(timeoutMillis = 3_000) {
+        waitUntil(timeoutMillis = 6_000) {
             onAllNodesWithText(banditEncounterTitle).fetchSemanticsNodes().isEmpty() ||
-                onAllNodesWithContentDescription(throwSupplyDescription).fetchSemanticsNodes().isNotEmpty()
+                onAllNodesWithText(yourTurnLabel).fetchSemanticsNodes().isNotEmpty() ||
+                onAllNodesWithText(retreatLabel).fetchSemanticsNodes().isNotEmpty()
         }
     }
     mainClock.autoAdvance = false

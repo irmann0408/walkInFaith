@@ -128,6 +128,7 @@ class RealAudioController(
         CharacterVoiceLine.GOOD_SAMARITAN_THE_PRIEST to (R.raw.good_samaritan_the_priest_voice_b to R.raw.good_samaritan_the_priest_voice_g),
         CharacterVoiceLine.GOOD_SAMARITAN_THE_LEVITE to (R.raw.good_samaritan_the_levite_voice_b to R.raw.good_samaritan_the_levite_voice_g),
         CharacterVoiceLine.GOOD_SAMARITAN_SAMARITAN_ARRIVES to (R.raw.good_samaritan_samaritan_arrives_voice_b to R.raw.good_samaritan_samaritan_arrives_voice_g),
+        CharacterVoiceLine.GOOD_SAMARITAN_EXPLORE_INTRO to (R.raw.good_samaritan_explore_intro_voice_b to R.raw.good_samaritan_explore_intro_voice_g),
         CharacterVoiceLine.GOOD_SAMARITAN_PASSING_BY_INSTRUCTIONS to (R.raw.good_samaritan_passing_by_instructions_voice_b to R.raw.good_samaritan_passing_by_instructions_voice_g),
         CharacterVoiceLine.GOOD_SAMARITAN_PASSING_BY_LEVEL_COMPLETE to (R.raw.good_samaritan_passing_by_level_complete_voice_b to R.raw.good_samaritan_passing_by_level_complete_voice_g),
         CharacterVoiceLine.GOOD_SAMARITAN_PASSING_BY_MORAL to (R.raw.good_samaritan_passing_by_moral_voice_b to R.raw.good_samaritan_passing_by_moral_voice_g),

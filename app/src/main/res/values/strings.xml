@@ -307,10 +307,20 @@
 
     <string name="good_samaritan_explore_title">The Road to Jericho</string>
     <string name="good_samaritan_explore_instructions">Drag the joystick to walk the road. Find medical supplies, help the traveler, then reach the Inn.</string>
+    <string name="good_samaritan_explore_intro_message">This is the road the traveler and the Samaritan walked. Let\'s follow it together.</string>
     <string name="good_samaritan_player_content_description">You are here</string>
     <string name="good_samaritan_traveler_content_description">Injured traveler</string>
+    <string name="good_samaritan_supply_content_description">Medical supplies</string>
+    <string name="good_samaritan_bandit_content_description">A bandit</string>
     <string name="good_samaritan_joystick_content_description">Move the Samaritan — drag in any direction</string>
     <string name="good_samaritan_dungeon_map_content_description">The road to Jericho</string>
+
+    <string name="good_samaritan_supply_preview_title">Medical Supplies</string>
+    <string name="good_samaritan_supply_preview_description">These bandages and medicine can help someone who is hurt. Look for them along the road!</string>
+    <string name="good_samaritan_bandit_preview_title">Watch Out for Bandits!</string>
+    <string name="good_samaritan_bandit_preview_description">Robbers hide along this road and may try to steal your supplies. Toss your medical supplies at one to scare it away!</string>
+    <string name="good_samaritan_traveler_preview_title">An Injured Traveler</string>
+    <string name="good_samaritan_traveler_preview_description">This man was beaten by robbers and left hurt beside the road. Bring him medical supplies to help him.</string>
 
     <string name="good_samaritan_bandit_encounter_title">A Bandit Blocks the Way!</string>
     <string name="good_samaritan_bandit_toughness_label">Bandit: %1$d of %2$d</string>
@@ -318,6 +328,10 @@
     <string name="good_samaritan_throw_supply_content_description">Throw medical supplies at the bandit</string>
     <string name="good_samaritan_out_of_supplies_message">Out of supplies! Retreat and look for more along the road.</string>
     <string name="good_samaritan_retreat_button">Retreat</string>
+    <string name="good_samaritan_battle_your_turn">Your turn — tap yourself to attack!</string>
+    <string name="good_samaritan_battle_samaritan_turn">The Samaritan attacks!</string>
+    <string name="good_samaritan_battle_bandit_turn">The bandit attacks!</string>
+    <string name="good_samaritan_samaritan_content_description">The Good Samaritan</string>
 
     <string name="dungeon_feedback_supply_collected">Found medical supplies!</string>
     <string name="dungeon_feedback_trap_entered">A bandit jumps out!</string>
@@ -326,6 +340,8 @@
     <string name="dungeon_feedback_goal_reached">You reached the Inn!</string>
     <string name="dungeon_feedback_bandit_hit">The bandit backs away!</string>
     <string name="dungeon_feedback_throw_missed">Your throw missed!</string>
+    <string name="dungeon_feedback_samaritan_hit">The Samaritan\'s strike lands!</string>
+    <string name="dungeon_feedback_samaritan_attack_missed">The Samaritan\'s strike misses!</string>
     <string name="dungeon_feedback_bandit_scared_off">The bandit runs off!</string>
     <string name="dungeon_feedback_out_of_supplies">Out of supplies!</string>
     <string name="dungeon_feedback_retreated">You stepped back to safety.</string>

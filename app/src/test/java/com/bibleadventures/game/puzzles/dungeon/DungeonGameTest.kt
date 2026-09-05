@@ -229,6 +229,48 @@ class DungeonGameTest {
     }
 
     @Test
+    fun `onSamaritanAttack on a favorable roll hits and resolves the trap once toughness reaches zero, without spending a supply`() {
+        var state = initialState().copy(
+            combat = DungeonCombatState(trapId = "trap_2_0", banditToughnessRemaining = 2),
+            supplyCount = 5,
+        )
+
+        state = DungeonGame.onSamaritanAttack(state, guaranteedSuccess)
+        assertEquals(DungeonOutcome.SAMARITAN_HIT, state.lastOutcome)
+        assertEquals(1, state.combat?.banditToughnessRemaining)
+        assertEquals("the Samaritan's melee turn costs no supply", 5, state.supplyCount)
+
+        state = DungeonGame.onSamaritanAttack(state, guaranteedSuccess)
+        assertEquals(DungeonOutcome.BANDIT_SCARED_OFF, state.lastOutcome)
+        assertNull(state.combat)
+        assertEquals(5 + DungeonGame.BANDIT_DEFEAT_SUPPLY_REWARD, state.supplyCount)
+        assertTrue("trap_2_0" in state.resolvedTrapIds)
+    }
+
+    @Test
+    fun `onSamaritanAttack on an unfavorable roll reports a miss without touching toughness or supplies`() {
+        val state = initialState().copy(
+            combat = DungeonCombatState(trapId = "trap_2_0", banditToughnessRemaining = 2),
+            supplyCount = 3,
+        )
+
+        val result = DungeonGame.onSamaritanAttack(state, guaranteedFailure)
+
+        assertEquals(DungeonOutcome.SAMARITAN_ATTACK_MISSED, result.lastOutcome)
+        assertEquals(2, result.combat?.banditToughnessRemaining)
+        assertEquals(3, result.supplyCount)
+    }
+
+    @Test
+    fun `onSamaritanAttack with no active combat is a full no-op`() {
+        val state = initialState().copy(supplyCount = 3)
+
+        val result = DungeonGame.onSamaritanAttack(state, guaranteedSuccess)
+
+        assertEquals(state, result)
+    }
+
+    @Test
     fun `onBanditAttack steals a supply on a favorable roll, leaving combat itself untouched`() {
         val state = initialState().copy(
             combat = DungeonCombatState(trapId = "trap_2_0", banditToughnessRemaining = 1),
@@ -377,7 +419,24 @@ class DungeonGameTest {
 
     @Test
     fun `replaying the production map's hand-verified waypoint route reaches isComplete`() {
+        // A generous supply cushion, not the map's own natural pickup
+        // economy — this test's job is verifying the route/map itself is
+        // walkable and completable end to end (a regression guard against a
+        // broken waypoint or layout edit), not validating combat pacing —
+        // whether the map's *natural* supply trickle keeps up with
+        // BANDIT_INITIAL_TOUGHNESS (raised to 3 once the Good Samaritan
+        // joined as a second real attacker — see DungeonGame.onSamaritanAttack)
+        // is an on-device-feel balance question, not something this test
+        // should gate on. Starting well-stocked means every encounter
+        // resolves by throwing alone, so a fight is never forced to retreat
+        // mid-route — which matters here because retreating leaves the
+        // player off the exact straight line a later leg's steerToward
+        // call was hand-verified against, and resuming from that unverified
+        // midpoint can wall-deadlock steerToward's own "aim straight at the
+        // target" steering (a real failure mode hit while developing this
+        // fix, not a hypothetical).
         var state = DungeonGame.fromLayout(GoodSamaritanContent.mapLayout, GoodSamaritanContent.banditPatrols)
+            .copy(supplyCount = 100)
 
         GoodSamaritanContent.dungeonRouteWaypoints.forEach { waypoint ->
             state = steerToward(state, waypoint)

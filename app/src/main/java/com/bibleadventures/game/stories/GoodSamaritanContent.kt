@@ -60,8 +60,17 @@ object GoodSamaritanContent {
     // at a time, timing a crossing for when it's on the far side avoids a
     // fight; getting caught starts the turn-based fight screen. 7 supply
     // pickups sit in genuine dead-end pockets (real detours, not just
-    // decoration) — one deliberately right next to the Inn, mirroring
-    // where the artist placed it on the source art, and two sharing the
+    // decoration) — one right next to the injured traveler at (15,49)
+    // (originally placed one cell past the Inn instead, mirroring the
+    // artist's own source art, but that spot sat behind the goal cell
+    // itself: reaching goalPosition while the checkpoint is already active
+    // immediately sets DungeonGameState.isComplete, which stops
+    // GoodSamaritanExploreScreen's per-frame tick loop entirely — a real
+    // on-device report confirmed it was never actually reachable; moved
+    // next to the Inn instead as a first fix, then moved again, per
+    // further on-device feedback, to sit beside the traveler himself
+    // instead — reaching the checkpoint doesn't freeze anything, so
+    // there's no equivalent reachability risk here), and two sharing the
     // same dead-end corridor near (10,44)/(11,49) (one at the mouth, one
     // deeper in), rewarding the length of that particular detour with two
     // pickups instead of one. Treat exact counts/positions as a first
@@ -84,7 +93,7 @@ object GoodSamaritanContent {
         "#####..#########..##..#....####...##X.#.##.....#########",
         "#####..#####......#..##..#........##..#.####......######",
         "#####...###...#..##..##X####...#####....#########T.#####",
-        "######....#..#...##..##..###..#######...#########..#####",
+        "######....#..#...##..##..###..#######...#########M.#####",
         "########....##.#####..#......#####....###..######..#####",
         "#########..###.##M##..##....###......##...........######",
         "#######..X.###..#.....###..###...#..###.#####...########",
@@ -92,7 +101,7 @@ object GoodSamaritanContent {
         "#####..#..#####.########..###X.####....#################",
         "#####..#........#######..###M..####.####################",
         "#####..##....#########..#####..###..######....##########",
-        "#####..#############...######.........##......IM########",
+        "#####..#############...######.........##......I.########",
         "######...............##########..............###########",
         "########################################################",
         "########################################################",
@@ -275,8 +284,7 @@ object GoodSamaritanContent {
         Vector2(31.5f, 25.5f),
         Vector2(40.5f, 25.5f),
         Vector2(40.5f, 24.5f),
-        Vector2(47.5f, 24.5f), // supply (24,47) — dead end off the Inn's own cell, visited before the checkpoint (see note above)
-        Vector2(44.5f, 24.5f),
+        Vector2(44.5f, 24.5f), // turning point toward the Inn — no longer a supply stop (see mapLayout's own note: that pickup now sits by the traveler instead)
         Vector2(44.5f, 25.5f),
         Vector2(37.5f, 25.5f),
         Vector2(37.5f, 24.5f),
@@ -285,7 +293,7 @@ object GoodSamaritanContent {
         Vector2(39.5f, 20.5f),
         Vector2(39.5f, 18.5f),
         Vector2(49.5f, 18.5f),
-        Vector2(49.5f, 15.5f), // checkpoint — the injured traveler (15,49)
+        Vector2(49.5f, 15.5f), // checkpoint — the injured traveler (15,49); this leg's own straight line passes right through supply (16,49) on the way
         Vector2(49.5f, 18.5f),
         Vector2(39.5f, 18.5f),
         Vector2(39.5f, 20.5f),

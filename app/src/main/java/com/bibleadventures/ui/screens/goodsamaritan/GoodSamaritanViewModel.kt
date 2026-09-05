@@ -38,6 +38,17 @@ data class GoodSamaritanUiState(
     val passingByLevelIndex: Int = 0,
     /** Whether the player has dismissed the "helping" story beat shown once the traveler is treated. */
     val helpingBeatAcknowledged: Boolean = false,
+    /**
+     * Whether the player has already seen the medical-supply/bandit
+     * explainer popup — shown once automatically the first time the player
+     * ever collects a supply or is ever ambushed (see
+     * [com.bibleadventures.ui.screens.goodsamaritan.explore.GoodSamaritanExploreScreen]),
+     * and any time afterward the player deliberately taps that item's map
+     * icon. Tapping early sets this flag too, so the automatic version
+     * never redundantly repeats something the player already asked to see.
+     */
+    val medicalSupplyPreviewAcknowledged: Boolean = false,
+    val banditPreviewAcknowledged: Boolean = false,
     val reward: GoodSamaritanRewardResult? = null,
 )
 
@@ -110,6 +121,22 @@ class GoodSamaritanViewModel(
         }
     }
 
+    /** The Good Samaritan's own melee turn, triggered by the screen right after the player's own throw resolves (see [DungeonGame.onSamaritanAttack]) — a second real attack each round, at no supply cost. */
+    fun onSamaritanAttack() {
+        _uiState.update { current ->
+            val previousOutcome = current.dungeonState.lastOutcome
+            val next = DungeonGame.onSamaritanAttack(current.dungeonState, random)
+            if (next.lastOutcome != previousOutcome) {
+                when (next.lastOutcome) {
+                    DungeonOutcome.SAMARITAN_HIT -> audioController.playSfx(SoundEffect.TARGET_HIT)
+                    DungeonOutcome.BANDIT_SCARED_OFF -> audioController.playSfx(SoundEffect.OBSTACLE_DODGED)
+                    else -> Unit
+                }
+            }
+            current.copy(dungeonState = next)
+        }
+    }
+
     /** The bandit's own melee counter-attack, triggered by the screen after a hit's throw animation lands (see [DungeonGame.onBanditAttack]) — never hurts the player, just a chance to steal a supply back. */
     fun onBanditAttack() {
         _uiState.update { current ->
@@ -173,6 +200,16 @@ class GoodSamaritanViewModel(
     /** Dismisses the "helping" story beat overlay once the player has read it. */
     fun onHelpingBeatAcknowledged() {
         _uiState.update { it.copy(helpingBeatAcknowledged = true) }
+    }
+
+    /** Dismisses the medical-supply explainer popup, whether it showed automatically (first-ever pickup) or from a deliberate tap on its map icon. */
+    fun onMedicalSupplyPreviewAcknowledged() {
+        _uiState.update { it.copy(medicalSupplyPreviewAcknowledged = true) }
+    }
+
+    /** Dismisses the bandit explainer popup, whether it showed automatically (first-ever ambush) or from a deliberate tap on a bandit's map icon. */
+    fun onBanditPreviewAcknowledged() {
+        _uiState.update { it.copy(banditPreviewAcknowledged = true) }
     }
 
     /** Records mid-adventure progress so "Continue Adventure" and a future resume can see it. */

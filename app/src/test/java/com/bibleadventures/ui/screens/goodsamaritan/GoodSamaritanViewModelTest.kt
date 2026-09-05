@@ -59,11 +59,14 @@ class GoodSamaritanViewModelTest {
      * encounter is a matter of timing, not just position, so this can't
      * hand-pick a short prefix of turns the way a stationary-bandit map
      * could; it has to walk the same route [DungeonGameTest]'s own replay
-     * test already verified converges on a fight partway through. Uses the
-     * default [createViewModel] random (a guaranteed-success roll), the
-     * same worst-case assumption that route was verified against, so
-     * there's always enough banked supply by the time the fight starts.
-     * Shared by every combat-related test below.
+     * test already verified converges on a fight partway through. Doesn't
+     * guarantee enough banked supply to fully clear the fight by throwing
+     * alone — the route's very *first* encounter, in particular, happens
+     * before any bandit-defeat bonus has been earned, so it can come up
+     * short of [DungeonGame.BANDIT_INITIAL_TOUGHNESS] (see
+     * [walkToBanditEncounterWithEnoughSuppliesToDefeat] for a test that
+     * needs that guarantee instead). Shared by every combat-related test
+     * below that only needs *some* active encounter, not a winnable one.
      */
     private fun walkToFirstBanditEncounter(viewModel: GoodSamaritanViewModel) {
         for (turn in GoodSamaritanContent.dungeonRouteWaypoints) {
@@ -71,6 +74,28 @@ class GoodSamaritanViewModelTest {
             walkToward(viewModel, target = turn)
         }
         check(viewModel.uiState.value.dungeonState.combat != null) { "Expected a bandit encounter to have triggered by now" }
+    }
+
+    /**
+     * Like [walkToFirstBanditEncounter], but keeps going past any encounter
+     * that doesn't yet have [DungeonGame.BANDIT_INITIAL_TOUGHNESS] supplies
+     * banked — retreating (no cost beyond supplies already spent, same as
+     * real play) and continuing toward the next waypoint, picking up more
+     * supply along the way, until one really can be fully cleared by
+     * throwing alone. Needed specifically for a test that throws all the
+     * way to `BANDIT_SCARED_OFF`.
+     */
+    private fun walkToBanditEncounterWithEnoughSuppliesToDefeat(viewModel: GoodSamaritanViewModel) {
+        for (turn in GoodSamaritanContent.dungeonRouteWaypoints) {
+            while (true) {
+                walkToward(viewModel, target = turn)
+                val state = viewModel.uiState.value.dungeonState
+                if (state.combat == null) break
+                if (state.supplyCount >= DungeonGame.BANDIT_INITIAL_TOUGHNESS) return
+                viewModel.onRetreat()
+            }
+        }
+        check(false) { "Expected to find a bandit encounter with at least ${DungeonGame.BANDIT_INITIAL_TOUGHNESS} supplies banked somewhere along the route" }
     }
 
     @Test
@@ -107,10 +132,7 @@ class GoodSamaritanViewModelTest {
     fun `onSupplyThrown plays a hit sound, then a scared-off sound once the bandit's toughness reaches zero`() {
         val audioController = FakeAudioController()
         val viewModel = createViewModel(audioController = audioController)
-        walkToFirstBanditEncounter(viewModel)
-        check(viewModel.uiState.value.dungeonState.supplyCount >= DungeonGame.BANDIT_INITIAL_TOUGHNESS) {
-            "Expected at least ${DungeonGame.BANDIT_INITIAL_TOUGHNESS} supplies before the fight, had ${viewModel.uiState.value.dungeonState.supplyCount}"
-        }
+        walkToBanditEncounterWithEnoughSuppliesToDefeat(viewModel)
 
         repeat(DungeonGame.BANDIT_INITIAL_TOUGHNESS - 1) { viewModel.onSupplyThrown() }
         assertEquals(SoundEffect.TARGET_HIT, audioController.playedEffects.last())
@@ -118,6 +140,22 @@ class GoodSamaritanViewModelTest {
         viewModel.onSupplyThrown()
         assertEquals(SoundEffect.OBSTACLE_DODGED, audioController.playedEffects.last())
         assertNull(viewModel.uiState.value.dungeonState.combat)
+    }
+
+    @Test
+    fun `onSamaritanAttack plays a hit sound and reduces toughness without spending a supply, on a favorable roll`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController, random = fixedRandom(0f))
+        walkToFirstBanditEncounter(viewModel)
+        val supplyCountBefore = viewModel.uiState.value.dungeonState.supplyCount
+        val toughnessBefore = checkNotNull(viewModel.uiState.value.dungeonState.combat).banditToughnessRemaining
+
+        viewModel.onSamaritanAttack()
+
+        assertEquals(DungeonOutcome.SAMARITAN_HIT, viewModel.uiState.value.dungeonState.lastOutcome)
+        assertEquals(toughnessBefore - 1, viewModel.uiState.value.dungeonState.combat?.banditToughnessRemaining)
+        assertEquals(supplyCountBefore, viewModel.uiState.value.dungeonState.supplyCount)
+        assertEquals(SoundEffect.TARGET_HIT, audioController.playedEffects.last())
     }
 
     @Test
@@ -228,6 +266,24 @@ class GoodSamaritanViewModelTest {
         viewModel.onHelpingBeatAcknowledged()
 
         assertTrue(viewModel.uiState.value.helpingBeatAcknowledged)
+    }
+
+    @Test
+    fun `onMedicalSupplyPreviewAcknowledged flips the flag`() {
+        val viewModel = createViewModel()
+
+        viewModel.onMedicalSupplyPreviewAcknowledged()
+
+        assertTrue(viewModel.uiState.value.medicalSupplyPreviewAcknowledged)
+    }
+
+    @Test
+    fun `onBanditPreviewAcknowledged flips the flag`() {
+        val viewModel = createViewModel()
+
+        viewModel.onBanditPreviewAcknowledged()
+
+        assertTrue(viewModel.uiState.value.banditPreviewAcknowledged)
     }
 
     @Test

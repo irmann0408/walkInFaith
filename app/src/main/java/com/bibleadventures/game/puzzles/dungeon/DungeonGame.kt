@@ -26,11 +26,23 @@ object DungeonGame {
 
     const val PLAYER_SPEED_CELLS_PER_SECOND = 2.0f
 
-    /** "Easy fight only" — a small, fixed number of hits needed. */
-    const val BANDIT_INITIAL_TOUGHNESS = 2
+    /**
+     * "Easy fight only" — a small, fixed number of hits needed. Raised from
+     * the original `2` once the Good Samaritan joined as a real second
+     * attacker (see [onSamaritanAttack]): at `2`, both of the party's own
+     * attackers landing their (high-probability) hit in the same round was
+     * the single most likely outcome, so the bandit would almost never get
+     * a real turn of its own — `3` means the fight reliably takes a second
+     * round, so the turn order the player actually sees (party attacks,
+     * then the bandit attacks back) has something to show for itself.
+     */
+    const val BANDIT_INITIAL_TOUGHNESS = 3
 
     /** The player's own throw — high, not guaranteed: still "easy," but a real throw can miss. */
     const val PLAYER_HIT_CHANCE = 0.85f
+
+    /** The Good Samaritan's own melee attack, the party's second real turn each round (see [onSamaritanAttack]) — same odds as the player's own throw, no reason yet for the two to differ. */
+    const val SAMARITAN_HIT_CHANCE = 0.85f
 
     /** The bandit's counter-attack — deliberately lower than [PLAYER_HIT_CHANCE], so the player is favored overall even though both sides now roll. */
     const val BANDIT_STEAL_CHANCE = 0.3f
@@ -260,6 +272,40 @@ object DungeonGame {
                 supplyCount = newSupplyCount,
                 combat = combat.copy(banditToughnessRemaining = remainingToughness),
                 lastOutcome = DungeonOutcome.BANDIT_HIT,
+            )
+        }
+    }
+
+    /**
+     * The party's second turn each round — the Good Samaritan's own melee
+     * strike, thrown in right after the player's own [onSupplyThrown]. Same
+     * hit-roll/defeat handling as [onSupplyThrown] (rolled against
+     * [SAMARITAN_HIT_CHANCE]; reaching 0 toughness permanently resolves the
+     * trap, ends combat, and awards [BANDIT_DEFEAT_SUPPLY_REWARD]), but
+     * costs no supply — he's not throwing anything, he's fighting alongside
+     * the player for free. A full no-op if there's no active combat.
+     * [random] defaults to [Random.Default] in real play; callers needing
+     * deterministic behavior (tests) pass their own.
+     */
+    fun onSamaritanAttack(state: DungeonGameState, random: Random = Random.Default): DungeonGameState {
+        val combat = state.combat ?: return state
+
+        if (random.nextFloat() >= SAMARITAN_HIT_CHANCE) {
+            return state.copy(lastOutcome = DungeonOutcome.SAMARITAN_ATTACK_MISSED)
+        }
+
+        val remainingToughness = combat.banditToughnessRemaining - 1
+        return if (remainingToughness <= 0) {
+            state.copy(
+                supplyCount = state.supplyCount + BANDIT_DEFEAT_SUPPLY_REWARD,
+                combat = null,
+                resolvedTrapIds = state.resolvedTrapIds + combat.trapId,
+                lastOutcome = DungeonOutcome.BANDIT_SCARED_OFF,
+            )
+        } else {
+            state.copy(
+                combat = combat.copy(banditToughnessRemaining = remainingToughness),
+                lastOutcome = DungeonOutcome.SAMARITAN_HIT,
             )
         }
     }

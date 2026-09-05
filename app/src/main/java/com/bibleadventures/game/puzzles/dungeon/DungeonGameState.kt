@@ -60,6 +60,10 @@ enum class DungeonOutcome {
     GOAL_REACHED,
     BANDIT_HIT,
     THROW_MISSED,
+    /** The Good Samaritan's own melee strike connected — see [com.bibleadventures.game.puzzles.dungeon.DungeonGame.onSamaritanAttack]. Distinct from [BANDIT_HIT] (the player's own throw connecting) so the two turns get their own feedback text. */
+    SAMARITAN_HIT,
+    /** The Good Samaritan's own attack missed — distinct from [BANDIT_ATTACK_MISSED], which is the *bandit's* counter-attack missing, not the Samaritan's. */
+    SAMARITAN_ATTACK_MISSED,
     BANDIT_SCARED_OFF,
     OUT_OF_SUPPLIES,
     RETREATED,
