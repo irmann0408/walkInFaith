@@ -556,6 +556,7 @@ private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController,
                 narrationRes = R.raw.good_samaritan_dangerous_road_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.good_samaritan_reflection_dangerous_road,
+                characterVoiceLine = CharacterVoiceLine.GOOD_SAMARITAN_DANGEROUS_ROAD,
                 onContinue = {
                     viewModel.onSceneCompleted("dangerous_road_video")
                     navController.navigate(Destination.GoodSamaritan.PassingBy.route)
@@ -583,6 +584,7 @@ private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController,
                 narrationRes = R.raw.good_samaritan_the_priest_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.good_samaritan_reflection_the_priest,
+                characterVoiceLine = CharacterVoiceLine.GOOD_SAMARITAN_THE_PRIEST,
                 onContinue = {
                     viewModel.onSceneCompleted("the_priest_video")
                     navController.navigate(Destination.GoodSamaritan.TheLeviteVideo.route)
@@ -597,6 +599,7 @@ private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController,
                 narrationRes = R.raw.good_samaritan_the_levite_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.good_samaritan_reflection_the_levite,
+                characterVoiceLine = CharacterVoiceLine.GOOD_SAMARITAN_THE_LEVITE,
                 onContinue = {
                     viewModel.onSceneCompleted("the_levite_video")
                     navController.navigate(Destination.GoodSamaritan.Explore.route)
@@ -624,6 +627,7 @@ private fun NavGraphBuilder.goodSamaritanGraph(navController: NavHostController,
                 narrationRes = R.raw.good_samaritan_samaritan_arrives_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.good_samaritan_reflection_samaritan_arrives,
+                characterVoiceLine = CharacterVoiceLine.GOOD_SAMARITAN_SAMARITAN_ARRIVES,
                 onContinue = {
                     viewModel.onSceneCompleted("samaritan_arrives_video")
                     navController.navigate(Destination.GoodSamaritan.Reward.route)
@@ -665,6 +669,7 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 narrationRes = R.raw.daniel_kings_decree_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.daniel_reflection_kings_decree,
+                characterVoiceLine = CharacterVoiceLine.DANIEL_KINGS_DECREE,
                 onContinue = {
                     viewModel.onSceneCompleted("intro_video")
                     navController.navigate(Destination.Daniel.Window.route)
@@ -692,6 +697,7 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 narrationRes = R.raw.daniel_prays_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.daniel_reflection_prays,
+                characterVoiceLine = CharacterVoiceLine.DANIEL_PRAYS,
                 onContinue = {
                     viewModel.onSceneCompleted("prayer_video")
                     navController.navigate(Destination.Daniel.Choice.route)
@@ -729,6 +735,7 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 narrationRes = R.raw.daniel_thrown_to_lions_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.daniel_reflection_thrown_to_lions,
+                characterVoiceLine = CharacterVoiceLine.DANIEL_THROWN_TO_LIONS,
                 onContinue = {
                     viewModel.onSceneCompleted("thrown_to_lions_video")
                     navController.navigate(Destination.Daniel.RaceToTheDen.route)
@@ -760,6 +767,7 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 narrationRes = R.raw.daniel_next_morning_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.daniel_reflection_next_morning,
+                characterVoiceLine = CharacterVoiceLine.DANIEL_NEXT_MORNING,
                 onContinue = {
                     viewModel.onSceneCompleted("next_morning_video")
                     navController.navigate(Destination.Daniel.ProclamationVideo.route)
@@ -774,6 +782,7 @@ private fun NavGraphBuilder.danielGraph(navController: NavHostController, onBack
                 narrationRes = R.raw.daniel_new_proclamation_narration,
                 characterCustomization = characterCustomization,
                 reflectionRes = R.string.daniel_reflection_new_proclamation,
+                characterVoiceLine = CharacterVoiceLine.DANIEL_NEW_PROCLAMATION,
                 onContinue = {
                     viewModel.onSceneCompleted("proclamation_video")
                     navController.navigate(Destination.Daniel.Reward.route)

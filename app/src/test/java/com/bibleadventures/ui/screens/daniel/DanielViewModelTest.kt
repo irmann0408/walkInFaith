@@ -3,6 +3,7 @@ package com.bibleadventures.ui.screens.daniel
 import com.bibleadventures.FakeAudioController
 import com.bibleadventures.FakePlayerProfileRepository
 import com.bibleadventures.MainDispatcherRule
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.game.puzzles.racemaze.RaceMazeGame
@@ -91,6 +92,16 @@ class DanielViewModelTest {
         viewModel.onChoiceSelected("thankful")
 
         assertEquals("thankful", viewModel.uiState.value.selectedChoiceId)
+    }
+
+    @Test
+    fun `onChoiceSelected plays the character's own recorded line for whichever option was picked`() {
+        val audioController = FakeAudioController()
+        val viewModel = createViewModel(audioController = audioController)
+
+        viewModel.onChoiceSelected("trusting")
+
+        assertEquals(listOf(CharacterVoiceLine.DANIEL_CHOICE_TRUSTING), audioController.playedCharacterLines)
     }
 
     @Test

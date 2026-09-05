@@ -3,6 +3,7 @@ package com.bibleadventures.ui.screens.daniel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bibleadventures.audio.AudioController
+import com.bibleadventures.audio.CharacterVoiceLine
 import com.bibleadventures.audio.SoundEffect
 import com.bibleadventures.domain.model.ChapterId
 import com.bibleadventures.domain.model.CharacterCustomization
@@ -98,8 +99,22 @@ class DanielViewModel(
         }
     }
 
+    /**
+     * The character speaks the exact option they picked
+     * ([DanielContent.choiceOptions]'s own text), in their own recorded
+     * voice — not a generic reaction — so [choiceId] maps 1:1 to a
+     * [CharacterVoiceLine], same "thankful"/"trusting"/"unafraid" ids as
+     * that content list.
+     */
     fun onChoiceSelected(choiceId: String) {
         _uiState.update { it.copy(selectedChoiceId = choiceId) }
+        val voiceLine = when (choiceId) {
+            "thankful" -> CharacterVoiceLine.DANIEL_CHOICE_THANKFUL
+            "trusting" -> CharacterVoiceLine.DANIEL_CHOICE_TRUSTING
+            "unafraid" -> CharacterVoiceLine.DANIEL_CHOICE_UNAFRAID
+            else -> null
+        }
+        voiceLine?.let(audioController::playCharacterLine)
     }
 
     /**
